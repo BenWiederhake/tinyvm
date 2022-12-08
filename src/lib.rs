@@ -248,7 +248,30 @@ impl VirtualMachine {
     }
 
     fn step_compare(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let flag_l = (instruction & 0x0800) != 0;
+        let flag_e = (instruction & 0x0400) != 0;
+        let flag_g = (instruction & 0x0200) != 0;
+        let flag_s = (instruction & 0x0100) != 0;
+        let register_lhs = ((instruction & 0x00F0) >> 4) as usize;
+        let register_rhs = (instruction & 0x000F) as usize;
+
+        let (lhs, rhs) = if flag_s {
+            // Sign-extend
+            (
+                self.registers[register_lhs] as i16 as i32,
+                self.registers[register_rhs] as i16 as i32,
+            )
+        } else {
+            // Zero-extend
+            (
+                self.registers[register_lhs] as u32 as i32,
+                self.registers[register_rhs] as u32 as i32,
+            )
+        };
+
+        self.registers[register_rhs] =
+            ((flag_l && lhs < rhs) || (flag_e && lhs == rhs) || (flag_g && lhs > rhs)) as u16;
+        StepResult::Continue
     }
 
     // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x9xxx-branch

@@ -930,3 +930,230 @@ fn test_branch_doc2() {
         ],
     );
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x8xxx-compare
+// The instruction is `0b1000 1010 0011 0100`, register 3 contains the value 0x0005, and register 4 contains the value 0x0007. Then this instruction will write the value 0x0001 into register 4, because 5 is not equal 7.
+#[test]
+fn test_compare_doc() {
+    run_test(
+        &[
+            0x3305, // lw r3, 0x0005
+            0x3407, // lw r4, 0x0007
+            0x8A34, // ne r4, r3 (or cmp.lg r4, r3)
+        ],
+        &[],
+        3,
+        &[
+            Expectation::Register(3, 5),
+            Expectation::ProgramCounter(3),
+            Expectation::ActualNumSteps(3),
+            Expectation::Register(4, 1),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+fn run_compare_test(a: u16, b: u16, flags: u16, result: u16) {
+    run_test(
+        &[
+            0x3100 | (a & 0xFF),        // ↓
+            0x4100 | ((a >> 8) & 0xFF), // lw r1, a
+            0x3200 | (b & 0xFF),        // ↓
+            0x4200 | ((b >> 8) & 0xFF), // lw r2, b
+            0x8012 | (flags << 8),      // cmp.flags r2, r1
+        ],
+        &[],
+        5,
+        &[
+            Expectation::ProgramCounter(5),
+            Expectation::ActualNumSteps(5),
+            Expectation::Register(1, a),
+            Expectation::Register(2, result),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_compare_false1() {
+    run_compare_test(3, 4, 0b0000, 0);
+    run_compare_test(3, 4, 0b0001, 0);
+}
+
+#[test]
+fn test_compare_false2() {
+    run_compare_test(7, 7, 0b0000, 0);
+    run_compare_test(7, 7, 0b0001, 0);
+}
+
+#[test]
+fn test_compare_false3() {
+    run_compare_test(8, 1, 0b0000, 0);
+    run_compare_test(8, 1, 0b0001, 0);
+}
+
+#[test]
+fn test_compare_less_positive() {
+    run_compare_test(5, 7, 0b1000, 1);
+    run_compare_test(5, 7, 0b1001, 1);
+}
+
+#[test]
+fn test_compare_less_negative1() {
+    run_compare_test(7, 7, 0b1000, 0);
+    run_compare_test(7, 7, 0b1001, 0);
+}
+
+#[test]
+fn test_compare_less_negative2() {
+    run_compare_test(9, 7, 0b1000, 0);
+    run_compare_test(9, 7, 0b1001, 0);
+}
+
+#[test]
+fn test_compare_equal_positive() {
+    run_compare_test(6, 6, 0b0100, 1);
+    run_compare_test(6, 6, 0b0101, 1);
+}
+
+#[test]
+fn test_compare_equal_negative1() {
+    run_compare_test(9, 6, 0b0100, 0);
+    run_compare_test(9, 6, 0b0101, 0);
+}
+
+#[test]
+fn test_compare_equal_negative2() {
+    run_compare_test(6, 9, 0b0100, 0);
+    run_compare_test(6, 9, 0b0101, 0);
+}
+
+#[test]
+fn test_compare_lessequal_positive1() {
+    run_compare_test(7, 8, 0b1100, 1);
+    run_compare_test(7, 8, 0b1101, 1);
+}
+
+#[test]
+fn test_compare_lessequal_positive2() {
+    run_compare_test(7, 7, 0b1100, 1);
+    run_compare_test(7, 7, 0b1101, 1);
+}
+
+#[test]
+fn test_compare_lessequal_negative() {
+    run_compare_test(8, 7, 0b1100, 0);
+    run_compare_test(8, 7, 0b1101, 0);
+}
+
+#[test]
+fn test_compare_greater_positive() {
+    run_compare_test(8, 2, 0b0010, 1);
+    run_compare_test(8, 2, 0b0011, 1);
+}
+
+#[test]
+fn test_compare_greater_negative1() {
+    run_compare_test(3, 9, 0b0010, 0);
+    run_compare_test(3, 9, 0b0011, 0);
+}
+
+#[test]
+fn test_compare_greater_negative2() {
+    run_compare_test(9, 9, 0b0010, 0);
+    run_compare_test(9, 9, 0b0011, 0);
+}
+
+#[test]
+fn test_compare_lessgreater_positive1() {
+    run_compare_test(1, 9, 0b1010, 1);
+    run_compare_test(1, 9, 0b1011, 1);
+}
+
+#[test]
+fn test_compare_lessgreater_positive2() {
+    run_compare_test(9, 1, 0b1010, 1);
+    run_compare_test(9, 1, 0b1011, 1);
+}
+
+#[test]
+fn test_compare_lessgreater_negative() {
+    run_compare_test(9, 9, 0b1010, 0);
+    run_compare_test(9, 9, 0b1011, 0);
+}
+
+#[test]
+fn test_compare_equalgreater_positive1() {
+    run_compare_test(2, 2, 0b0110, 1);
+    run_compare_test(2, 2, 0b0111, 1);
+}
+
+#[test]
+fn test_compare_equalgreater_positive2() {
+    run_compare_test(5, 2, 0b0110, 1);
+    run_compare_test(5, 2, 0b0111, 1);
+}
+
+#[test]
+fn test_compare_equalgreater_negative() {
+    run_compare_test(1, 2, 0b0110, 0);
+    run_compare_test(1, 2, 0b0111, 0);
+}
+
+#[test]
+fn test_compare_lessequalgreater_positive1() {
+    run_compare_test(1, 8, 0b1110, 1);
+    run_compare_test(1, 8, 0b1111, 1);
+}
+
+#[test]
+fn test_compare_lessequalgreater_positive2() {
+    run_compare_test(8, 8, 0b1110, 1);
+    run_compare_test(8, 8, 0b1111, 1);
+}
+
+#[test]
+fn test_compare_lessequalgreater_positive3() {
+    run_compare_test(9, 8, 0b1110, 1);
+    run_compare_test(9, 8, 0b1111, 1);
+}
+
+#[test]
+fn test_compare_less_unsigned_positive() {
+    run_compare_test(0x1234, 0xABCD, 0b1000, 1);
+}
+
+#[test]
+fn test_compare_less_unsigned_negative() {
+    run_compare_test(0xABCD, 0x1234, 0b1000, 0);
+}
+
+#[test]
+fn test_compare_greater_unsigned_positive() {
+    run_compare_test(0xABCD, 0x1234, 0b0010, 1);
+}
+
+#[test]
+fn test_compare_greater_unsigned_negative() {
+    run_compare_test(0x1234, 0xABCD, 0b0010, 0);
+}
+
+#[test]
+fn test_compare_less_signed_positive() {
+    run_compare_test(0xABCD, 0x1234, 0b1001, 1);
+}
+
+#[test]
+fn test_compare_less_signed_negative() {
+    run_compare_test(0x1234, 0xABCD, 0b1001, 0);
+}
+
+#[test]
+fn test_compare_greater_signed_positive() {
+    run_compare_test(0x1234, 0xABCD, 0b0011, 1);
+}
+
+#[test]
+fn test_compare_greater_signed_negative() {
+    run_compare_test(0xABCD, 0x1234, 0b0011, 0);
+}
