@@ -1,7 +1,7 @@
 use tinyvm::{Segment, StepResult, VirtualMachine};
 
 enum Expectation {
-    ActualNumSteps(u16),
+    ActualNumSteps(u64),
     Data(u16, u16),
     LastStep(StepResult),
     ProgramCounter(u16),
@@ -46,6 +46,8 @@ fn run_test(
     }
 
     println!("VM state is {:?}", vm);
+
+    assert_eq!(actual_steps, vm.get_time());
 
     for expectation in expectations {
         match expectation {
