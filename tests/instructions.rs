@@ -286,3 +286,31 @@ fn test_cpuid_overwrite() {
         ],
     );
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102c-debug-dump
+// The instruction is `0b0001 0000 0010 1100`. Then memory and registers remain unchanged, and the program counter is incremented as usual. However, the caller of the VM may or may not decide to halt and inspect the VM, potentially resuming it later.
+#[test]
+fn test_debug_dump() {
+    run_test(
+        &[0x102C],
+        &[4, 5, 6],
+        1,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::Data(0, 4),
+            Expectation::Data(1, 5),
+            Expectation::Data(2, 6),
+            Expectation::Data(3, 0),
+            Expectation::Data(0xFFFE, 0),
+            Expectation::Data(0xFFFF, 0),
+            Expectation::LastStep(StepResult::DebugDump),
+            Expectation::ProgramCounter(1),
+            Expectation::Register(0, 0),
+            Expectation::Register(1, 0),
+            Expectation::Register(2, 0),
+            Expectation::Register(3, 0),
+            Expectation::Register(14, 0),
+            Expectation::Register(15, 0),
+        ],
+    );
+}

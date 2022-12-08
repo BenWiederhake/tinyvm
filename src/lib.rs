@@ -159,6 +159,11 @@ impl VirtualMachine {
                 }
                 StepResult::Continue
             }
+            0x2C => {
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102c-debug-dump
+                // Debug-dump
+                StepResult::DebugDump
+            }
             _ => StepResult::IllegalInstruction(instruction),
         }
     }
