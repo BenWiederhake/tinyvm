@@ -229,8 +229,14 @@ impl VirtualMachine {
         StepResult::Continue
     }
 
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x4xxx-load-immediate-high-only-high-byte
     fn step_load_imm_high(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let register_index = (instruction & 0x0F00) >> 8;
+        let register = &mut self.registers[register_index as usize];
+        let data = (instruction & 0x00FF) << 8;
+        *register &= 0x00FF;
+        *register |= data;
+        StepResult::Continue
     }
 
     fn step_unary(&mut self, instruction: u16) -> StepResult {
