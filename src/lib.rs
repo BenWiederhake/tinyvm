@@ -206,7 +206,10 @@ impl VirtualMachine {
                 StepResult::Continue
             }
             1 => {
-                unimplemented!()
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x21xx-load-word-data
+                // Load word data
+                *value_in_register = self.data[address];
+                StepResult::Continue
             }
             2 => {
                 unimplemented!()

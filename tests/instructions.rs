@@ -46,6 +46,7 @@ fn run_test(
     }
 
     println!("VM state is {:?}", vm);
+    println!("last_step_result is StepResult::{:?}", last_step_result);
 
     assert_eq!(actual_steps, vm.get_time());
 
@@ -411,6 +412,51 @@ fn test_store_data_simple() {
             Expectation::Register(2, 0x0045),
             Expectation::Register(5, 0x0067),
             Expectation::Data(0x0045, 0x0067),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x21xx-load-word-data
+// The instruction is `0b0010 0001 0010 0101`, register 2 holds the value 0x1234, and data memory at address 0x1234 is 0x5678. Then this instruction will write the value 0x5678 into register 5.
+#[test]
+#[ignore = "load immediate high not implemented"]
+fn test_load_data_doc() {
+    let mut initial_data = vec![0; 0x1234 - 1];
+    initial_data.push(0x5678);
+    run_test(
+        &[
+            0x3234, 0x4212, // lw r2, 0x1234
+            0x2125, // lw r5, r2
+        ],
+        &initial_data,
+        3,
+        &[
+            Expectation::ActualNumSteps(3),
+            Expectation::ProgramCounter(3),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(2, 0x1234),
+            Expectation::Data(0x1234, 0x5678),
+            Expectation::Register(5, 0x5678),
+        ],
+    );
+}
+
+#[test]
+fn test_load_data_simple() {
+    run_test(
+        &[
+            0x3205, // lw r2, 0x0005
+            0x2125, // lw r5, r2
+        ],
+        &[0, 0, 0, 0, 0, 0xABCD],
+        2,
+        &[
+            Expectation::ActualNumSteps(2),
+            Expectation::ProgramCounter(2),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(2, 0x0005),
+            Expectation::Data(0x0005, 0xABCD),
+            Expectation::Register(5, 0xABCD),
         ],
     );
 }
