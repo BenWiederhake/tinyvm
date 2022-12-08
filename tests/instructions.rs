@@ -626,6 +626,140 @@ fn test_jump_register_simple() {
 }
 
 #[test]
+fn test_jump_register_overflow() {
+    run_test(
+        &[
+            0x37FF, 0x47FF, // lw r7, 0xFFFF
+            0xB710, // j r7 + 0x0010
+        ],
+        &[],
+        3,
+        &[
+            Expectation::Register(7, 0xFFFF),
+            Expectation::ProgramCounter(0x000F),
+            Expectation::ActualNumSteps(3),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_underflow() {
+    run_test(
+        &[
+            0xB080, // j r0 - 0x0080
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ProgramCounter(0xFF80),
+            Expectation::ActualNumSteps(1),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_extreme_positive_imm() {
+    run_test(
+        &[
+            0xB07F, // j r0 + 0x7F
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(0x007F),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_extreme_negative_imm() {
+    run_test(
+        &[
+            0xB080, // j r0 - 0x80
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(0xFF80),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_extreme_positive() {
+    run_test(
+        &[
+            0x37FF, 0x47FF, // lw r7, 0xFFFF
+            0xB77F, // j r7 + 0x7F
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ActualNumSteps(3),
+            Expectation::ProgramCounter(0x007E),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_extreme_positive_nowrap() {
+    run_test(
+        &[
+            0x37FF, 0x477F, // lw r7, 0x7FFF
+            0xB77F, // j r7 + 0x7F
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ActualNumSteps(3),
+            Expectation::ProgramCounter(0x807E),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_extreme_negative() {
+    run_test(
+        &[
+            0x37FF, 0x47FF, // lw r7, 0xFFFF
+            0xB780, // j r7 - 0x80
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ActualNumSteps(3),
+            Expectation::ProgramCounter(0xFF7F),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_extreme_negative_signedish() {
+    run_test(
+        &[
+            0x4780, // lhi r7, 0x8000
+            0xB780, // j r7 - 0x80
+        ],
+        &[],
+        2,
+        &[
+            Expectation::ActualNumSteps(2),
+            Expectation::ProgramCounter(0x7F80),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
 fn test_program_counter_wraps() {
     let mut instructions = vec![0; 1 << 16];
     instructions[0x0000] = 0x37FF; // ↓
@@ -683,6 +817,73 @@ fn test_jump_imm_doc2() {
             Expectation::Register(3, 0x1200),
             Expectation::ProgramCounter(0x1233),
             Expectation::ActualNumSteps(3),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_immediate_overflow() {
+    let mut instructions = vec![0; 1 << 16];
+    instructions[0x0000] = 0x43FF; // lw r3, 0xFF00
+    instructions[0x0001] = 0xB300; // j r3 + 0x0000
+    instructions[0xFF00] = 0xA200; // j +0x202
+    run_test(
+        &instructions,
+        &[],
+        3,
+        &[
+            Expectation::Register(3, 0xFF00),
+            Expectation::ActualNumSteps(3),
+            Expectation::ProgramCounter(0x0102),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_immediate_underflow() {
+    run_test(
+        &[
+            0xA830, // j -0x031
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(0xFFCF),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_immediate_extreme_positive() {
+    run_test(
+        &[
+            0xA7FF, // j +0x801
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(0x0801),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_immediate_extreme_negative() {
+    run_test(
+        &[
+            0xAFFF, // j -0x800
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(0xf800),
             Expectation::LastStep(StepResult::Continue),
         ],
     );
