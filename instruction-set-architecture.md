@@ -143,7 +143,7 @@ This reads from register 0bAAAA, and writes to register 0bDDDD.
 
 This instruction reads a word of instruction memory at the address stored in register 0bAAAA. This word is written to the destination register 0bDDDD.
 
-Example: The instruction is `0b0010 0010 0101 0010`, register 13 holds the value 0x5678, and instruction memory at address 0x5678 is 0x1234. Then this instruction will read data memory at address 0x5678 and write the value 0x1234 into register 2.
+Example: The instruction is `0b0010 0010 0010 0101`, register 2 holds the value 0x1234, and instruction memory at address 0x1234 is 0x5678. Then this instruction will write the value 0x5678 into register 5.
 
 Note that this instruction can be used to provide the program with a limited amount of read-only memory, at the expense of available space for program code.
 

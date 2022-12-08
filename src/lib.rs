@@ -212,7 +212,10 @@ impl VirtualMachine {
                 StepResult::Continue
             }
             2 => {
-                unimplemented!()
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x22xx-load-word-instruction
+                // Load word instruction
+                *value_in_register = self.instructions[address];
+                StepResult::Continue
             }
             _ => StepResult::IllegalInstruction(instruction),
         }
