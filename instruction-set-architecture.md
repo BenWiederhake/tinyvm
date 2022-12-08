@@ -91,6 +91,10 @@ Known feature flags depending on the content of register 0 before calling this i
 - Register 0 was 0x0000, bit 1 (mask 0x4000) of register 0: The binary instructions for exponentiation and roots are supported.
 - Other feature flags will be documented here.
 
+Example: The instruction is `0b0001 0000 0010 1011`, and register 0 contains the value 0x0000. Then this instruction might, in a bare-bones and conforming VM, overwrite the register 0 with the value 0x8000, and registers 1, 2, and 3 each with the value 0x0000.
+
+Example: The instruction is `0b0001 0000 0010 1011`, register 0 contains the value 0x0007. Then this instruction should, in any VM without exotic extensions, overwrite the registers 0, 1, 2, and 3 each with the value 0x0000.
+
 ### `0x102C`: Debug-dump
 
 `0b0001 0000 0010 1100`, type 3 (instruction carries no data)
@@ -99,13 +103,17 @@ This reads no registers – or, in some sense, reads all registers and all memor
 
 Indicates to the VM that an observer may be interested in the current state of the machine. There is no directly observable side-effect. This may or may not pause the VM.
 
+Example: The instruction is `0b0001 0000 0010 1100`. Then memory and registers remain unchanged, and the program counter is incremented as usual. However, the caller of the VM may or may not decide to halt and inspect the VM, potentially resuming it later.
+
 ### `0x102D`: Time
 
 `0b0001 0000 0010 1101`, type 3 (instruction carries no data)
 
 This writes to registers 0, 1, 2, and 3.
 
-The new value of these registers is the amount of instructions that have been executed before this instruction, interpreted as a 64-bit number, with register 0 now carrying the least significant bits, and register 3 now carrying the most significant bits.
+The new value of these registers is the amount of instructions that have been executed before this instruction, interpreted as a 64-bit number, with register 0 now carrying the most significant bits, and register 3 now carrying the least significant bits.
+
+Example: The instruction is `0b0001 0000 0010 1101`, and before this instruction, 7 instructions have already been executed. Then the registers 0, 1, 2, and 3 now contain the values 0x0000, 0x0000, 0x0000, and 0x0007, respectively. Note that this does not depend on the program counter.
 
 ### `0x20xx`: Store word data
 
