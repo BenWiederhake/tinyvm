@@ -195,3 +195,33 @@ fn test_load_imm_low_simple() {
         ],
     );
 }
+
+#[test]
+fn test_return_simple() {
+    run_test(
+        &[0x102A],
+        &[],
+        1,
+        &[
+            Expectation::ActualNumSteps(0),
+            Expectation::ProgramCounter(0),
+            Expectation::Register(0, 0),
+            Expectation::LastStep(StepResult::Return(0x0000)),
+        ],
+    );
+}
+
+#[test]
+fn test_return_value() {
+    run_test(
+        &[0x3042, 0x102A],
+        &[],
+        2,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(1),
+            Expectation::Register(0, 0x0042),
+            Expectation::LastStep(StepResult::Return(0x0042)),
+        ],
+    );
+}

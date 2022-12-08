@@ -132,7 +132,19 @@ impl VirtualMachine {
     }
 
     fn step_special(&mut self, instruction: u16, increment_pc_as_usual: &mut bool) -> StepResult {
-        unimplemented!()
+        if instruction & 0x0F00 != 0x0000 {
+            return StepResult::IllegalInstruction(instruction);
+        }
+
+        match instruction & 0x00FF {
+            0x2A => {
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102a-return
+                // Return
+                *increment_pc_as_usual = false;
+                StepResult::Return(self.registers[0])
+            }
+            _ => StepResult::IllegalInstruction(instruction),
+        }
     }
 
     fn step_memory(&mut self, instruction: u16) -> StepResult {
