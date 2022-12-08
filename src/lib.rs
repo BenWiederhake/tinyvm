@@ -133,7 +133,7 @@ impl VirtualMachine {
             }
         };
         if increment_pc_as_usual {
-            self.program_counter += 1;
+            self.program_counter = self.program_counter.wrapping_add(1);
         }
         match step_result {
             StepResult::Continue | StepResult::DebugDump => {

@@ -618,3 +618,24 @@ fn test_jump_register_simple() {
         ],
     );
 }
+
+#[test]
+fn test_program_counter_wraps() {
+    let mut instructions = vec![0; 1 << 16];
+    instructions[0x0000] = 0x37FF; // ↓
+    instructions[0x0001] = 0x47FF; // lw r7, 0xFFFF
+    instructions[0x0002] = 0xB700; // j r7 + 0x0000
+    instructions[0xFFFF] = 0x3412; // lw r4, 0x0012
+    run_test(
+        &instructions,
+        &[],
+        4,
+        &[
+            Expectation::ActualNumSteps(4),
+            Expectation::ProgramCounter(0x0000),
+            Expectation::Register(7, 0xFFFF),
+            Expectation::Register(4, 0x0012),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
