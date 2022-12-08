@@ -227,3 +227,62 @@ fn test_return_value() {
         ],
     );
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102b-cpuid
+// The instruction is `0b0001 0000 0010 1011`, and register 0 contains the value 0x0000. Then this instruction might, in a bare-bones and conforming VM, overwrite the register 0 with the value 0x8000, and registers 1, 2, and 3 each with the value 0x0000.
+#[test]
+fn test_cpuid_0() {
+    run_test(
+        &[0x102B],
+        &[],
+        1,
+        &[
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(1),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(0, 0x8000),
+            Expectation::Register(1, 0x0000),
+            Expectation::Register(2, 0x0000),
+            Expectation::Register(3, 0x0000),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102b-cpuid
+// The instruction is `0b0001 0000 0010 1011`, register 0 contains the value 0x0007. Then this instruction should, in any VM without exotic extensions, overwrite the registers 0, 1, 2, and 3 each with the value 0x0000.
+#[test]
+fn test_cpuid_7() {
+    run_test(
+        &[0x3007, 0x102B],
+        &[],
+        2,
+        &[
+            Expectation::ActualNumSteps(2),
+            Expectation::ProgramCounter(2),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(0, 0x0000),
+            Expectation::Register(1, 0x0000),
+            Expectation::Register(2, 0x0000),
+            Expectation::Register(3, 0x0000),
+        ],
+    );
+}
+
+#[test]
+fn test_cpuid_overwrite() {
+    run_test(
+        &[0x310A, 0x320B, 0x330C, 0x340D, 0x102B],
+        &[],
+        5,
+        &[
+            Expectation::ActualNumSteps(5),
+            Expectation::ProgramCounter(5),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(0, 0x8000),
+            Expectation::Register(1, 0x0000),
+            Expectation::Register(2, 0x0000),
+            Expectation::Register(3, 0x0000),
+            Expectation::Register(4, 0x000D),
+        ],
+    );
+}

@@ -143,6 +143,22 @@ impl VirtualMachine {
                 *increment_pc_as_usual = false;
                 StepResult::Return(self.registers[0])
             }
+            0x2B => {
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102b-cpuid
+                // CPUID
+                if self.registers[0] == 0x0000 {
+                    self.registers[0] = 0x8000; // TODO: binary instructions for exponentiation and roots
+                    self.registers[1] = 0x0000;
+                    self.registers[2] = 0x0000;
+                    self.registers[3] = 0x0000;
+                } else {
+                    self.registers[0] = 0x0000;
+                    self.registers[1] = 0x0000;
+                    self.registers[2] = 0x0000;
+                    self.registers[3] = 0x0000;
+                }
+                StepResult::Continue
+            }
             _ => StepResult::IllegalInstruction(instruction),
         }
     }
