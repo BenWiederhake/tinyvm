@@ -251,8 +251,22 @@ impl VirtualMachine {
         unimplemented!()
     }
 
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x9xxx-branch
     fn step_branch(&mut self, instruction: u16, increment_pc_as_usual: &mut bool) -> StepResult {
-        unimplemented!()
+        let register = (instruction & 0x0F00) >> 8;
+        if self.registers[register as usize] != 0 {
+            *increment_pc_as_usual = false;
+            let offset = (instruction & 0x007F) as i8 as i16 as u16; // sign-extend to 16 bits
+            let sign_bit = instruction & 0x0080;
+            if sign_bit == 0 {
+                // - If S=0, the program counter is not incremented by 1 as usual, but rather incremented by 2 + 0b0VVVVVVV.
+                self.program_counter = self.program_counter.wrapping_add(2 + offset);
+            } else {
+                // - If S=1, the program counter is not incremented by 1 as usual, but rather decremented by 1 + 0b0VVVVVVV.
+                self.program_counter = self.program_counter.wrapping_sub(1 + offset);
+            }
+        }
+        StepResult::Continue
     }
 
     // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xaxxx-jump-by-immediate

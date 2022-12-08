@@ -269,6 +269,8 @@ If you need long conditional branches, consider using a jump by immediate (conta
 
 Example: The program counter is 0x1234, the instruction at that address is `0b1001 0011 1000 0000`, and register 3 contains the value 0x0001. Because 0x0001 is considered true, the program counter is then updated to 0x1233, i.e. the instruction before the branch.
 
+Example: The instruction is `0b1001 0101 1000 0000`, and register 5 contains the value 0x0000. Because 0x0000 is considered false, the program counter is incremented as normal.
+
 ### `0xAxxx`: Jump by immediate
 
 `0b1010 SVVV VVVV VVVV`, type 1 (instruction carries a 12-bit value)

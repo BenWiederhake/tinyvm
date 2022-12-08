@@ -888,3 +888,45 @@ fn test_jump_immediate_extreme_negative() {
         ],
     );
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x9xxx-branch
+// The program counter is 0x1234, the instruction at that address is `0b1001 0011 1000 0000`, and register 3 contains the value 0x0001. Because 0x0001 is considered true, the program counter is then updated to 0x1233, i.e. the instruction before the branch.
+#[test]
+fn test_branch_doc1() {
+    let mut instructions = vec![0; 1 << 16];
+    instructions[0x0000] = 0x3301; // lw r3, 0x0001
+    instructions[0x0001] = 0x4712; // lhi r7, 0x1200
+    instructions[0x0002] = 0xB734; // j r7 + 0x0034
+    instructions[0x1234] = 0x9380; // b r3, -0x1
+    run_test(
+        &instructions,
+        &[],
+        4,
+        &[
+            Expectation::Register(3, 0x0001),
+            Expectation::Register(7, 0x1200),
+            Expectation::ProgramCounter(0x1233),
+            Expectation::ActualNumSteps(4),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x9xxx-branch
+// The instruction is `0b1001 0101 1000 0000`, and register 5 contains the value 0x0000. Because 0x0000 is considered false, the program counter is incremented as normal.
+#[test]
+fn test_branch_doc2() {
+    run_test(
+        &[
+            0x9580, // b r5, -0x1
+        ],
+        &[],
+        1,
+        &[
+            Expectation::Register(5, 0),
+            Expectation::ProgramCounter(1),
+            Expectation::ActualNumSteps(1),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
