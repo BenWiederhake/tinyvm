@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug)]
@@ -28,12 +29,25 @@ impl IndexMut<u16> for Segment {
     }
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum StepResult {
     Continue,
+    DebugDump,
     IllegalInstruction(u16),
     Return(u16),
-    DebugDump,
+}
+
+impl Debug for StepResult {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            StepResult::Continue => f.write_str("Continue"),
+            StepResult::DebugDump => f.write_str("DebugDump"),
+            StepResult::IllegalInstruction(insn) => {
+                f.write_fmt(format_args!("IllegalInstruction(0x{:04x})", *insn))
+            }
+            StepResult::Return(value) => f.write_fmt(format_args!("Return(0x{:04x})", *value)),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -106,7 +120,10 @@ impl VirtualMachine {
                 self.step_jump_reg(instruction)
             }
             // 0xC000, 0xD000, 0xE000, 0xF000 illegal
-            _ => StepResult::IllegalInstruction(instruction),
+            _ => {
+                increment_pc_as_usual = false;
+                StepResult::IllegalInstruction(instruction)
+            }
         };
         if increment_pc_as_usual {
             self.program_counter += 1;
