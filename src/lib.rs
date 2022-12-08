@@ -1,3 +1,6 @@
+extern crate getrandom;
+
+use getrandom::getrandom;
 use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Index, IndexMut};
 
@@ -48,6 +51,35 @@ impl Debug for StepResult {
             StepResult::Return(value) => f.write_fmt(format_args!("Return(0x{:04x})", *value)),
         }
     }
+}
+
+fn random_upto_including(upper_bound: u16) -> u16 {
+    let modulus = (upper_bound as u64) + 1;
+    // Make a random u64, and do the modulo trick.
+    // This *does* create a disparity in probabilities, but it's at most (2**16) / (2**64) = 3.55e-13,
+    // so pretty darn unlikely to be noticed by anyone.
+    let mut bytes = [0u8; 8];
+    // If getrandom fails, tinyvm probably doesn't matter anymore. Crash and burn.
+    getrandom(&mut bytes).expect("Cannot satisfy rnd instruction");
+    let mut value: u64 = 0;
+    value |= bytes[0] as u64;
+    value <<= 8;
+    value |= bytes[1] as u64;
+    value <<= 8;
+    value |= bytes[2] as u64;
+    value <<= 8;
+    value |= bytes[3] as u64;
+    value <<= 8;
+    value |= bytes[4] as u64;
+    value <<= 8;
+    value |= bytes[5] as u64;
+    value <<= 8;
+    value |= bytes[6] as u64;
+    value <<= 8;
+    value |= bytes[7] as u64;
+    value <<= 8;
+    value %= modulus;
+    value as u16
 }
 
 #[derive(Debug)]
@@ -239,8 +271,53 @@ impl VirtualMachine {
         StepResult::Continue
     }
 
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x5xxx-unary-functions
     fn step_unary(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let function = (instruction & 0x0F00) >> 8;
+        let source = self.registers[((instruction & 0x00F0) >> 4) as usize];
+        let destination = &mut self.registers[(instruction & 0x000F) as usize];
+
+        match function {
+            0b1000 => {
+                // * If FFFF=1000, the computed function is "decr" (add 1), e.g. decr(41) = 40
+                *destination = source.wrapping_sub(1);
+            }
+            0b1001 => {
+                // * If FFFF=1001, the computed function is "incr" (subtract 1), e.g. incr(41) = 42
+                *destination = source.wrapping_add(1);
+            }
+            0b1010 => {
+                // * If FFFF=1010, the computed function is "not" (bite-wise logical negation), e.g. not(0x1234) = 0xEDCB
+                *destination = !source;
+            }
+            0b1011 => {
+                // * If FFFF=1011, the computed function is "popcnt" (population count), e.g. popcnt(0xFFFF) = 16, popcnt(0x0000) = 0
+                //     * Note that there are no silly exceptions as there would be in x86.
+                *destination = source.count_ones() as u16;
+            }
+            0b1100 => {
+                // * If FFFF=1100, the computed function is "clz" (count leading zeros), e.g. clz(0x8000) = 0, clz(0x0002) = 14
+                *destination = source.leading_zeros() as u16;
+            }
+            0b1101 => {
+                // * If FFFF=1101, the computed function is "ctz" (count trailing zeros), e.g. ctz(0x8000) = 15, ctz(0x0002) = 1
+                *destination = source.trailing_zeros() as u16;
+            }
+            0b1110 => {
+                // * If FFFF=1110, the computed function is "rnd" (random number up to AND INCLUDING), e.g. rnd(5) = 3, rnd(5) = 5, rnd(5) = 0
+                //     * Note that rnd must never result in a value larger than the argument, so rnd(5) must never generate 6 or even 0xFFFF.
+                *destination = random_upto_including(source);
+            }
+            0b1111 => {
+                // * If FFFF=1111, the computed function is "mov" (move, identity function), e.g. mov(0x5678) = 0x5678
+                *destination = source;
+            }
+            _ => {
+                return StepResult::IllegalInstruction(instruction);
+            }
+        }
+
+        StepResult::Continue
     }
 
     fn step_binary(&mut self, instruction: u16) -> StepResult {

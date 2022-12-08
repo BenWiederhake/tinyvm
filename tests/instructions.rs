@@ -1157,3 +1157,181 @@ fn test_compare_greater_signed_positive() {
 fn test_compare_greater_signed_negative() {
     run_compare_test(0xABCD, 0x1234, 0b0011, 0);
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x5xxx-unary-functions
+// The instruction is `0b0101 1010 0101 0110`, and register 5 contains the value 0x1234. Then this instruction will write the value 0xEDCB into register 6, because not(0x1234) = 0xEDCB.
+#[test]
+fn test_unary_doc1() {
+    run_test(
+        &[
+            0x3534, 0x4512, // lw r5, 0x1234
+            0x5A56, // not r6, r5
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ProgramCounter(3),
+            Expectation::ActualNumSteps(3),
+            Expectation::Register(5, 0x1234),
+            Expectation::Register(6, 0xEDCB),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x5xxx-unary-functions
+// The instruction is `0b0101 1001 0011 0011`, and register 3 contains the value 41. Then this instruction will write the value 42 into register 3, because incr(41) = 42.
+#[test]
+fn test_unary_doc2() {
+    run_test(
+        &[
+            0x3329, // lw r3, 41
+            0x5933, // incr r3
+        ],
+        &[],
+        2,
+        &[
+            Expectation::ProgramCounter(2),
+            Expectation::ActualNumSteps(2),
+            Expectation::Register(3, 42),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+fn run_unary_test(function: u16, a: u16, result: u16) {
+    run_test(
+        &[
+            0x3100 | (a & 0xFF),        // ↓
+            0x4100 | ((a >> 8) & 0xFF), // lw r1, a
+            0x5012 | (function << 8),   // unary.function r2, r1
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ProgramCounter(3),
+            Expectation::ActualNumSteps(3),
+            Expectation::Register(1, a),
+            Expectation::Register(2, result),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_unary_decr() {
+    // * If FFFF=1000, the computed function is "decr" (add 1), e.g. decr(41) = 40
+    run_unary_test(0b1000, 41, 40);
+    run_unary_test(0b1000, 0x0000, 0xFFFF);
+    run_unary_test(0b1000, 0xABCD, 0xABCC);
+}
+
+#[test]
+fn test_unary_incr() {
+    // * If FFFF=1001, the computed function is "incr" (subtract 1), e.g. incr(41) = 42
+    run_unary_test(0b1001, 41, 42);
+    run_unary_test(0b1001, 0xFFFF, 0x0000);
+    run_unary_test(0b1001, 0xABCD, 0xABCE);
+}
+
+#[test]
+fn test_unary_not() {
+    // * If FFFF=1010, the computed function is "not" (bite-wise logical negation), e.g. not(0x1234) = 0xEDCB
+    run_unary_test(0b1010, 0x1234, 0xEDCB);
+    run_unary_test(0b1010, 0x0F5A, 0xF0A5);
+}
+
+#[test]
+fn test_unary_popcnt() {
+    // * If FFFF=1011, the computed function is "popcnt" (population count), e.g. popcnt(0xFFFF) = 16, popcnt(0x0000) = 0
+    //     * Note that there are no silly exceptions as there would be in x86.
+    run_unary_test(0b1011, 0xFFFF, 16);
+    run_unary_test(0b1011, 0x0000, 0);
+    run_unary_test(0b1011, 0x1234, 5);
+}
+
+#[test]
+fn test_unary_clz() {
+    // * If FFFF=1100, the computed function is "clz" (count leading zeros), e.g. clz(0x8000) = 0, clz(0x0002) = 14
+    run_unary_test(0b1100, 0x8000, 0);
+    run_unary_test(0b1100, 0x0002, 14);
+    run_unary_test(0b1100, 0xFFFF, 0);
+    run_unary_test(0b1100, 0x0000, 16);
+}
+
+#[test]
+fn test_unary_ctz() {
+    // * If FFFF=1101, the computed function is "ctz" (count trailing zeros), e.g. ctz(0x8000) = 15, ctz(0x0002) = 1
+    run_unary_test(0b1101, 0x8000, 15);
+    run_unary_test(0b1101, 0x0002, 1);
+    run_unary_test(0b1101, 0xFFFF, 0);
+    run_unary_test(0b1101, 0x0000, 16);
+}
+
+#[test]
+fn test_unary_rnd() {
+    // * If FFFF=1110, the computed function is "rnd" (random number up to AND INCLUDING), e.g. rnd(5) = 3, rnd(5) = 5, rnd(5) = 0
+    //     * Note that rnd must never result in a value larger than the argument, so rnd(5) must never generate 6 or even 0xFFFF.
+
+    // The only argument with a predictable outcome:
+    run_unary_test(0b1110, 0, 0);
+
+    // The other cases aren't easily testable
+}
+
+#[test]
+fn test_unary_rnd_inclusive() {
+    run_test(
+        &[
+            0x3105, // lw r1, 5
+            0x5E12, // rnd r2, r1
+            0x8C21, // le r2 r1
+            0x8620, // ge r2 r0
+        ],
+        &[],
+        4,
+        &[
+            Expectation::ProgramCounter(4),
+            Expectation::ActualNumSteps(4),
+            // Can't easily check register 2 here.
+            // So instead we use the VM to check that it is within bounds:
+            Expectation::Register(0, 1),
+            Expectation::Register(1, 1),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_unary_rnd_extreme() {
+    // This test is flaky, and fails with a probability of roughly 0.00305%.
+    // So if you see it fail twice in a row, something is broken for sure.
+    run_test(
+        &[
+            0x31FF, // lw r1, 0xFFFF
+            0x5E12, // rnd r2, r1
+            0x8421, // eq r2 r1
+            0x8420, // eq r2 r0
+        ],
+        &[],
+        4,
+        &[
+            Expectation::ProgramCounter(4),
+            Expectation::ActualNumSteps(4),
+            // Can't easily check register 2 here.
+            // So instead we use the VM to check that it is neither minimum nor maximum:
+            Expectation::Register(0, 0),
+            Expectation::Register(1, 0),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_unary_mov() {
+    // * If FFFF=1111, the computed function is "mov" (move, identity function), e.g. mov(0x5678) = 0x5678
+    run_unary_test(0b1111, 0x5678, 0x5678);
+    run_unary_test(0b1111, 0x0002, 0x0002);
+    run_unary_test(0b1111, 0xFFFF, 0xFFFF);
+    run_unary_test(0b1111, 0x0000, 0x0000);
+}

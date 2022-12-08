@@ -43,6 +43,8 @@ Case distinction over the first (most significant) four bits of the first byte:
 - 0100: Load immediate high (only high byte)
 - 0101:
     * 0000-1001: reserved (see note)
+    * 1000: unary decr
+    * 1001: unary incr
     * 1010: unary not
     * 1011: unary popcnt
     * 1100: unary clz
@@ -177,6 +179,8 @@ This reads from register 0bSSSS, and writes to register 0bDDDD.
 
 This computes a simple mathematical function using only the value of the source register 0bSSSS, and writes it into the destination register 0bDDDD, where FFFF selects the desired unary function.
 
+* If FFFF=1000, the computed function is "decr" (add 1), e.g. decr(41) = 40
+* If FFFF=1001, the computed function is "incr" (subtract 1), e.g. incr(41) = 42
 * If FFFF=1010, the computed function is "not" (bite-wise logical negation), e.g. not(0x1234) = 0xEDCB
 * If FFFF=1011, the computed function is "popcnt" (population count), e.g. popcnt(0xFFFF) = 16, popcnt(0x0000) = 0
     * Note that there are no silly exceptions as there would be in x86.
@@ -188,6 +192,8 @@ This computes a simple mathematical function using only the value of the source 
 * Other values of FFFF indicate reserved functions, and should be treated as a reserved instructions.
 
 Example: The instruction is `0b0101 1010 0101 0110`, and register 5 contains the value 0x1234. Then this instruction will write the value 0xEDCB into register 6, because not(0x1234) = 0xEDCB.
+
+Example: The instruction is `0b0101 1001 0011 0011`, and register 3 contains the value 41. Then this instruction will write the value 42 into register 3, because incr(41) = 42.
 
 ### `0x6xxx`: Basic binary functions
 
