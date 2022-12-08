@@ -54,6 +54,7 @@ impl Debug for StepResult {
 pub struct VirtualMachine {
     registers: [u16; 16],
     program_counter: u16,
+    time: u64,
     instructions: Segment,
     data: Segment,
 }
@@ -64,6 +65,7 @@ impl VirtualMachine {
         VirtualMachine {
             registers: [0; 16],
             program_counter: 0,
+            time: 0,
             instructions,
             data,
         }
@@ -81,6 +83,11 @@ impl VirtualMachine {
     #[must_use]
     pub fn get_program_counter(&self) -> u16 {
         self.program_counter
+    }
+
+    #[must_use]
+    pub fn get_time(&self) -> u64 {
+        self.time
     }
 
     #[must_use]
@@ -128,6 +135,13 @@ impl VirtualMachine {
         if increment_pc_as_usual {
             self.program_counter += 1;
         }
+        match step_result {
+            StepResult::Continue | StepResult::DebugDump => {
+                self.time += 1;
+            }
+            _ => {}
+        }
+
         step_result
     }
 
@@ -163,6 +177,15 @@ impl VirtualMachine {
                 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102c-debug-dump
                 // Debug-dump
                 StepResult::DebugDump
+            }
+            0x2D => {
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102d-time
+                // Time
+                self.registers[0] = (self.time >> 48) as u16;
+                self.registers[1] = (self.time >> 32) as u16;
+                self.registers[2] = (self.time >> 16) as u16;
+                self.registers[3] = self.time as u16;
+                StepResult::Continue
             }
             _ => StepResult::IllegalInstruction(instruction),
         }

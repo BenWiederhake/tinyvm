@@ -45,6 +45,8 @@ fn run_test(
         actual_steps += 1;
     }
 
+    println!("VM state is {:?}", vm);
+
     for expectation in expectations {
         match expectation {
             Expectation::ActualNumSteps(expected_steps) => {
@@ -53,7 +55,7 @@ fn run_test(
             }
             Expectation::Data(address, expected_data) => {
                 println!(
-                    "Expecting word {:4X} at address {:4X}",
+                    "Expecting word {:04X} at address {:04X}",
                     expected_data, address
                 );
                 assert_eq!(*expected_data, vm.get_data()[*address]);
@@ -68,7 +70,7 @@ fn run_test(
             }
             Expectation::Register(register_index, expected_value) => {
                 println!(
-                    "Expecting register {} to contain {:4X}",
+                    "Expecting register {} to contain {:04X}",
                     register_index, expected_value
                 );
                 assert_eq!(
@@ -313,4 +315,55 @@ fn test_debug_dump() {
             Expectation::Register(15, 0),
         ],
     );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102d-time
+// The instruction is `0b0001 0000 0010 1101`, and before this instruction, 7 instructions have already been executed. Then the registers 0, 1, 2, and 3 now contain the values 0x0000, 0x0000, 0x0000, and 0x0007, respectively.
+#[test]
+fn test_time_doc() {
+    run_test(
+        &[
+            0x300A, 0x310B, 0x320C, 0x330D, 0x340E, 0x350F, 0x3609, 0x102D,
+        ],
+        &[],
+        8,
+        &[
+            Expectation::ActualNumSteps(8),
+            Expectation::ProgramCounter(8),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(0, 0x0000),
+            Expectation::Register(1, 0x0000),
+            Expectation::Register(2, 0x0000),
+            Expectation::Register(3, 0x0007),
+            Expectation::Register(4, 0x000E),
+            Expectation::Register(5, 0x000F),
+            Expectation::Register(6, 0x0009),
+        ],
+    );
+}
+
+#[test]
+#[ignore = "jump-immediate not yet implemented"]
+fn test_time_jump() {
+    run_test(
+        &[0xA003, 0, 0, 0, 0, 0x102D],
+        &[],
+        2,
+        &[
+            Expectation::ActualNumSteps(2),
+            Expectation::ProgramCounter(6),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(0, 0x0000),
+            Expectation::Register(1, 0x0000),
+            Expectation::Register(2, 0x0000),
+            Expectation::Register(3, 0x0002),
+        ],
+    );
+}
+
+#[test]
+#[ignore = "write long-running program"]
+fn test_time_long() {
+    // FIXME: Test 'time' instruction with non-zero higher bytes!
+    unimplemented!()
 }
