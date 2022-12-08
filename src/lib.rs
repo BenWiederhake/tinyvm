@@ -192,7 +192,27 @@ impl VirtualMachine {
     }
 
     fn step_memory(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let memory_command = (instruction & 0x0F00) >> 8;
+        let register_address = (instruction & 0x00F0) >> 4;
+        let register_data = instruction & 0x000F;
+        let address = self.registers[register_address as usize];
+        let value_in_register = &mut self.registers[register_data as usize];
+
+        match memory_command {
+            0 => {
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x20xx-store-word-data
+                // Store word data
+                self.data[address] = *value_in_register;
+                StepResult::Continue
+            }
+            1 => {
+                unimplemented!()
+            }
+            2 => {
+                unimplemented!()
+            }
+            _ => StepResult::IllegalInstruction(instruction),
+        }
     }
 
     // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x3xxx-load-immediate-low-sign-extended

@@ -123,7 +123,7 @@ This reads from registers 0bAAAA and 0bVVVV.
 
 This instruction reads a value from register 0bVVVV, and writes it to the address stored in register 0bAAAA of data memory. Note that data memory is word-indexed, so the address 1 refers to bytes 2 and 3.
 
-Example: The instruction is `0b0010 0000 0101 0010`, register 2 holds the value 0x1234, and register 13 holds the value 0x5678. Then this instruction will overwrite data memory at address 0x5678 with the value 0x1234.
+Example: The instruction is `0b0010 0000 0010 0101`, register 2 holds the value 0x1234, and register 5 holds the value 0x5678. Then this instruction will overwrite data memory at address 0x1234 with the value 0x5678.
 
 ### `0x21xx`: Load word data
 

@@ -369,3 +369,48 @@ fn test_time_long() {
     // FIXME: Test 'time' instruction with non-zero higher bytes!
     unimplemented!()
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x20xx-store-word-data
+// The instruction is `0b0010 0000 0010 0101`, register 2 holds the value 0x1234, and register 5 holds the value 0x5678. Then this instruction will overwrite data memory at address 0x1234 with the value 0x5678.
+#[test]
+#[ignore = "load immediate high not implemented"]
+fn test_store_data_doc() {
+    run_test(
+        &[
+            0x3234, 0x4212, // lw r2, 0x1234
+            0x3578, 0x4556, // lw r5, 0x5678
+            0x2025, // sw r2, r5
+        ],
+        &[],
+        5,
+        &[
+            Expectation::ActualNumSteps(5),
+            Expectation::ProgramCounter(5),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(2, 0x1234),
+            Expectation::Register(5, 0x5678),
+            Expectation::Data(0x1234, 0x5678),
+        ],
+    );
+}
+
+#[test]
+fn test_store_data_simple() {
+    run_test(
+        &[
+            0x3245, // lw r2, 0x0045
+            0x3567, // lw r5, 0x0067
+            0x2025, // sw r2, r5
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ActualNumSteps(3),
+            Expectation::ProgramCounter(3),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Register(2, 0x0045),
+            Expectation::Register(5, 0x0067),
+            Expectation::Data(0x0045, 0x0067),
+        ],
+    );
+}
