@@ -259,7 +259,11 @@ impl VirtualMachine {
         unimplemented!()
     }
 
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xbxxx-jump-to-register
     fn step_jump_reg(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let register = (instruction & 0x0F00) >> 8;
+        let offset = (instruction & 0x00FF) as i8 as i16 as u16; // sign-extend to 16 bits
+        self.program_counter = self.registers[register as usize].wrapping_add(offset);
+        StepResult::Continue
     }
 }

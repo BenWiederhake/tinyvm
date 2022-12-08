@@ -562,3 +562,59 @@ fn test_load_imm_high_simple() {
         ],
     );
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xbxxx-jump-to-register
+// The instruction is `0b1011 0111 0011 0100`, and register 7 contains the value 0x1200. Then the program counter is updated to 0x1234.
+#[test]
+fn test_jump_register_doc1() {
+    run_test(
+        &[
+            0x4712, // lhi r7, 0x1200
+            0xB734, // j r7 + 0x0034
+        ],
+        &[],
+        2,
+        &[
+            Expectation::Register(7, 0x1200),
+            Expectation::ProgramCounter(0x1234),
+            Expectation::ActualNumSteps(2),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xbxxx-jump-to-register
+// The instruction is `0b1011 0111 1111 1111`, and register 7 contains the value 0x1234. Then the program counter is updated to 0x1233.
+#[test]
+fn test_jump_register_doc2() {
+    run_test(
+        &[
+            0x3734, 0x4712, // lw r7, 0x1234
+            0xB7FF, // j r7 - 0x0001
+        ],
+        &[],
+        3,
+        &[
+            Expectation::Register(7, 0x1234),
+            Expectation::ProgramCounter(0x1233),
+            Expectation::ActualNumSteps(3),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_simple() {
+    run_test(
+        &[
+            0xB042, // j r0 + 0x0042
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ProgramCounter(0x0042),
+            Expectation::ActualNumSteps(1),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}

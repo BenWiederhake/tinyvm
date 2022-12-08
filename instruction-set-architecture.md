@@ -303,3 +303,5 @@ Note that the program counter is allowed to overflow.
 Note that this means that any jump takes at most three instructions: two instructions to load the value into an unused register, and one instruction for this jump.
 
 Example: The instruction is `0b1011 0111 0011 0100`, and register 7 contains the value 0x1200. Then the program counter is updated to 0x1234.
+
+Example: The instruction is `0b1011 0111 1111 1111`, and register 7 contains the value 0x1234. Then the program counter is updated to 0x1233.
