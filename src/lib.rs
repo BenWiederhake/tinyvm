@@ -139,8 +139,12 @@ impl VirtualMachine {
         unimplemented!()
     }
 
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x3xxx-load-immediate-low-sign-extended
     fn step_load_imm_low(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let register = (instruction & 0x0F00) >> 8;
+        let data = (instruction & 0x00FF) as i8 as i16 as u16; // sign-extend to 16 bits
+        self.registers[register as usize] = data;
+        StepResult::Continue
     }
 
     fn step_load_imm_high(&mut self, instruction: u16) -> StepResult {
