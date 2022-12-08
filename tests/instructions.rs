@@ -346,10 +346,16 @@ fn test_time_doc() {
 }
 
 #[test]
-#[ignore = "jump-immediate not yet implemented"]
 fn test_time_jump() {
     run_test(
-        &[0xA003, 0, 0, 0, 0, 0x102D],
+        &[
+            0xB005, // j r0 + 0x0005
+            0,      // padding
+            0,      // padding
+            0,      // padding
+            0,      // padding
+            0x102D, // time
+        ],
         &[],
         2,
         &[
@@ -359,7 +365,7 @@ fn test_time_jump() {
             Expectation::Register(0, 0x0000),
             Expectation::Register(1, 0x0000),
             Expectation::Register(2, 0x0000),
-            Expectation::Register(3, 0x0002),
+            Expectation::Register(3, 0x0001),
         ],
     );
 }
@@ -635,6 +641,48 @@ fn test_program_counter_wraps() {
             Expectation::ProgramCounter(0x0000),
             Expectation::Register(7, 0xFFFF),
             Expectation::Register(4, 0x0012),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xaxxx-jump-by-immediate
+// The program counter is 0x5000, the instruction at that address is `0b1010 0001 0010 0011`. Then the program counter is updated to 0x5000 + 2 + 0x0123 = 0x5125.
+#[test]
+fn test_jump_imm_doc1() {
+    let mut instructions = vec![0; 1 << 16];
+    instructions[0x0000] = 0x4350; // lhi r3, 0x5000
+    instructions[0x0001] = 0xB300; // j r3 + 0x0000
+    instructions[0x5000] = 0xA123; // j +0x125
+    run_test(
+        &instructions,
+        &[],
+        3,
+        &[
+            Expectation::Register(3, 0x5000),
+            Expectation::ProgramCounter(0x5125),
+            Expectation::ActualNumSteps(3),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xaxxx-jump-by-immediate
+// The program counter is 0x1234, the instruction at that address is `0b1010 1000 0000 0000`. Then the program counter is updated to 0x1233, i.e. the instruction before the jump.
+#[test]
+fn test_jump_imm_doc2() {
+    let mut instructions = vec![0; 1 << 16];
+    instructions[0x0000] = 0x4312; // lhi r3, 0x1200
+    instructions[0x0001] = 0xB334; // j r3 + 0x0034
+    instructions[0x1234] = 0xA800; // j -0x1
+    run_test(
+        &instructions,
+        &[],
+        3,
+        &[
+            Expectation::Register(3, 0x1200),
+            Expectation::ProgramCounter(0x1233),
+            Expectation::ActualNumSteps(3),
             Expectation::LastStep(StepResult::Continue),
         ],
     );

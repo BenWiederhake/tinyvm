@@ -255,8 +255,18 @@ impl VirtualMachine {
         unimplemented!()
     }
 
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xaxxx-jump-by-immediate
     fn step_jump_imm(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let offset = instruction & 0x07FF;
+        let sign_bit = instruction & 0x0800;
+        if sign_bit == 0 {
+            // - If S=0, the program counter is not incremented by 1 as usual, but rather incremented by 2 + 0b0000 0VVV VVVV VVVV.
+            self.program_counter = self.program_counter.wrapping_add(2 + offset);
+        } else {
+            // - If S=1, the program counter is not incremented by 1 as usual, but rather decremented by 1 + 0b0000 0VVV VVVV VVVV.
+            self.program_counter = self.program_counter.wrapping_sub(1 + offset);
+        }
+        StepResult::Continue
     }
 
     // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xbxxx-jump-to-register
