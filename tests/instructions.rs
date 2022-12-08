@@ -212,6 +212,8 @@ fn test_return_simple() {
 }
 
 #[test]
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102a-return
+// The instruction is `0b0001 0000 0010 1010`, and register 0 contains the value 0x0042. Then this instruction will halt the machine, and present the value 0x0042 as the main result.
 fn test_return_value() {
     run_test(
         &[0x3042, 0x102A],

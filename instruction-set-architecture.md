@@ -76,6 +76,8 @@ This reads register 0 – or, in some sense, reads all registers and all memory.
 
 Halts the machine. There is no execution  The content of register 0 is considered to be the primary return value. Depending on the use case, other registers and/or memory may also be considered to be return value.
 
+Example: The instruction is `0b0001 0000 0010 1010`, and register 0 contains the value 0x0042. Then this instruction will halt the machine, and present the value 0x0042 as the main result.
+
 ### `0x102B`: CPUID
 
 `0b0001 0000 0010 1011`, type 3 (instruction carries no data)
