@@ -320,8 +320,113 @@ impl VirtualMachine {
         StepResult::Continue
     }
 
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x6xxx-basic-binary-functions
     fn step_binary(&mut self, instruction: u16) -> StepResult {
-        unimplemented!()
+        let function = (instruction & 0x0F00) >> 8;
+        let source = self.registers[((instruction & 0x00F0) >> 4) as usize];
+        let destination = &mut self.registers[(instruction & 0x000F) as usize];
+
+        match function {
+            0b0000 => {
+                // * If FFFF=0000, the computed function is "add" (overflowing addition), e.g. fn(0x1234, 0xABCD) = 0xBE01
+                //     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
+                *destination = source.wrapping_add(*destination);
+            }
+            0b0001 => {
+                // * If FFFF=0001, the computed function is "sub" (overflowing subtraction), e.g. fn(0xBE01, 0xABCD) = 0x1234, fn(0x0007, 0x0009) = 0xFFFE
+                //     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
+                *destination = source.wrapping_sub(*destination);
+            }
+            0b0010 => {
+                // * If FFFF=0010, the computed function is "mul" (truncated multiplication, low word), e.g. fn(0x0005, 0x0007) = 0x0023, fn(0x1234, 0xABCD) = 0x4FA4
+                //     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
+                *destination = source.wrapping_mul(*destination);
+            }
+            0b0011 => {
+                // * If FFFF=0011, the computed function is "mulh" (truncated multiplication, high word), e.g. fn(0x0005, 0x0007) = 0x0000, fn(0x1234, 0xABCD) = 0x0C37
+                //     * Note that there is no signed equivalent.
+                let result = (source as u32) * (*destination as u32);
+                *destination = (result >> 16) as u16;
+            }
+            0b0100 => {
+                // * If FFFF=0100, the computed function is "div.u" (unsigned division, rounded towards 0), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0x0009
+                //     * The result of dividing by zero is 0xFFFF, the highest unsigned value.
+                *destination = source.checked_div(*destination).unwrap_or(0xFFFF);
+            }
+            0b0101 => {
+                // * If FFFF=0101, the computed function is "div.s" (signed division, rounded towards 0), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0xFFFC
+                //     * The result of dividing by zero is 0x7FFF, the highest signed value.
+                //     * We define fn(0x8000, 0xFFFF) = 0x8000.
+
+                if *destination == 0 {
+                    *destination = 0x7FFF;
+                } else {
+                    *destination = (source as i16).wrapping_div(*destination as i16) as u16;
+                }
+            }
+            0b0110 => {
+                // * If FFFF=0110, the computed function is "mod.u" (unsigned modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x07F9
+                //     * The result of modulo by zero is 0x0000.
+                //     * Note that if x = div.u(a, b) and y = mod.u(a, b), then add(mul(x, b), y) will usually result in a.
+                *destination = source.checked_rem(*destination).unwrap_or(0x0000);
+            }
+            0b0111 => {
+                // * If FFFF=0111, the computed function is "mod.s" (signed modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x06D1
+                //     * The result of modulo by zero is 0x0000.
+                //     * Note that if x = div.s(a, b) and y = mod.s(a, b), then add(mul(x, b), y) will usually result in a.
+                *destination = (source as i16)
+                    .checked_rem(*destination as i16)
+                    .unwrap_or(0x0000) as u16;
+            }
+            0b1000 => {
+                // * If FFFF=1000, the computed function is "and" (bitwise and), e.g. fn(0x5500, 0x5050) = 0x5000
+                *destination &= source;
+            }
+            0b1001 => {
+                // * If FFFF=1001, the computed function is "or" (bitwise inclusive or), e.g. fn(0x5500, 0x5050) = 0x5550
+                *destination |= source;
+            }
+            0b1010 => {
+                // * If FFFF=1010, the computed function is "xor" (bitwise exclusive or), e.g. fn(0x5500, 0x5050) = 0x0550
+                *destination ^= source;
+            }
+            0b1011 => {
+                // * If FFFF=1011, the computed function is "sl" (bitshift left, filling the least-significant bits with zero), e.g. fn(0x1234, 0x0001) = 0x2468, fn(0xFFFF, 0x0010) = 0x0000
+                //     * Note that there are no silly exceptions as there would be in x86.
+
+                // And because of that weird exceptions, we can't just use '<<'.
+                if *destination >= 16 {
+                    *destination = 0;
+                } else {
+                    *destination = source.wrapping_shl(*destination as u32);
+                }
+            }
+            0b1100 => {
+                // * If FFFF=1100, the computed function is "srl" (logical bitshift right, filling the most significant bits with zero), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0x0000
+
+                // '>>' would shift by (*destination & 0xF), which is not what we want. Therefore, do it manually:
+                if *destination >= 16 {
+                    *destination = 0;
+                } else {
+                    *destination = source.wrapping_shr(*destination as u32);
+                }
+            }
+            0b1101 => {
+                // * If FFFF=1101, the computed function is "sra" (arithmetic bitshift right, filling the most significant bits with the sign-bit), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0xFFFF
+
+                // '>>' would shift by (*destination & 0xF), which is not what we want. Therefore, do it manually:
+                if *destination >= 16 {
+                    *destination = if source & 0x8000 != 0 { 0xFFFF } else { 0 };
+                } else {
+                    *destination = (source as i16).wrapping_shr(*destination as u32) as u16;
+                }
+            }
+            _ => {
+                return StepResult::IllegalInstruction(instruction);
+            }
+        }
+
+        StepResult::Continue
     }
 
     fn step_compare(&mut self, instruction: u16) -> StepResult {

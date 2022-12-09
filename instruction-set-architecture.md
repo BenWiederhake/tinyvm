@@ -203,37 +203,41 @@ This reads from registers 0bLLLL and 0bRRRR, and writes to register 0bRRRR.
 
 This computes a simple mathematical function using only the values of the registers 0bLLLL and 0bRRRR, used as left-hand side and right-hand side operand respectively. The result is written into the register 0bRRRR, thus overwriting the formerly right-hand side value. The value of FFFF selects the desired binary function.
 
-* If FFFF=0000, the computed function is "+" (overflowing addition), e.g. fn(0x1234, 0xABCD) = 0xBE01
+* If FFFF=0000, the computed function is "add" (overflowing addition), e.g. fn(0x1234, 0xABCD) = 0xBE01
     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
-* If FFFF=0001, the computed function is "-" (overflowing subtraction), e.g. fn(0xBE01, 0xABCD) = 0x1234, fn(0x0009, 0x0007) = 0xFFFE
+* If FFFF=0001, the computed function is "sub" (overflowing subtraction), e.g. fn(0xBE01, 0xABCD) = 0x1234, fn(0x0007, 0x0009) = 0xFFFE
     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
-* If FFFF=0010, the computed function is "*" (truncated multiplication, low word), e.g. fn(0x0005, 0x0007) = 0x0023, fn(0x1234, 0xABCD) = 0x4FA4
+* If FFFF=0010, the computed function is "mul" (truncated multiplication, low word), e.g. fn(0x0005, 0x0007) = 0x0023, fn(0x1234, 0xABCD) = 0x4FA4
     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
-* If FFFF=0011, the computed function is "*h" (truncated multiplication, high word), e.g. fn(0x0005, 0x0007) = 0x0000, fn(0x1234, 0xABCD) = 0x0C37
-    * Note that there is no need to distinguish signedness, as the results would always bit-identical.
-* If FFFF=0100, the computed function is "/u" (unsigned division, rounded towards negative infitity), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0x0009
+* If FFFF=0011, the computed function is "mulh" (truncated multiplication, high word), e.g. fn(0x0005, 0x0007) = 0x0000, fn(0x1234, 0xABCD) = 0x0C37
+    * Note that there is no signed equivalent.
+* If FFFF=0100, the computed function is "div.u" (unsigned division, rounded towards 0), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0x0009
     * The result of dividing by zero is 0xFFFF, the highest unsigned value.
-* If FFFF=0101, the computed function is "/s" (signed division, rounded towards negative infitity), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0xFFFA
+* If FFFF=0101, the computed function is "div.s" (signed division, rounded towards 0), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0xFFFC
     * The result of dividing by zero is 0x7FFF, the highest signed value.
-* If FFFF=0110, the computed function is "%u" (unsigned modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x07F9
+    * We define fn(0x8000, 0xFFFF) = 0x8000.
+* If FFFF=0110, the computed function is "mod.u" (unsigned modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x07F9
     * The result of modulo by zero is 0x0000.
-* If FFFF=0111, the computed function is "%s" (signed modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x06D1
+    * Note that if x = div.u(a, b) and y = mod.u(a, b), then add(mul(x, b), y) will usually result in a.
+* If FFFF=0111, the computed function is "mod.s" (signed modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x06D1
     * The result of modulo by zero is 0x0000.
-* If FFFF=1000, the computed function is "&" (bitwise and), e.g. fn(0x5500, 0x5050) = 0x5000
-* If FFFF=1001, the computed function is "|" (bitwise inclusive or), e.g. fn(0x5500, 0x5050) = 0x5550
-* If FFFF=1010, the computed function is "^" (bitwise exclusive or), e.g. fn(0x5500, 0x5050) = 0x0550
-* If FFFF=1011, the computed function is "<<" (bitshift left, filling the least-significant bits with zero), e.g. fn(0x1234, 0x0001) = 0x2468, fn(0xFFFF, 0x0010) = 0x0000
+    * Note that if x = div.s(a, b) and y = mod.s(a, b), then add(mul(x, b), y) will usually result in a.
+* If FFFF=1000, the computed function is "and" (bitwise and), e.g. fn(0x5500, 0x5050) = 0x5000
+* If FFFF=1001, the computed function is "or" (bitwise inclusive or), e.g. fn(0x5500, 0x5050) = 0x5550
+* If FFFF=1010, the computed function is "xor" (bitwise exclusive or), e.g. fn(0x5500, 0x5050) = 0x0550
+* If FFFF=1011, the computed function is "sl" (bitshift left, filling the least-significant bits with zero), e.g. fn(0x1234, 0x0001) = 0x2468, fn(0xFFFF, 0x0010) = 0x0000
     * Note that there are no silly exceptions as there would be in x86.
-* If FFFF=1100, the computed function is ">>u" (logical bitshift right, filling the most significant bits with zero), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0x0000
-* If FFFF=1101, the computed function is ">>s" (arithmetic bitshift right, filling the most significant bits with the sign-bit), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0xFFFF
+* If FFFF=1100, the computed function is "srl" (logical bitshift right, filling the most significant bits with zero), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0x0000
+* If FFFF=1101, the computed function is "sra" (arithmetic bitshift right, filling the most significant bits with the sign-bit), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0xFFFF
+    * Note that the right-hand side is interpreted as unsigned, so fn(0x1234, 0xFFFF) = 0x0000, because here 0xFFFF = 65536 (and not -1)
 * Other values of FFFF indicate reserved functions, and should be treated as a reserved instructions, unless indicated by the corresponding feature flag.
-    * If FFFF=1110, the computed function may be "\*\*s" (signed exponentiation according to IEEE754 double-precision arithmetic, then rounded to the nearest integer, clamped between 0x8000 (-32768) and 0x7FFF (+32767)), e.g. fn(0x0003, 0x0005) = 0x00F3, fn(0xFFFF, 0x0002) = 0x0001
+    * If FFFF=1110, the computed function may be "exp" (signed exponentiation according to IEEE754 double-precision arithmetic, then rounded to the nearest integer, clamped between 0x8000 (-32768) and 0x7FFF (+32767)), e.g. fn(0x0003, 0x0005) = 0x00F3, fn(0xFFFF, 0x0002) = 0x0001
         * If the result is positive or negative Infinity, it is clamped accordingly.
         * If the result is NaN (can this even happen?), the written value may be arbitrary.
-    * If FFFF=1111, the computed function may be "n-th root" (signed root according to IEEE754 double-precision arithmetic, then rounded to the nearest integer), e.g. fn(0x0009, 0x0002) = 0x0003, fn(0x0900, 0x0002) = 0x0030, fn(0x00F3, 0x0005) = 0x0003, fn(0x0002, 0x0002) = 0x0001, fn(0x1234, 0x0000) = 0x0001
+    * If FFFF=1111, the computed function may be "root" (signed root according to IEEE754 double-precision arithmetic, then rounded to the nearest integer), e.g. fn(0x0009, 0x0002) = 0x0003, fn(0x0900, 0x0002) = 0x0030, fn(0x00F3, 0x0005) = 0x0003, fn(0x0002, 0x0002) = 0x0001, fn(0x1234, 0x0000) = 0x0001
         * If the result is NaN, the written value may be arbitrary.
 
-Example: The instruction is `0b0110 0010 0101 0110`, register 5 contains the value 0x0005, and register 6 contains the value 0x0007. Then this instruction will write the value 0x0023 into register 6, because 5 \* 7 = 35 = 0x0023.
+Example: The instruction is `0b0110 0010 0101 0110`, register 5 contains the value 0x0005, and register 6 contains the value 0x0007. Then this instruction will write the value 0x0023 into register 6, because mul(5, 7) = 35 = 0x0023.
 
 ### `0x8xxx`: Compare
 

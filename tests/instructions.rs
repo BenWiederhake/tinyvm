@@ -1401,3 +1401,311 @@ fn test_unary_mov() {
     run_unary_test(0b1111, 0xFFFF, 0xFFFF);
     run_unary_test(0b1111, 0x0000, 0x0000);
 }
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x6xxx-basic-binary-functions
+// The instruction is `0b0110 0010 0101 0110`, register 5 contains the value 0x0005, and register 6 contains the value 0x0007. Then this instruction will write the value 0x0023 into register 6, because 5 \* 7 = 35 = 0x0023.
+#[test]
+fn test_binary_doc() {
+    run_test(
+        &[
+            0x3505, // lw r5, 5
+            0x3607, // lw r6, 7
+            0x6256, // mul r5 r6
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ProgramCounter(3),
+            Expectation::ActualNumSteps(3),
+            Expectation::Register(5, 5),
+            Expectation::Register(6, 35),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+fn run_binary_test(a: u16, b: u16, function: u16, result: u16) {
+    run_test(
+        &[
+            0x3100 | (a & 0xFF),        // ↓
+            0x4100 | ((a >> 8) & 0xFF), // lw r1, a
+            0x3200 | (b & 0xFF),        // ↓
+            0x4200 | ((b >> 8) & 0xFF), // lw r2, b
+            0x6012 | (function << 8),   // binary.function r2, r1
+        ],
+        &[],
+        5,
+        &[
+            Expectation::ProgramCounter(5),
+            Expectation::ActualNumSteps(5),
+            Expectation::Register(1, a),
+            Expectation::Register(2, result),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_binary_add() {
+    // * If FFFF=0000, the computed function is "+" (overflowing addition), e.g. fn(0x1234, 0xABCD) = 0xBE01
+    //     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
+    run_binary_test(0x1234, 0xABCD, 0b0000, 0xBE01);
+    run_binary_test(0x0005, 0x0007, 0b0000, 0x000C);
+    run_binary_test(0xFFFF, 0x0002, 0b0000, 0x0001);
+}
+
+#[test]
+fn test_binary_sub() {
+    // * If FFFF=0001, the computed function is "-" (overflowing subtraction), e.g. fn(0xBE01, 0xABCD) = 0x1234, fn(0x0007, 0x0009) = 0xFFFE
+    //     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
+    run_binary_test(0xBE01, 0xABCD, 0b0001, 0x1234);
+    run_binary_test(0x0007, 0x0009, 0b0001, 0xFFFE);
+    run_binary_test(0x0009, 0x0007, 0b0001, 0x0002);
+}
+
+#[test]
+fn test_binary_mul() {
+    // * If FFFF=0010, the computed function is "*" (truncated multiplication, low word), e.g. fn(0x0005, 0x0007) = 0x0023, fn(0x1234, 0xABCD) = 0x4FA4
+    //     * Note that there is no need to distinguish signedness, as the results would always bit-identical.
+    run_binary_test(0x0005, 0x0007, 0b0010, 0x0023);
+    run_binary_test(0x1234, 0xABCD, 0b0010, 0x4FA4);
+    run_binary_test(0x0000, 0x1234, 0b0010, 0x0000);
+    run_binary_test(0xFFFF, 0xFFFF, 0b0010, 0x0001);
+}
+
+#[test]
+fn test_binary_mulh() {
+    // * If FFFF=0011, the computed function is "*h" (truncated multiplication, high word), e.g. fn(0x0005, 0x0007) = 0x0000, fn(0x1234, 0xABCD) = 0x0C37
+    //     * Note that there is no signed equivalent.
+    run_binary_test(0x0005, 0x0007, 0b0011, 0x0000);
+    run_binary_test(0x1234, 0xABCD, 0b0011, 0x0C37);
+    run_binary_test(0xFFFF, 0xFFFF, 0b0011, 0xFFFE);
+}
+
+#[test]
+fn test_binary_div_u() {
+    // * If FFFF=0100, the computed function is "div.u" (unsigned division, rounded towards 0), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0x0009
+    //     * The result of dividing by zero is 0xFFFF, the highest unsigned value.
+    run_binary_test(0x0023, 0x0007, 0b0100, 0x0005);
+    run_binary_test(0xABCD, 0x1234, 0b0100, 0x0009);
+    run_binary_test(0x0001, 0x0000, 0b0100, 0xFFFF);
+
+    run_binary_test(0x0022, 0x0007, 0b0100, 0x0004);
+    run_binary_test(0x001D, 0x0007, 0b0100, 0x0004);
+    run_binary_test(0x001C, 0x0007, 0b0100, 0x0004);
+    run_binary_test(0x001B, 0x0007, 0b0100, 0x0003);
+    run_binary_test(0x1234, 0xABCD, 0b0100, 0x0000);
+    run_binary_test(0x0000, 0x0000, 0b0100, 0xFFFF);
+    run_binary_test(0xFFFF, 0x0000, 0b0100, 0xFFFF);
+    run_binary_test(0x0000, 0xFFFF, 0b0100, 0x0000);
+    run_binary_test(0xFFFF, 0x7FFF, 0b0100, 0x0002);
+    run_binary_test(0xFFFF, 0xFFFF, 0b0100, 0x0001);
+    run_binary_test(0xFFFF, 0x0001, 0b0100, 0xFFFF);
+}
+
+#[test]
+fn test_binary_div_s() {
+    // * If FFFF=0101, the computed function is "div.s" (signed division, rounded towards 0), e.g. fn(0x0023, 0x0007) = 0x0005, fn(0xABCD, 0x1234) = 0xFFFC
+    //     * The result of dividing by zero is 0x7FFF, the highest signed value.
+    //     * We define fn(0x8000, 0xFFFF) = 0x8000.
+    run_binary_test(0x0023, 0x0007, 0b0101, 0x0005);
+    run_binary_test(0xABCD, 0x1234, 0b0101, 0xFFFC);
+    run_binary_test(0x0001, 0x0000, 0b0101, 0x7FFF);
+    run_binary_test(0x8000, 0xFFFF, 0b0101, 0x8000);
+
+    // pos/pos, round towards 0:
+    run_binary_test(0x0022, 0x0007, 0b0101, 0x0004);
+    run_binary_test(0x001D, 0x0007, 0b0101, 0x0004);
+    run_binary_test(0x001C, 0x0007, 0b0101, 0x0004);
+    run_binary_test(0x001B, 0x0007, 0b0101, 0x0003);
+    // neg/pos, round towards 0:
+    run_binary_test(0xFFEA, 0x0007, 0b0101, 0xFFFD);
+    run_binary_test(0xFFEB, 0x0007, 0b0101, 0xFFFD);
+    run_binary_test(0xFFEC, 0x0007, 0b0101, 0xFFFE);
+    run_binary_test(0xFFF1, 0x0007, 0b0101, 0xFFFE);
+    run_binary_test(0xFFF2, 0x0007, 0b0101, 0xFFFE);
+    run_binary_test(0xFFF3, 0x0007, 0b0101, 0xFFFF);
+    run_binary_test(0xFFFF, 0x0001, 0b0101, 0xFFFF);
+    // div by zero:
+    run_binary_test(0x0000, 0x0000, 0b0101, 0x7FFF);
+    run_binary_test(0xFFFF, 0x0000, 0b0101, 0x7FFF);
+    // pos/neg, round towards -infinity:
+    run_binary_test(0x1234, 0xABCD, 0b0101, 0x0000);
+    run_binary_test(0x0000, 0xFFFF, 0b0101, 0x0000);
+    run_binary_test(0x0015, 0xFFF9, 0b0101, 0xFFFD);
+    run_binary_test(0x0014, 0xFFF9, 0b0101, 0xFFFE);
+    run_binary_test(0x000F, 0xFFF9, 0b0101, 0xFFFE);
+    run_binary_test(0x000E, 0xFFF9, 0b0101, 0xFFFE);
+    run_binary_test(0x000D, 0xFFF9, 0b0101, 0xFFFF);
+    // other:
+    run_binary_test(0xFFFF, 0x7FFF, 0b0101, 0x0000);
+    run_binary_test(0xFFFF, 0xFFFF, 0b0101, 0x0001);
+}
+
+#[test]
+fn test_binary_mod_u() {
+    // * If FFFF=0110, the computed function is "mod.u" (unsigned modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x07F9
+    //     * The result of modulo by zero is 0x0000.
+    //     * Note that if x = div.u(a, b) and y = mod.u(a, b), then add(mul(x, b), y) will usually result in a.
+    run_binary_test(0x0023, 0x0007, 0b0110, 0x0000);
+    run_binary_test(0xABCD, 0x1234, 0b0110, 0x07F9);
+    run_binary_test(0x0001, 0x0000, 0b0110, 0x0000);
+
+    run_binary_test(0x0022, 0x0007, 0b0110, 0x0006);
+    run_binary_test(0x001D, 0x0007, 0b0110, 0x0001);
+    run_binary_test(0x001C, 0x0007, 0b0110, 0x0000);
+    run_binary_test(0x001B, 0x0007, 0b0110, 0x0006);
+    run_binary_test(0x1234, 0xABCD, 0b0110, 0x1234);
+    run_binary_test(0x0000, 0x0000, 0b0110, 0x0000);
+    run_binary_test(0x0000, 0x0001, 0b0110, 0x0000);
+    run_binary_test(0x0001, 0x0001, 0b0110, 0x0000);
+    run_binary_test(0x0002, 0x0001, 0b0110, 0x0000);
+    run_binary_test(0xFFFF, 0x0000, 0b0110, 0x0000);
+    run_binary_test(0x0000, 0xFFFF, 0b0110, 0x0000);
+    run_binary_test(0xFFFF, 0x7FFF, 0b0110, 0x0001);
+    run_binary_test(0xFFFF, 0xFFFF, 0b0110, 0x0000);
+    run_binary_test(0xFFFF, 0x0001, 0b0110, 0x0000);
+}
+
+#[test]
+fn test_binary_mod_s() {
+    // * If FFFF=0111, the computed function is "mod.s" (signed modulo), e.g. fn(0x0023, 0x0007) = 0x0000, fn(0xABCD, 0x1234) = 0x06D1
+    //     * The result of modulo by zero is 0x0000.
+    //     * Note that if x = div.s(a, b) and y = mod.s(a, b), then add(mul(x, b), y) will usually result in a.
+    run_binary_test(0x0023, 0x0007, 0b0111, 0x0000);
+    //run_binary_test(0xABCD, 0x1234, 0b0111, 0x06D1);
+    run_binary_test(0x0001, 0x0000, 0b0111, 0x0000);
+
+    // pos/pos:
+    run_binary_test(0x0022, 0x0007, 0b0111, 0x0006);
+    run_binary_test(0x001D, 0x0007, 0b0111, 0x0001);
+    run_binary_test(0x001C, 0x0007, 0b0111, 0x0000);
+    run_binary_test(0x001B, 0x0007, 0b0111, 0x0006);
+    // neg/pos:
+    run_binary_test(0xFFEA, 0x0007, 0b0111, 0xFFFF); // a = 0xFFEA = -22, x = 0xFFFD = -3, x*7=-21, need -1 to get to a
+    run_binary_test(0xFFEB, 0x0007, 0b0111, 0x0000); // a = 0xFFEB = -21, x = 0xFFFD = -3, x*7=-21, need +0 to get to a
+    run_binary_test(0xFFEC, 0x0007, 0b0111, 0xFFFA); // a = 0xFFEC = -20, x = 0xFFFE = -2, x*7=-14, need -6 to get to a
+    run_binary_test(0xFFF1, 0x0007, 0b0111, 0xFFFF); // a = 0xFFF1 = -15, x = 0xFFFE = -2, x*7=-14, need -1 to get to a
+    run_binary_test(0xFFF2, 0x0007, 0b0111, 0x0000); // a = 0xFFF2 = -14, x = 0xFFFE = -2, x*7=-14, need +0 to get to a
+    run_binary_test(0xFFF3, 0x0007, 0b0111, 0xFFFA); // a = 0xFFF3 = -13, x = 0xFFFF = -1, x*7= -7, need -6 to get to a
+
+    // mod by zero:
+    run_binary_test(0x0000, 0x0000, 0b0111, 0x0000);
+    run_binary_test(0xFFFF, 0x0000, 0b0111, 0x0000);
+    // mod by one:
+    run_binary_test(0x0000, 0x0001, 0b0111, 0x0000);
+    run_binary_test(0xFFFF, 0x0001, 0b0111, 0x0000);
+    // mod by minus one:
+    run_binary_test(0x0000, 0xFFFF, 0b0111, 0x0000);
+    run_binary_test(0x0001, 0xFFFF, 0b0111, 0x0000);
+    run_binary_test(0xFFFF, 0xFFFF, 0b0111, 0x0000);
+    run_binary_test(0x8000, 0xFFFF, 0b0111, 0x0000);
+    // pos/neg:
+    run_binary_test(0x1234, 0xABCD, 0b0111, 0x1234);
+    run_binary_test(0x0015, 0xFFF9, 0b0111, 0x0000);
+    run_binary_test(0x0014, 0xFFF9, 0b0111, 0x0006);
+    run_binary_test(0x000F, 0xFFF9, 0b0111, 0x0001);
+    run_binary_test(0x000E, 0xFFF9, 0b0111, 0x0000);
+    // other:
+    run_binary_test(0xFFFF, 0x7FFF, 0b0111, 0xFFFF);
+}
+
+#[test]
+fn test_binary_and() {
+    // * If FFFF=1000, the computed function is "and" (bitwise and), e.g. fn(0x5500, 0x5050) = 0x5000
+    run_binary_test(0x5500, 0x5050, 0b1000, 0x5000);
+    run_binary_test(0x000C, 0x000A, 0b1000, 0x0008);
+    run_binary_test(0x0000, 0xFFFF, 0b1000, 0x0000);
+    run_binary_test(0xFFFF, 0xFFFF, 0b1000, 0xFFFF);
+}
+
+#[test]
+fn test_binary_or() {
+    // * If FFFF=1001, the computed function is "or" (bitwise inclusive or), e.g. fn(0x5500, 0x5050) = 0x5550
+    run_binary_test(0x5500, 0x5050, 0b1001, 0x5550);
+    run_binary_test(0x000C, 0x000A, 0b1001, 0x000E);
+    run_binary_test(0x0000, 0xFFFF, 0b1001, 0xFFFF);
+    run_binary_test(0xFFFF, 0xFFFF, 0b1001, 0xFFFF);
+    run_binary_test(0x0000, 0x0000, 0b1001, 0x0000);
+}
+
+#[test]
+fn test_binary_xor() {
+    // * If FFFF=1010, the computed function is "xor" (bitwise exclusive or), e.g. fn(0x5500, 0x5050) = 0x0550
+    run_binary_test(0x5500, 0x5050, 0b1010, 0x0550);
+    run_binary_test(0x000C, 0x000A, 0b1010, 0x0006);
+    run_binary_test(0x0000, 0xFFFF, 0b1010, 0xFFFF);
+    run_binary_test(0xFFFF, 0xFFFF, 0b1010, 0x0000);
+    run_binary_test(0x0000, 0x0000, 0b1010, 0x0000);
+}
+
+#[test]
+fn test_binary_sl() {
+    // * If FFFF=1011, the computed function is "sl" (bitshift left, filling the least-significant bits with zero), e.g. fn(0x1234, 0x0001) = 0x2468, fn(0xFFFF, 0x0010) = 0x0000
+    //     * Note that there are no silly exceptions as there would be in x86.
+    run_binary_test(0x1234, 0x0001, 0b1011, 0x2468);
+    run_binary_test(0xFFFF, 0x0010, 0b1011, 0x0000);
+
+    run_binary_test(0x1234, 0x0000, 0b1011, 0x1234);
+    run_binary_test(0x1234, 0x0010, 0b1011, 0x0000);
+    run_binary_test(0x1234, 0x0008, 0b1011, 0x3400);
+    run_binary_test(0xFFFF, 0x000B, 0b1011, 0xF800);
+    run_binary_test(0xFFFF, 0x000C, 0b1011, 0xF000);
+    run_binary_test(0xFFFF, 0x000D, 0b1011, 0xE000);
+    run_binary_test(0xFFFF, 0x000E, 0b1011, 0xC000);
+    run_binary_test(0xFFFF, 0x000F, 0b1011, 0x8000);
+    run_binary_test(0xFFFF, 0x0011, 0b1011, 0x0000);
+    run_binary_test(0xFFFF, 0x0012, 0b1011, 0x0000);
+}
+
+#[test]
+fn test_binary_srl() {
+    // * If FFFF=1100, the computed function is "srl" (logical bitshift right, filling the most significant bits with zero), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0x0000
+    run_binary_test(0x2468, 0x0001, 0b1100, 0x1234);
+    run_binary_test(0xFFFF, 0x0010, 0b1100, 0x0000);
+
+    run_binary_test(0x1234, 0x0000, 0b1100, 0x1234);
+    run_binary_test(0x1234, 0x0010, 0b1100, 0x0000);
+    run_binary_test(0x1234, 0x0008, 0b1100, 0x0012);
+    run_binary_test(0xFFFF, 0x000B, 0b1100, 0x001F);
+    run_binary_test(0xFFFF, 0x000C, 0b1100, 0x000F);
+    run_binary_test(0xFFFF, 0x000D, 0b1100, 0x0007);
+    run_binary_test(0xFFFF, 0x000E, 0b1100, 0x0003);
+    run_binary_test(0xFFFF, 0x000F, 0b1100, 0x0001);
+    run_binary_test(0xFFFF, 0x0011, 0b1100, 0x0000);
+    run_binary_test(0xFFFF, 0x0012, 0b1100, 0x0000);
+}
+
+#[test]
+fn test_binary_sra() {
+    // * If FFFF=1101, the computed function is "sra" (arithmetic bitshift right, filling the most significant bits with the sign-bit), e.g. fn(0x2468, 0x0001) = 0x1234, fn(0xFFFF, 0x0010) = 0xFFFF
+    //     * Note that the right-hand side is interpreted as unsigned, so fn(0x1234, 0xFFFF) = 0x0000, because here 0xFFFF = 65536 (and not -1)
+    run_binary_test(0x2468, 0x0001, 0b1101, 0x1234);
+    run_binary_test(0xFFFF, 0x0010, 0b1101, 0xFFFF);
+    run_binary_test(0x1234, 0xFFFF, 0b1101, 0x0000);
+
+    run_binary_test(0x1234, 0x0000, 0b1101, 0x1234);
+    run_binary_test(0x1234, 0x0010, 0b1101, 0x0000);
+    run_binary_test(0x1234, 0x0011, 0b1101, 0x0000);
+    run_binary_test(0x1234, 0x0008, 0b1101, 0x0012);
+    run_binary_test(0xFFFF, 0x000B, 0b1101, 0xFFFF);
+    run_binary_test(0xFFFF, 0x000C, 0b1101, 0xFFFF);
+    run_binary_test(0xFFFF, 0x000D, 0b1101, 0xFFFF);
+    run_binary_test(0xFFFF, 0x000E, 0b1101, 0xFFFF);
+    run_binary_test(0xFFFF, 0x000F, 0b1101, 0xFFFF);
+    run_binary_test(0xFFFF, 0x0011, 0b1101, 0xFFFF);
+    run_binary_test(0xFFFF, 0x0012, 0b1101, 0xFFFF);
+
+    run_binary_test(0x8000, 0x0000, 0b1101, 0x8000);
+    run_binary_test(0x8000, 0x0001, 0b1101, 0xC000);
+    run_binary_test(0x8000, 0x000B, 0b1101, 0xFFF0);
+    run_binary_test(0x8000, 0x000C, 0b1101, 0xFFF8);
+    run_binary_test(0x8000, 0x000D, 0b1101, 0xFFFC);
+    run_binary_test(0x8000, 0x000E, 0b1101, 0xFFFE);
+    run_binary_test(0x8000, 0x000F, 0b1101, 0xFFFF);
+    run_binary_test(0x8000, 0x0011, 0b1101, 0xFFFF);
+    run_binary_test(0x8000, 0x0012, 0b1101, 0xFFFF);
+}
+
+// FIXME: Implement and test "exp" instruction
+// FIXME: Implement and test "root" instruction
