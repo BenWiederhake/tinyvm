@@ -2,7 +2,7 @@ use getrandom::getrandom;
 use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Index, IndexMut};
 
-#[derive(Debug)]
+#[derive(PartialEq, Eq)]
 pub struct Segment {
     backing: Box<[u16; 1 << 16]>,
 }
@@ -13,6 +13,45 @@ impl Segment {
         Segment {
             backing: Box::new([0; 1 << 16]),
         }
+    }
+}
+
+impl Debug for Segment {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        f.write_str("Segment { backing: [")?;
+        f.write_fmt(format_args!("{:04X}", self.backing[0]))?;
+        // Invariant: Formatter is "always" dirently after a value or value-ish part.
+
+        let mut last_word = self.backing[0];
+        let mut repetitions = 0;
+
+        fn append_value(f: &mut Formatter, word: u16) -> Result {
+            f.write_fmt(format_args!(", {:04X}", word))
+        }
+        fn close_repetitions(f: &mut Formatter, last_word: u16, repetitions: usize) -> Result {
+            if repetitions < 2 {
+                for _ in 0..repetitions {
+                    append_value(f, last_word)?;
+                }
+                Ok(())
+            } else {
+                f.write_fmt(format_args!(", <elided {} repetitions>", repetitions))
+            }
+        }
+
+        for word in self.backing.iter().skip(1) {
+            if *word == last_word {
+                repetitions += 1;
+            } else {
+                close_repetitions(f, last_word, repetitions)?;
+                repetitions = 0;
+                append_value(f, *word)?;
+                last_word = *word;
+            }
+        }
+        close_repetitions(f, last_word, repetitions)?;
+
+        f.write_str(" ] }")
     }
 }
 
