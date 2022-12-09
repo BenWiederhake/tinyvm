@@ -2,7 +2,7 @@ use getrandom::getrandom;
 use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Index, IndexMut};
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Segment {
     backing: Box<[u16; 1 << 16]>,
 }
@@ -167,6 +167,11 @@ impl VirtualMachine {
     #[must_use]
     pub fn get_data(&self) -> &Segment {
         &self.data
+    }
+
+    #[must_use]
+    pub fn release_to_data_segment(self) -> Segment {
+        self.data
     }
 
     pub fn set_data_word(&mut self, index: u16, value: u16) {
