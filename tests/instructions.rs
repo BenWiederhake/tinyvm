@@ -43,9 +43,23 @@ fn run_test(
             }
         }
         actual_steps += 1;
+        if actual_steps % 0x100_0000 == 0 {
+            println!(
+                "Intermediate state: registers={:?}, pc={:04X}, actual_steps={}",
+                vm.get_registers(),
+                vm.get_program_counter(),
+                actual_steps
+            );
+        }
     }
 
-    println!("VM state is {:?}", vm);
+    println!("Data segment: {:?}", vm.get_data());
+    println!(
+        "Final state: registers={:?}, pc={:04X}, actual_steps={}",
+        vm.get_registers(),
+        vm.get_program_counter(),
+        actual_steps
+    );
     println!("last_step_result is StepResult::{:?}", last_step_result);
 
     assert_eq!(actual_steps, vm.get_time());
@@ -371,10 +385,62 @@ fn test_time_jump() {
 }
 
 #[test]
-#[ignore = "write long-running program"]
 fn test_time_long() {
-    // FIXME: Test 'time' instruction with non-zero higher bytes!
-    unimplemented!()
+    run_test(
+        &[
+            0x37AB, // lw r7, 0xFFAB
+            0x5877, // decr r7
+            0x9780, // b r7 -0x1
+            0x102D, // time
+            0x102A, // ret
+        ],
+        &[],
+        0xF_FFFF, // More than enough; definitely not tight
+        &[
+            Expectation::ActualNumSteps(1 + 2 * 0xFFAB + 1),
+            Expectation::ProgramCounter(4),
+            Expectation::LastStep(StepResult::Return(0)),
+            Expectation::Register(0, 0x0000),
+            Expectation::Register(1, 0x0000),
+            Expectation::Register(2, 0x0001),
+            Expectation::Register(3, 1 + 2 * 0x7FAB),
+        ],
+    );
+}
+
+#[test]
+#[ignore = "Test takes too long"]
+// Runs in 122.29s in debug mode, that's about 35 MHz in simulation. Whoa!
+// Runs in 14.67s in release mode, that's about 292 MHz in simulation. Very whoa!
+fn test_time_very_long() {
+    #[rustfmt::skip] // Would break the labels. See https://github.com/rust-lang/rustfmt/issues/5630
+    run_test(
+        &[
+            0x3705, 0x47B5, // lw r7, 0xB505 // executed 1 time
+            0x5F71, // mv r1, r7 // executed 1 time
+                    // .label outer_loop
+            0x5F72, // mv r2, r7 // executed 0xB505 times
+                    // .label inner_loop
+            0x5822, // decr r2 // executed 0xB505 * 0xB505 times
+            0x9280, // b r2 inner_loop (offset is -0x1) // executed 0xB505 * 0xB505 times
+            0x5811, // decr r1 // executed 0xB505 times
+            0x9183, // b r1 outer_loop (offset is -0x4) // executed 0xB505 times
+            0x102D, // time // executed 0 times or 1 time, depending on how you look at it
+            0x102A, // ret // executed 0 times
+            // Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
+        ],
+        &[],
+        0x1_FFFF_FFFF, // More than enough; definitely not tight
+        &[
+            Expectation::ActualNumSteps(0x100024345),
+            Expectation::ProgramCounter(9),
+            Expectation::LastStep(StepResult::Return(0)),
+            Expectation::Register(0, 0x0000),
+            Expectation::Register(1, 0x0001),
+            Expectation::Register(2, 0x0002),
+            Expectation::Register(3, 0x4344),
+        ],
+    );
 }
 
 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x20xx-store-word-data
