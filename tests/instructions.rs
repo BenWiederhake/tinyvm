@@ -1709,3 +1709,57 @@ fn test_binary_sra() {
 
 // FIXME: Implement and test "exp" instruction
 // FIXME: Implement and test "root" instruction
+
+#[test]
+fn test_fibonacci() {
+    #[rustfmt::skip] // Would break the labels. See https://github.com/rust-lang/rustfmt/issues/5630
+    run_test(
+        &[
+            0x3018, // lw r0, 24
+            0x3101, // lw r1, 1
+                    // .label start:
+            0x6012, // add r1 r2
+            0x5800, // decr r0
+            0x2002, // sw r0, r2
+            0x6021, // add r2 r1
+            0x5800, // decr r0
+            0x2001, // sw r0, r1
+            0x9085, // b r0 start // (offset is -0x6)
+            0x102A, // ret
+        ],
+        &[],
+        0xFFFF,
+        &[
+            Expectation::ActualNumSteps(2 + (24 / 2) * 7),
+            Expectation::ProgramCounter(9),
+            Expectation::Data(23, 1),
+            Expectation::Data(22, 2),
+            Expectation::Data(21, 3),
+            Expectation::Data(20, 5),
+            Expectation::Data(19, 8),
+            Expectation::Data(18, 13),
+            Expectation::Data(17, 21),
+            Expectation::Data(16, 34),
+            Expectation::Data(15, 55),
+            Expectation::Data(14, 89),
+            Expectation::Data(13, 144),
+            Expectation::Data(12, 233),
+            Expectation::Data(11, 377),
+            Expectation::Data(10, 610),
+            Expectation::Data(9, 987),
+            Expectation::Data(8, 1597),
+            Expectation::Data(7, 2584),
+            Expectation::Data(6, 4181),
+            Expectation::Data(5, 6765),
+            Expectation::Data(4, 10946),
+            Expectation::Data(3, 17711),
+            Expectation::Data(2, 28657),
+            Expectation::Data(1, 46368),
+            Expectation::Data(0, 9489), // 75025 & 0xFFFF
+            Expectation::Register(0, 0),
+            Expectation::Register(1, 9489),
+            Expectation::Register(2, 46368),
+            Expectation::LastStep(StepResult::Return(0)),
+        ],
+    );
+}
