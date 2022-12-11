@@ -18,6 +18,7 @@ pub enum PlacementResult {
     Success,
     InvalidColumn,
     ColumnFull,
+    Connect4,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -65,6 +66,54 @@ impl Board {
         self.slots[self.index(x, y)]
     }
 
+    fn count_towards(&self, x: usize, y: usize, dx: isize, dy: isize) -> usize {
+        let expect_slot = self.get_slot(x, y);
+        assert!(
+            expect_slot != SlotState::Empty,
+            "Counting from empty slot at ({}, {}) towards ({}, {})?!",
+            x,
+            y,
+            dx,
+            dy
+        );
+        let mut streak = 0;
+        for i in 1.. {
+            let new_x = x as isize + i * dx;
+            let new_y = y as isize + i * dy;
+            if new_x < 0 || new_y < 0 {
+                break;
+            }
+            let new_x = new_x as usize;
+            let new_y = new_y as usize;
+            if new_x >= self.width || new_y >= self.height {
+                break;
+            }
+            if self.get_slot(new_x, new_y) != expect_slot {
+                break;
+            }
+            streak += 1;
+        }
+
+        streak
+    }
+
+    fn have_connect4(&self, x: usize, y: usize) -> bool {
+        assert!(
+            x < self.width && y < self.height,
+            "Checking connect4 at OOB ({}, {})?!",
+            x,
+            y
+        );
+        for (dx, dy) in [(1, -1), (1, 0), (1, 1), (0, 1)] {
+            let to_left = self.count_towards(x, y, -dx, -dy);
+            let to_right = self.count_towards(x, y, dx, dy);
+            if to_left + 1 + to_right >= 4 {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn place_into_unsanitized_column(
         &mut self,
         column_index: u16,
@@ -80,6 +129,9 @@ impl Board {
             let slot = &mut self.slots[slot_index];
             if *slot == SlotState::Empty {
                 *slot = SlotState::Token(player);
+                if self.have_connect4(x, y) {
+                    return PlacementResult::Connect4;
+                }
                 return PlacementResult::Success;
             }
         }
@@ -95,6 +147,16 @@ impl Board {
                 SlotState::Token(_) => 2,
             };
         }
+    }
+
+    pub fn is_full(&self) -> bool {
+        // It's enough to check only the top row, since the rows below it have already been "filled up" before.
+        for x in 0..self.width {
+            if self.get_slot(x, self.height - 1) == SlotState::Empty {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -144,8 +206,10 @@ mod test_board {
     fn test_refuse_full() {
         let mut b = Board::default();
 
-        for _ in 0..6 {
+        for _ in 0..3 {
             let result = b.place_into_unsanitized_column(0, Player::One);
+            assert_eq!(result, PlacementResult::Success);
+            let result = b.place_into_unsanitized_column(0, Player::Two);
             assert_eq!(result, PlacementResult::Success);
         }
 
@@ -209,6 +273,160 @@ mod test_board {
         segment_expect[25] = 2;
         b.encode_onto(Player::Two, &mut segment_actual);
         assert_eq!(segment_expect, segment_actual);
+    }
+
+    fn assert_place_success(board: &mut Board, col: u16, player: Player) {
+        assert_eq!(
+            board.place_into_unsanitized_column(col, player),
+            PlacementResult::Success
+        );
+    }
+
+    #[test]
+    fn test_full_board() {
+        let mut b = Board::default();
+
+        fn fill_column(col: u16, board: &mut Board, starting_with: Player) {
+            assert_eq!(board.get_height(), 6);
+            for _ in 0..3 {
+                assert_eq!(board.is_full(), false);
+                assert_place_success(board, col, starting_with);
+                assert_eq!(board.is_full(), false);
+                assert_place_success(board, col, starting_with.other());
+            }
+        }
+
+        fill_column(0, &mut b, Player::One);
+        fill_column(1, &mut b, Player::One);
+        fill_column(2, &mut b, Player::One);
+        // We start the middle column with the opposite player. This way, the "game" is guaranteed to be a draw.
+        fill_column(3, &mut b, Player::Two);
+        fill_column(4, &mut b, Player::One);
+        fill_column(5, &mut b, Player::One);
+        fill_column(6, &mut b, Player::One);
+
+        assert_eq!(b.is_full(), true);
+    }
+
+    #[test]
+    fn test_connect4_horizontal_negative() {
+        let mut board = Board::default();
+
+        assert_place_success(&mut board, 0, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 2, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 6, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 5, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 4, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 3, Player::One);
+        assert_eq!(board.is_full(), false);
+    }
+
+    #[test]
+    fn test_connect4_horizontal_positive() {
+        let mut board = Board::default();
+
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 2, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 4, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_eq!(
+            board.place_into_unsanitized_column(3, Player::Two),
+            PlacementResult::Connect4
+        );
+    }
+
+    #[test]
+    fn test_connect4_vertical_positive() {
+        let mut board = Board::default();
+
+        assert_place_success(&mut board, 1, Player::One);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_eq!(
+            board.place_into_unsanitized_column(1, Player::Two),
+            PlacementResult::Connect4
+        );
+    }
+
+    #[test]
+    fn test_connect4_vertical_negative() {
+        let mut board = Board::default();
+
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::One);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(board.is_full(), false);
+        assert_place_success(&mut board, 1, Player::Two);
+        assert_eq!(
+            board.place_into_unsanitized_column(1, Player::Two),
+            PlacementResult::ColumnFull
+        );
+    }
+
+    #[test]
+    fn test_connect4_diag1_positive() {
+        // TODO: Write a diag1 negative test.
+        let mut board = Board::default();
+
+        assert_place_success(&mut board, 2, Player::One);
+
+        assert_place_success(&mut board, 3, Player::One);
+        assert_place_success(&mut board, 3, Player::One);
+
+        assert_place_success(&mut board, 4, Player::One);
+        assert_place_success(&mut board, 4, Player::One);
+        assert_place_success(&mut board, 4, Player::One);
+
+        assert_place_success(&mut board, 2, Player::Two);
+        assert_place_success(&mut board, 4, Player::Two);
+        assert_place_success(&mut board, 3, Player::Two);
+        assert_eq!(
+            board.place_into_unsanitized_column(1, Player::Two),
+            PlacementResult::Connect4
+        );
+    }
+
+    #[test]
+    fn test_connect4_diag2_positive() {
+        // TODO: Write a diag2 negative test.
+        let mut board = Board::default();
+
+        assert_place_success(&mut board, 5, Player::One);
+
+        assert_place_success(&mut board, 4, Player::One);
+        assert_place_success(&mut board, 4, Player::One);
+
+        assert_place_success(&mut board, 3, Player::One);
+        assert_place_success(&mut board, 3, Player::One);
+        assert_place_success(&mut board, 3, Player::One);
+
+        assert_place_success(&mut board, 3, Player::Two);
+        assert_place_success(&mut board, 4, Player::Two);
+        assert_place_success(&mut board, 5, Player::Two);
+        assert_eq!(
+            board.place_into_unsanitized_column(6, Player::Two),
+            PlacementResult::Connect4
+        );
     }
 }
 
