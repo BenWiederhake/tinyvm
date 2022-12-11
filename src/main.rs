@@ -1,7 +1,7 @@
 use std::io::{Error, ErrorKind, Result};
 use std::{env, fs, process};
 
-use tinyvm::{Segment, VirtualMachine};
+use tinyvm::{Game, GameResult, Player, Segment, SlotState, WinReason};
 
 fn parse_segment(segment_bytes: &[u8], segment_type: &str) -> Result<Segment> {
     if segment_bytes.len() != (1 << 17) {
@@ -31,25 +31,73 @@ fn parse_args() -> Result<(Segment, Segment)> {
     let args = env::args().collect::<Vec<_>>();
     if args.len() != 3 {
         eprintln!(
-            "USAGE: {} /path/to/vm_instruction_segment /path/to/vm_data_segment",
+            "USAGE: {} /path/to/instruction_segment_player_one /path/to/instruction_segment_player_two",
             args[0]
         );
         process::exit(1);
     }
 
-    let instruction_segment_bytes = fs::read(args[1].clone())?;
-    let data_segment_bytes = fs::read(args[2].clone())?;
+    let instructions_one_bytes = fs::read(args[1].clone())?;
+    let instructions_two_bytes = fs::read(args[2].clone())?;
 
     Ok((
-        parse_segment(&instruction_segment_bytes, "instruction")?,
-        parse_segment(&data_segment_bytes, "data")?,
+        parse_segment(&instructions_one_bytes, "player one instruction")?,
+        parse_segment(&instructions_two_bytes, "player two instruction")?,
     ))
 }
 
 fn main() -> Result<()> {
-    let (instruction_segment, data_segment) = parse_args()?;
-    let mut vm = VirtualMachine::new(instruction_segment, data_segment);
-    println!("First step result is {:?}", vm.step());
+    let (instructions_one, instructions_two) = parse_args()?;
+    println!("Player one: {:?}", &instructions_one);
+    println!("Player two: {:?}", &instructions_two);
+    let mut game = Game::new(instructions_one, instructions_two, 10_000_000);
+
+    let result = game.conclude();
+
+    let result_text = match result {
+        GameResult::Draw => "The game was drawn".into(),
+        GameResult::Won(player, reason) => {
+            let player_name = match player {
+                Player::One => "1",
+                Player::Two => "2",
+            };
+            let reason_text = match reason {
+                WinReason::Connect4 => "by connect4".into(),
+                WinReason::Timeout => "by timeout of the opponent".into(),
+                WinReason::IllegalInstruction(insn) => {
+                    format!("by illegal instruction (0x{:04X}) of the opponent", insn)
+                }
+                WinReason::IllegalColumn(col) => format!(
+                    "by opponent's attempt to move at non-existent column {}",
+                    col
+                ),
+                WinReason::FullColumn(col) => {
+                    format!("by opponent's attempt to move at full column {}", col)
+                }
+            };
+            format!("Player {} won {}", player_name, reason_text)
+        }
+    };
+    println!("{} after {} moves.", result_text, game.get_total_moves());
+    println!("End result (1=x, 2=O):");
+    let board = game.get_board();
+    for y in (0..board.get_height()).rev() {
+        print!("|");
+        for x in 0..board.get_width() {
+            let symbol = match board.get_slot(x, y) {
+                SlotState::Empty => "_",
+                SlotState::Token(Player::One) => "x",
+                SlotState::Token(Player::Two) => "O",
+            };
+            print!(" {}", symbol);
+        }
+        println!(" |");
+    }
+    print!("+");
+    for _ in 0..board.get_width() {
+        print!("--");
+    }
+    println!("-+");
 
     Ok(())
 }
