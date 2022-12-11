@@ -6,6 +6,15 @@ pub enum Player {
     Two,
 }
 
+impl Player {
+    pub fn other(&self) -> Player {
+        match self {
+            Player::One => Player::Two,
+            Player::Two => Player::One,
+        }
+    }
+}
+
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum SlotState {
@@ -458,10 +467,6 @@ impl PlayerData {
         }
     }
 
-    pub fn get_last_move(&self) -> u16 {
-        self.last_move
-    }
-
     pub fn get_total_moves(&self) -> u16 {
         self.total_moves
     }
@@ -593,5 +598,338 @@ mod test_player_data {
         assert_eq!(result, AlgorithmResult::Column(0x1337));
         assert_eq!(player_data.last_move, 0x1337);
         assert_eq!(player_data.total_moves, 1);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum WinReason {
+    Connect4,
+    Timeout,
+    IllegalInstruction(u16),
+    IllegalColumn(u16),
+    FullColumn(u16),
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum GameResult {
+    Won(Player, WinReason),
+    Draw,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum GameState {
+    RunningNextIs(Player),
+    Ended(GameResult),
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Game {
+    player_one: PlayerData,
+    player_two: PlayerData,
+    board: Board,
+    state: GameState,
+    max_steps: u64,
+}
+
+impl Game {
+    pub fn new(
+        instructions_player_one: Segment,
+        instructions_player_two: Segment,
+        max_steps: u64,
+    ) -> Game {
+        Game {
+            player_one: PlayerData::new(instructions_player_one),
+            player_two: PlayerData::new(instructions_player_two),
+            board: Default::default(),
+            state: GameState::RunningNextIs(Player::One),
+            max_steps,
+        }
+    }
+
+    pub fn do_move(&mut self) {
+        // Determine whose turn it is.
+        let moving_player = match self.state {
+            GameState::RunningNextIs(player) => player,
+            GameState::Ended(_) => {
+                return;
+            }
+        };
+        let moving_player_data;
+        let other_player_data;
+        match moving_player {
+            Player::One => {
+                moving_player_data = &mut self.player_one;
+                other_player_data = &mut self.player_two;
+            }
+            Player::Two => {
+                moving_player_data = &mut self.player_two;
+                other_player_data = &mut self.player_one;
+            }
+        }
+
+        // Make a decision.
+        moving_player_data.update_data(
+            moving_player,
+            self.max_steps,
+            &self.board,
+            other_player_data,
+        );
+        let step_result = moving_player_data.determine_answer(self.max_steps);
+        let column_index = match step_result {
+            AlgorithmResult::Column(column_index) => column_index,
+            AlgorithmResult::IllegalInstruction(insn) => {
+                // Loss by failure to produce a decision.
+                self.state = GameState::Ended(GameResult::Won(
+                    moving_player.other(),
+                    WinReason::IllegalInstruction(insn),
+                ));
+                return;
+            }
+            AlgorithmResult::Timeout => {
+                // Loss by failure to produce a decision.
+                self.state =
+                    GameState::Ended(GameResult::Won(moving_player.other(), WinReason::Timeout));
+                return;
+            }
+        };
+
+        // Do the move, check the result.
+        let placement_result = // (force linebreak)
+            self.board.place_into_unsanitized_column(column_index, moving_player);
+        match placement_result {
+            PlacementResult::Success => {
+                // Nothing to do.
+            }
+            PlacementResult::Connect4 => {
+                self.state = GameState::Ended(GameResult::Won(moving_player, WinReason::Connect4));
+                return;
+            }
+            PlacementResult::InvalidColumn => {
+                // Loss by invalid decision.
+                self.state = GameState::Ended(GameResult::Won(
+                    moving_player.other(),
+                    WinReason::IllegalColumn(column_index),
+                ));
+                return;
+            }
+            PlacementResult::ColumnFull => {
+                // Loss by invalid decision.
+                self.state = GameState::Ended(GameResult::Won(
+                    moving_player.other(),
+                    WinReason::FullColumn(column_index),
+                ));
+                return;
+            }
+        }
+
+        // Do we keep going?
+        if self.board.is_full() {
+            self.state = GameState::Ended(GameResult::Draw);
+        } else {
+            self.state = GameState::RunningNextIs(moving_player.other());
+        }
+    }
+
+    pub fn conclude(&mut self) -> GameResult {
+        loop {
+            if let GameState::Ended(result) = self.state {
+                return result;
+            }
+            self.do_move();
+        }
+    }
+
+    pub fn get_state(&self) -> GameState {
+        self.state
+    }
+
+    pub fn get_total_moves(&self) -> u16 {
+        self.player_one.get_total_moves() + self.player_two.get_total_moves()
+    }
+
+    pub fn get_board(&self) -> &Board {
+        &self.board
+    }
+}
+
+#[cfg(test)]
+mod test_game {
+    use super::*;
+
+    #[test]
+    fn test_full_column() {
+        let mut instructions = Segment::new_zeroed();
+        instructions[0] = 0x102A; // ret
+        let mut game = Game::new(instructions.clone(), instructions, 0x12345);
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
+        game.do_move();
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::Two));
+        game.do_move();
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
+        game.do_move();
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::Two));
+        game.do_move();
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
+        game.do_move();
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::Two));
+
+        assert_eq!(game.board.get_slot(0, 0), SlotState::Token(Player::One));
+        assert_eq!(game.board.get_slot(0, 1), SlotState::Token(Player::Two));
+        assert_eq!(game.board.get_slot(0, 2), SlotState::Token(Player::One));
+        assert_eq!(game.board.get_slot(0, 3), SlotState::Token(Player::Two));
+        assert_eq!(game.board.get_slot(0, 4), SlotState::Token(Player::One));
+        assert_eq!(game.board.get_slot(0, 5), SlotState::Empty);
+
+        game.do_move();
+        assert_eq!(game.board.get_slot(0, 5), SlotState::Token(Player::Two));
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
+        // Next, player 1 attempts to insert into column 0, which is full,
+        // therefore an illegal move, thus losing the game.
+        game.do_move();
+        assert_eq!(
+            game.get_state(),
+            GameState::Ended(GameResult::Won(Player::Two, WinReason::FullColumn(0)))
+        );
+    }
+
+    #[test]
+    fn test_illegal_column() {
+        let mut instructions = Segment::new_zeroed();
+        instructions[0] = 0x30FF; // lw r3, 0xFFFF
+        instructions[1] = 0x102A; // ret
+        let mut game = Game::new(instructions.clone(), instructions, 0x12345);
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
+        // Next, player 1 attempts to insert into column 0xFFFF, which is an invalid column,
+        // thus losing the game.
+        game.do_move();
+        assert_eq!(
+            game.get_state(),
+            GameState::Ended(GameResult::Won(
+                Player::Two,
+                WinReason::IllegalColumn(0xFFFF)
+            ))
+        );
+
+        // Test that do_move() is idempotent.
+        game.do_move();
+        assert_eq!(
+            game.get_state(),
+            GameState::Ended(GameResult::Won(
+                Player::Two,
+                WinReason::IllegalColumn(0xFFFF)
+            ))
+        );
+    }
+
+    #[test]
+    fn test_timeout() {
+        let mut instructions = Segment::new_zeroed();
+        instructions[0] = 0xB000; // j r0, +0x0000
+        let mut game = Game::new(instructions.clone(), instructions, 123);
+        assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
+        // Next, player 1 times out, thus losing the game.
+        game.do_move();
+        assert_eq!(
+            game.get_state(),
+            GameState::Ended(GameResult::Won(Player::Two, WinReason::Timeout))
+        );
+    }
+
+    #[test]
+    fn test_two_illegal_column() {
+        let mut instructions_one = Segment::new_zeroed();
+        instructions_one[0] = 0x102A; // ret
+        let mut instructions_two = Segment::new_zeroed();
+        instructions_two[0] = 0x30FF; // lw r0, 0xFFFF
+        instructions_two[1] = 0x102A; // ret
+        let mut game = Game::new(instructions_one, instructions_two, 123);
+
+        // Player 2 tries to play into an illegal column, losing the game.
+        assert_eq!(
+            game.conclude(),
+            GameResult::Won(Player::One, WinReason::IllegalColumn(0xFFFF))
+        );
+
+        assert_eq!(game.player_one.total_moves, 1);
+        assert_eq!(game.player_two.total_moves, 1);
+    }
+
+    #[test]
+    fn test_two_illegal_instruction() {
+        let mut instructions_one = Segment::new_zeroed();
+        instructions_one[0] = 0x102A; // ret
+        let mut instructions_two = Segment::new_zeroed();
+        instructions_two[0] = 0x0000; // ill 0x0000
+        let mut game = Game::new(instructions_one, instructions_two, 123);
+
+        // Player 2 terminates with an illegal instruction, losing the game.
+        assert_eq!(
+            game.conclude(),
+            GameResult::Won(Player::One, WinReason::IllegalInstruction(0x0000))
+        );
+
+        assert_eq!(game.player_one.total_moves, 1);
+        assert_eq!(game.player_two.total_moves, 0);
+    }
+
+    #[test]
+    fn test_connect4() {
+        let mut instructions_one = Segment::new_zeroed();
+        instructions_one[0] = 0x102A; // ret
+        let mut instructions_two = Segment::new_zeroed();
+        instructions_two[0] = 0x3001; // lw r0, 0x0001
+        instructions_two[1] = 0x102A; // ret
+        let mut game = Game::new(instructions_one, instructions_two, 123);
+
+        // Player 1 finishes a connect4 in column 0.
+        assert_eq!(
+            game.conclude(),
+            GameResult::Won(Player::One, WinReason::Connect4)
+        );
+
+        assert_eq!(game.player_one.total_moves, 4);
+        assert_eq!(game.player_two.total_moves, 3);
+    }
+
+    #[test]
+    fn test_board_full() {
+        let mut instructions_one = Segment::new_zeroed();
+        // On the nth move, place in column n % 7
+        instructions_one[0] = 0x3189; // lw r1, 0xFF89
+        instructions_one[1] = 0x2111; // lw r1, r1
+        instructions_one[2] = 0x3007; // lw r0, 7
+        instructions_one[3] = 0x6610; // mod r1 r0
+        instructions_one[4] = 0x102A; // ret
+
+        // Mark it read-only to prevent typos.
+        let instructions_one = instructions_one;
+
+        let mut instructions_two = Segment::new_zeroed();
+        // Force the same pattern as in test_board::test_full_board.
+        instructions_two[0] = 0x3189; // lw r1, 0xFF89
+        instructions_two[1] = 0x2111; // lw r1, r1
+        instructions_two[2] = 0x9101; // b r1 move_nonzero // (offset is +0x3)
+                                      // .label move_zero // On move 0, play in column 3.
+        instructions_two[3] = 0x3003; // lw r0, 3
+        instructions_two[4] = 0x102A; // ret
+                                      // .label move_nonzero
+        instructions_two[5] = 0x3012; // lw r0, 18
+        instructions_two[6] = 0x8610; // ge r1 r0
+        instructions_two[7] = 0x9000; // b r0 move_late // (offset is +0x2)
+                                      // .label move_early // On moves 1-17, play in column (n - 1) % 7.
+        instructions_two[8] = 0x5811; // decr r1
+                                      // j move_late // Surprise optimization: This is a noop, this time!
+                                      // .label move_late // On moves 18-20, play in column n % 7.
+        instructions_two[9] = 0x3007; // lw r0, 7
+        instructions_two[10] = 0x6610; // mod r1 r0
+        instructions_two[11] = 0x102A; // ret
+
+        let mut game = Game::new(instructions_one, instructions_two, 123);
+
+        // The board is full, thus the game is drawn.
+        assert_eq!(game.conclude(), GameResult::Draw);
+
+        assert_eq!(game.player_one.total_moves, 21);
+        assert_eq!(game.player_two.total_moves, 21);
     }
 }
