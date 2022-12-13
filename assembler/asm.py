@@ -301,6 +301,62 @@ class Assembler:
             return False
         return self.push_word(0x5800 | registers_byte)
 
+    @asm_command
+    def parse_command_incr(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5900 | registers_byte)
+
+    @asm_command
+    def parse_command_not(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5A00 | registers_byte)
+
+    @asm_command
+    def parse_command_popcnt(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5B00 | registers_byte)
+
+    @asm_command
+    def parse_command_clz(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5C00 | registers_byte)
+
+    @asm_command
+    def parse_command_ctz(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5D00 | registers_byte)
+
+    @asm_command
+    def parse_command_rnd(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5E00 | registers_byte)
+
+    @asm_command
+    def parse_command_mov(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5F00 | registers_byte)
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.split("#")[0]

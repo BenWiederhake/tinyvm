@@ -160,6 +160,91 @@ ASM_TESTS = [
         """,
         "5800 5800 5855 5866 5887 58FF",
     ),
+    (
+        "incr",
+        """
+        incr r0
+        incr r0, r0
+        incr r5
+        incr r6, r6
+        incr r7, r8
+        incr r15, r15
+        """,
+        "5900 5900 5955 5966 5987 59FF",
+    ),
+    (
+        "not",
+        """
+        not r0
+        not r0, r0
+        not r5
+        not r6, r6
+        not r7, r8
+        not r15, r15
+        """,
+        "5A00 5A00 5A55 5A66 5A87 5AFF",
+    ),
+    (
+        "popcnt",
+        """
+        popcnt r0
+        popcnt r0, r0
+        popcnt r5
+        popcnt r6, r6
+        popcnt r7, r8
+        popcnt r15, r15
+        """,
+        "5B00 5B00 5B55 5B66 5B87 5BFF",
+    ),
+    (
+        "clz",
+        """
+        clz r0
+        clz r0, r0
+        clz r5
+        clz r6, r6
+        clz r7, r8
+        clz r15, r15
+        """,
+        "5C00 5C00 5C55 5C66 5C87 5CFF",
+    ),
+    (
+        "ctz",
+        """
+        ctz r0
+        ctz r0, r0
+        ctz r5
+        ctz r6, r6
+        ctz r7, r8
+        ctz r15, r15
+        """,
+        "5D00 5D00 5D55 5D66 5D87 5DFF",
+    ),
+    (
+        "rnd",
+        """
+        rnd r0
+        rnd r0, r0
+        rnd r5
+        rnd r6, r6
+        rnd r7, r8
+        rnd r15, r15
+        """,
+        "5E00 5E00 5E55 5E66 5E87 5EFF",
+    ),
+    (
+        "mov",
+        # TODO: Should probably forbid single-arg mov?
+        """
+        mov r0
+        mov r0, r0
+        mov r5
+        mov r6, r6
+        mov r7, r8
+        mov r15, r15
+        """,
+        "5F00 5F00 5F55 5F66 5F87 5FFF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -338,6 +423,48 @@ NEGATIVE_TESTS = [
         "decr 2-arg, reg imm",
         """
         decr r0, 123
+        """,
+    ),
+    (
+        "incr no args",
+        """
+        incr
+        """,
+    ),
+    (
+        "not no args",
+        """
+        not
+        """,
+    ),
+    (
+        "clz no args",
+        """
+        clz
+        """,
+    ),
+    (
+        "ctz no args",
+        """
+        ctz
+        """,
+    ),
+    (
+        "rnd no args",
+        """
+        rnd
+        """,
+    ),
+    (
+        "mov no args",
+        """
+        mov
+        """,
+    ),
+    (
+        "popcnt no args",
+        """
+        popcnt
         """,
     ),
 ]
