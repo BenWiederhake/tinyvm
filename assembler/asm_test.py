@@ -64,6 +64,53 @@ ASM_TESTS = [
     ),
 ]
 
+NEGATIVE_TESTS = [
+    (
+        "garbage",
+        """
+        garbage
+        """,
+    ),
+    (
+        "return with arg",
+        """
+        ret 42
+        """,
+    ),
+    (
+        "late garbage",
+        """
+        ret
+        garbage
+        """,
+    ),
+    (
+        "late return with arg",
+        """
+        ret
+        ret 42
+        """,
+    ),
+    (
+        "CPUID with arg",
+        """
+        cpuid 42
+        """,
+    ),
+    (
+        "Debug-dump with arg",
+        """
+        debug 1337
+        """,
+    ),
+    (
+        "Time with arg",
+        """
+        time 0x42
+        """,
+    ),
+]
+
 
 class AsmTests(unittest.TestCase):
     def test_empty(self):
@@ -74,7 +121,11 @@ class AsmTests(unittest.TestCase):
     def test_testsuite_names(self):
         nameCounter = Counter(name for name, _, _ in ASM_TESTS)
         for name, count in nameCounter.items():
-            with self.subTest(name=name):
+            with self.subTest(t="ASM_TESTS", name=name):
+                self.assertEqual(count, 1)
+        nameCounter = Counter(name for name, _ in NEGATIVE_TESTS)
+        for name, count in nameCounter.items():
+            with self.subTest(t="NEGATIVE_TESTS", name=name):
                 self.assertEqual(count, 1)
 
     def test_hardcoded(self):
@@ -87,6 +138,12 @@ class AsmTests(unittest.TestCase):
                 padding = b"\x00" * (asm.SEGMENT_LENGTH - len(expected_segment))
                 expected_segment.extend(padding)
                 self.assertEqual(expected_segment, asm.compile_to_segment(asm_text))
+
+    def test_negative(self):
+        asm.ERROR_OUTPUT = False
+        for i, (name, asm_text) in enumerate(NEGATIVE_TESTS):
+            with self.subTest(i=i, name=name):
+                self.assertIsNone(asm.compile_to_segment(asm_text))
 
 
 if __name__ == "__main__":
