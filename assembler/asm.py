@@ -20,6 +20,17 @@ def asm_command(fn):
     return fn
 
 
+def asm_directive(fn):
+    name = fn.__name__
+    prefix = "parse_directive_"
+    assert name.startswith(prefix), name
+    command_name = "." + name[len(prefix) :]
+    global ASM_COMMANDS
+    assert command_name not in ASM_COMMANDS
+    ASM_COMMANDS[command_name] = fn
+    return fn
+
+
 class ArgType(Enum):
     REGISTER = 1
     IMMEDIATE = 2
@@ -647,6 +658,26 @@ class Assembler:
             return self.command_j_twoarg(arg_parts[0], arg_parts[1])
         raise AssertionError(f"Wtf .split(, 1) returned {arg_parts}?")
 
+    @asm_directive
+    def parse_directive_offset(self, command, args):
+        args = args.strip()
+        arg_parts = args.split(" ", 1)
+        if len(arg_parts) > 1 or not arg_parts[0]:
+            return self.error(
+                f"Directive '.offset' takes exactly one argument (the new absolute offset), found '{args}' instead"
+            )
+        new_offset = self.parse_imm(arg_parts[0], "argument of .offset")
+        if new_offset is None:
+            # Error was already reported
+            return False
+        if new_offset < 0:
+            return self.error(
+                f"Argument to '.offset' must be positive, found '{args}' instead"
+            )
+        self.current_pointer = new_offset
+        # No codegen
+        return True
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.split("#")[0]
@@ -670,6 +701,7 @@ class Assembler:
         return command_fn(self, command, args)
 
     def segment_bytes(self):
+        assert len(self.segment_words) == 65536
         segment = bytearray(SEGMENT_LENGTH)
         for i, word in enumerate(self.segment_words):
             segment[2 * i] = word >> 8

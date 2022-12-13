@@ -606,6 +606,49 @@ ASM_TESTS = [
         """,
         "B781 B880",
     ),
+    (
+        "offset empty",
+        """
+        .offset 0x1234
+        """,
+        "0000",
+    ),
+    (
+        "offset basic",
+        """
+        .offset 0x1234
+        ret
+        """,
+        "0000 " * 0x1234 + "102A",
+    ),
+    (
+        "offset low",
+        """
+        lw r1, 0x23
+        .offset 3
+        ret
+        """,
+        "3123 0000 0000 102A",
+    ),
+    (
+        "offset weird order",
+        """
+        .offset 3
+        ret
+        .offset 0
+        lw r1, 0x23
+        """,
+        "3123 0000 0000 102A",
+    ),
+    (
+        "offset extreme",
+        """
+        .offset +0xFFFF
+        lw r1, 0x23
+        lw r4, 0x56
+        """,
+        "3456" + (" 0000" * (0x1_0000 - 2)) + " 3123",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1045,6 +1088,31 @@ NEGATIVE_TESTS = [
         j r8 -129
         """,
     ),
+    (
+        "offset negative",
+        """
+        .offset -1
+        """,
+    ),
+    (
+        "offset overwrite",
+        """
+        ret
+        .offset 0
+        ret
+        """,
+    ),
+    (
+        "offset overwrite indirect",
+        """
+        .offset 2
+        ret
+        .offset 0
+        ret
+        ret
+        ret # Bam!
+        """,
+    ),
 ]
 
 TESTS_INSTRUCTIONS_RS = [
@@ -1247,50 +1315,47 @@ TESTS_INSTRUCTIONS_RS = [
         # The example doesn't use 3700, but the assembler shouldn't make such optimizations.
         "3700 4780 B780",
     ),
-    # FIXME: .offset not implemented
-    # (
-    #     "from test_program_counter_wraps",
-    #     """
-    #     lw r7, 0xFFFF
-    #     j r7 +0x0000
-    #     .offset 0xFFFF
-    #     lw r4, 0x0012
-    #     """,
-    #     "37FF 47FF B700 " + ("0000 " * (65536 - 4)) + "3412",
-    # ),
-    # FIXME: .offset not implemented
-    # (
-    #     "from test_jump_imm_doc1",
-    #     """
-    #     lhi r3, 0x5000
-    #     j r3 +0x0000
-    #     .offset 0x5000
-    #     j +0x125
-    #     """,
-    #     "4350 B300 " + ("0000 " + (0x5000 - 2)) + "A123",
-    # ),
-    # FIXME: .offset not implemented
-    # (
-    #     "from test_jump_imm_doc2",
-    #     """
-    #     lhi r3, 0x1200
-    #     j r3 +0x0034
-    #     .offset 0x1234
-    #     j -0x1
-    #     """,
-    #     "4312 B334 " + ("0000 " + (0x1234 - 2)) + "A800",
-    # ),
-    # FIXME: .offset not implemented
-    # (
-    #     "from test_jump_immediate_overflow",
-    #     """
-    #     lw r3, 0xFF00
-    #     j r3 + 0x0000
-    #     .offset 0xFF00
-    #     j +0x202
-    #     """,
-    #     "43FF B300 " + ("0000 " + (0xFF00 - 2)) + "A200",
-    # ),
+    (
+        "from test_program_counter_wraps",
+        """
+        lw r7, 0xFFFF
+        j r7 +0x0000
+        .offset 0xFFFF
+        lw r4, 0x0012
+        """,
+        "37FF B700 " + ("0000 " * (65536 - 3)) + "3412",
+    ),
+    (
+        "from test_jump_imm_doc1",
+        """
+        lhi r3, 0x5000
+        j r3 +0x0000
+        .offset 0x5000
+        j +0x125
+        """,
+        "4350 B300 " + ("0000 " * (0x5000 - 2)) + "A123",
+    ),
+    (
+        "from test_jump_imm_doc2",
+        """
+        lhi r3, 0x1200
+        j r3 +0x0034
+        .offset 0x1234
+        j -0x1
+        """,
+        "4312 B334 " + ("0000 " * (0x1234 - 2)) + "A800",
+    ),
+    (
+        "from test_jump_immediate_overflow",
+        """
+        lw r3, 0xFF00
+        j r3 +0x0000
+        .offset 0xFF00
+        j +0x202
+        """,
+        # The example doesn't use 3300, but the assembler shouldn't make such optimizations.
+        "3300 43FF B300 " + ("0000 " * (0xFF00 - 3)) + "A200" + (" 0000" * 0xFF),
+    ),
     (
         "from test_jump_immediate_underflow",
         """
@@ -1312,18 +1377,17 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "AFFF",
     ),
-    # FIXME: .offset not implemented
-    # (
-    #     "from test_branch_doc1",
-    #     """
-    #     lw r3, 0x0001
-    #     lhi r7, 0x1200
-    #     j r7 + 0x0034
-    #     .offset 0x1234
-    #     b r3 -0x1
-    #     """,
-    #     "3301 4712 B734 " + ("0000 " * (0x1234 - 3)) + "9380",
-    # ),
+    (
+        "from test_branch_doc1",
+        """
+        lw r3, 0x0001
+        lhi r7, 0x1200
+        j r7 +0x0034
+        .offset 0x1234
+        b r3 -0x1
+        """,
+        "3301 4712 B734 " + ("0000 " * (0x1234 - 3)) + "9380",
+    ),
     (
         "from test_branch_doc2",
         """
@@ -1391,7 +1455,7 @@ TESTS_INSTRUCTIONS_RS = [
     #     """
     #     lw r0, 24
     #     lw r1, 1
-    #     .label start:
+    #     .label start
     #     add r1 r2
     #     decr r0
     #     sw r0, r2
@@ -1428,6 +1492,9 @@ class AsmTests(unittest.TestCase):
             with self.subTest(i=i, name=name):
                 expected_segment = bytearray.fromhex(code_prefix_hex)
                 self.assertTrue(len(expected_segment) <= asm.SEGMENT_LENGTH)
+                if len(expected_segment) > asm.SEGMENT_LENGTH // 2:
+                    # If a very long sequence is specified, it's probably supposed to be the entire program.
+                    self.assertEqual(len(expected_segment), asm.SEGMENT_LENGTH)
                 self.assertEqual(len(expected_segment) % 2, 0)
                 padding = b"\x00" * (asm.SEGMENT_LENGTH - len(expected_segment))
                 expected_segment.extend(padding)
@@ -1445,6 +1512,9 @@ class AsmTests(unittest.TestCase):
             with self.subTest(i=i, name=name):
                 expected_segment = bytearray.fromhex(code_prefix_hex)
                 self.assertTrue(len(expected_segment) <= asm.SEGMENT_LENGTH)
+                if len(expected_segment) > asm.SEGMENT_LENGTH // 2:
+                    # If a very long sequence is specified, it's probably supposed to be the entire program.
+                    self.assertEqual(len(expected_segment), asm.SEGMENT_LENGTH)
                 self.assertEqual(len(expected_segment) % 2, 0)
                 padding = b"\x00" * (asm.SEGMENT_LENGTH - len(expected_segment))
                 expected_segment.extend(padding)

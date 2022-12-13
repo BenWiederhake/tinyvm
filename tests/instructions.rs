@@ -828,16 +828,15 @@ fn test_jump_register_extreme_negative_signedish() {
 #[test]
 fn test_program_counter_wraps() {
     let mut instructions = vec![0; 1 << 16];
-    instructions[0x0000] = 0x37FF; // ↓
-    instructions[0x0001] = 0x47FF; // lw r7, 0xFFFF
-    instructions[0x0002] = 0xB700; // j r7 +0x0000
+    instructions[0x0000] = 0x37FF; // lw r7, 0xFFFF
+    instructions[0x0001] = 0xB700; // j r7 +0x0000
     instructions[0xFFFF] = 0x3412; // lw r4, 0x0012
     run_test(
         &instructions,
         &[],
-        4,
+        3,
         &[
-            Expectation::ActualNumSteps(4),
+            Expectation::ActualNumSteps(3),
             Expectation::ProgramCounter(0x0000),
             Expectation::Register(7, 0xFFFF),
             Expectation::Register(4, 0x0012),
@@ -892,7 +891,7 @@ fn test_jump_imm_doc2() {
 fn test_jump_immediate_overflow() {
     let mut instructions = vec![0; 1 << 16];
     instructions[0x0000] = 0x43FF; // lw r3, 0xFF00
-    instructions[0x0001] = 0xB300; // j r3 + 0x0000
+    instructions[0x0001] = 0xB300; // j r3 +0x0000
     instructions[0xFF00] = 0xA200; // j +0x202
     run_test(
         &instructions,
@@ -962,7 +961,7 @@ fn test_branch_doc1() {
     let mut instructions = vec![0; 1 << 16];
     instructions[0x0000] = 0x3301; // lw r3, 0x0001
     instructions[0x0001] = 0x4712; // lhi r7, 0x1200
-    instructions[0x0002] = 0xB734; // j r7 + 0x0034
+    instructions[0x0002] = 0xB734; // j r7 +0x0034
     instructions[0x1234] = 0x9380; // b r3 -0x1
     run_test(
         &instructions,
