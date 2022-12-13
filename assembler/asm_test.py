@@ -96,6 +96,15 @@ ASM_TESTS = [
         """,
         "2200 2210 22AF",
     ),
+    (
+        "Load word data, memory-only",
+        """
+        lw r0, r0
+        lw r0, r1
+        lw r15, r10
+        """,
+        "2100 2110 21AF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -208,6 +217,19 @@ NEGATIVE_TESTS = [
         # FIXME: This should be a feature!
         """
         lwi r5, 0x1234
+        """,
+    ),
+    (
+        "Load word data immediate address-as-used-value",
+        # FIXME: This should be a feature!
+        """
+        lw r4, 0x1234
+        """,
+    ),
+    (
+        "Load word data immediate value",
+        """
+        lw 0x1234, r5
         """,
     ),
 ]

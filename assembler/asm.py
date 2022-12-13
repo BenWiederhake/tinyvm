@@ -136,6 +136,27 @@ class Assembler:
         return self.push_word(0x2000 | (addr_register << 4) | value_register)
 
     @asm_command
+    def parse_command_lw(self, command, args):
+        arg_list = [e.strip() for e in args.split(",")]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command 'lw' expects exactly two arguments, got '{arg_list}' instead."
+            )
+        # TODO: Support immediate address
+        # TODO: Support immediate value
+        value_register = self.parse_reg(arg_list[0], "first argument to lw")
+        if value_register is None:
+            # Error already reported
+            return False
+        addr_register = self.parse_reg(arg_list[1], "second argument to lw")
+        if addr_register is None:
+            # Error already reported
+            return False
+        assert 0 <= addr_register < 16
+        assert 0 <= value_register < 16
+        return self.push_word(0x2100 | (addr_register << 4) | value_register)
+
+    @asm_command
     def parse_command_lwi(self, command, args):
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
