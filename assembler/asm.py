@@ -44,6 +44,37 @@ class Assembler:
         self.current_pointer %= SEGMENT_LENGTH // 2
         return True
 
+    def parse_reg(self, reg_string, context):
+        # TODO: Add register alias support?
+        if not reg_string.startswith("r"):
+            self.error(
+                f"Cannot parse register for {context}: Expected register (beginning with 'r'), "
+                f"instead got '{reg_string}'. Try something like 'r0' instead."
+            )
+            return None
+        number_part = reg_string[len("r") :]
+        try:
+            number = int(number_part)
+        except ValueError:
+            self.error(
+                f"Cannot parse register for {context}: Expected register with numeric index, "
+                f"instead got '{reg_string}'. Try something like 'r0' instead."
+            )
+            return None
+        if "_" in number_part:
+            self.error(
+                f"Cannot parse register for {context}: Refusing underscores in register index "
+                f"'{reg_string}'. Try something like 'r0' instead."
+            )
+            return None
+        if number < 0 or number >= 16:
+            self.error(
+                f"Cannot parse register for {context}: Expected register with index in 0,1,…,15, "
+                f"instead got '{reg_string}'. Try something like 'r0' instead."
+            )
+            return None
+        return number
+
     @asm_command
     def parse_command_ret(self, command, args):
         if args != "":
@@ -83,6 +114,26 @@ class Assembler:
                 f"Command 'time' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0x102D)
+
+    @asm_command
+    def parse_command_sw(self, command, args):
+        arg_list = [e.strip() for e in args.split(",")]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command 'sw' expects exactly two arguments, got '{arg_list}' instead."
+            )
+        # TODO: Support immediates?
+        addr_register = self.parse_reg(arg_list[0], "first argument to sw")
+        if addr_register is None:
+            # Error already reported
+            return False
+        value_register = self.parse_reg(arg_list[1], "second argument to sw")
+        if value_register is None:
+            # Error already reported
+            return False
+        assert 0 <= addr_register < 16
+        assert 0 <= value_register < 16
+        return self.push_word(0x2000 | (addr_register << 4) | value_register)
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno

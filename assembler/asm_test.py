@@ -62,6 +62,15 @@ ASM_TESTS = [
         """,
         "102D",
     ),
+    (
+        "Store word",
+        """
+        sw r0, r0
+        sw r1, r0
+        sw r10, r15
+        """,
+        "2000 2010 20AF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -107,6 +116,48 @@ NEGATIVE_TESTS = [
         "Time with arg",
         """
         time 0x42
+        """,
+    ),
+    (
+        "Store word no arg",
+        """
+        sw
+        """,
+    ),
+    (
+        "Store word one arg",
+        """
+        sw r4
+        """,
+    ),
+    (
+        "Store word no comma",
+        """
+        sw r4 r4
+        """,
+    ),
+    (
+        "Store word too many",
+        """
+        sw r4, r4, r4
+        """,
+    ),
+    (
+        "Store word illegal register",
+        """
+        sw r16, r1
+        """,
+    ),
+    (
+        "Store word other illegal register",
+        """
+        sw r4, r16
+        """,
+    ),
+    (
+        "Store word underscore register",
+        """
+        sw r1_3, r1
         """,
     ),
 ]
