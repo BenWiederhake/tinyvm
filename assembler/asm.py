@@ -137,8 +137,9 @@ class Assembler:
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
+        line = line.split("#")[0]
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line:
             # Nothing to do here
             return True
         if " " in line:

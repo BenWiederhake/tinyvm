@@ -27,6 +27,22 @@ ASM_TESTS = [
         "102A",
     ),
     (
+        "inline comment",
+        """
+        # This is awesome.
+        ret  # Return, yo!
+        # Hooray!
+        """,
+        "102A",
+    ),
+    (
+        "inline comment multi",
+        """
+        ret # Return   # but you knew that already, didn't you?
+        """,
+        "102A",
+    ),
+    (
         "illegal",
         """
         ill
