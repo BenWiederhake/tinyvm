@@ -52,6 +52,14 @@ class Assembler:
             )
         return self.push_word(0x102A)
 
+    @asm_command
+    def parse_command_ill(self, command, args):
+        if args != "":
+            return self.error(
+                f"Command 'ill' does not take any arguments (expected end of line, found '{args}' instead)"
+            )
+        return self.push_word(0xFFFF)
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.strip()

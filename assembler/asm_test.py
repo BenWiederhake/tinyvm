@@ -26,6 +26,21 @@ ASM_TESTS = [
         """,
         "102A",
     ),
+    (
+        "illegal",
+        """
+        ill
+        """,
+        "FFFF",
+    ),
+    (
+        "more than one instruction",
+        """
+        ret
+        ill
+        """,
+        "102A FFFF",
+    ),
 ]
 
 
