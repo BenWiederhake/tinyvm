@@ -561,7 +561,17 @@ class Assembler:
         return self.push_word(0x9000 | (condition_reg << 8) | sign_mask | offset_value)
 
     def command_j_register(self, register, offset):
-        raise NotImplementedError()
+        if offset >= 0xFF80:
+            return self.error(
+                f"Ambiguous offset 0x{offset:04X} to command 'j'. Note that this value is relative and signed."
+            )
+        if not (-0x80 <= offset <= 0x7F):
+            return self.error(
+                f"Command 'j' can only branch by offsets in [-128, 127], but not by {offset}."
+                " Try manually loading the final address into a register first."
+            )
+        offset_byte = offset & 0xFF
+        return self.push_word(0xB000 | (register << 8) | offset_byte)
 
     def command_j_immediate(self, offset):
         # FIXME: Support long jumps

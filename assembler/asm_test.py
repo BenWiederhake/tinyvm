@@ -561,6 +561,42 @@ ASM_TESTS = [
         """,
         "A87A A922 AFFD AFFE AFFF",
     ),
+    (
+        "jump to register onearg",
+        """
+        j r0
+        j r1
+        j r15
+        """,
+        "B000 B100 BF00",
+    ),
+    (
+        "jump to register twoarg positive",
+        """
+        j r0 +0
+        j r1 1
+        j r2 0x12
+        j r3 +127
+        """,
+        "B000 B101 B212 B37F",
+    ),
+    (
+        "jump to register twoarg negative",
+        """
+        j r4 -0
+        j r5 -1
+        j r6 -0x12
+        """,
+        "B400 B5FF B6EE",
+    ),
+    (
+        "jump to register twoarg negative extreme",
+        """
+        j r7 -127
+        j r8 -128
+        """,
+        "B781 B880",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -980,6 +1016,24 @@ NEGATIVE_TESTS = [
         "jump by immediate extreme negative",
         """
         j -0x801
+        """,
+    ),
+    (
+        "jump to register onearg",
+        """
+        j r16
+        """,
+    ),
+    (
+        "jump to register twoarg extreme positive",
+        """
+        j r3 +128
+        """,
+    ),
+    (
+        "jump to register twoarg extreme negative",
+        """
+        j r8 -129
         """,
     ),
 ]
