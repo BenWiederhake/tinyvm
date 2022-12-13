@@ -60,6 +60,30 @@ class Assembler:
             )
         return self.push_word(0xFFFF)
 
+    @asm_command
+    def parse_command_cpuid(self, command, args):
+        if args != "":
+            return self.error(
+                f"Command 'cpuid' does not take any arguments (expected end of line, found '{args}' instead)"
+            )
+        return self.push_word(0x102B)
+
+    @asm_command
+    def parse_command_debug(self, command, args):
+        if args != "":
+            return self.error(
+                f"Command 'debug' does not take any arguments (expected end of line, found '{args}' instead)"
+            )
+        return self.push_word(0x102C)
+
+    @asm_command
+    def parse_command_time(self, command, args):
+        if args != "":
+            return self.error(
+                f"Command 'time' does not take any arguments (expected end of line, found '{args}' instead)"
+            )
+        return self.push_word(0x102D)
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.strip()

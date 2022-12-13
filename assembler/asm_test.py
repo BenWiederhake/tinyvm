@@ -41,6 +41,27 @@ ASM_TESTS = [
         """,
         "102A FFFF",
     ),
+    (
+        "CPUID",
+        """
+        cpuid
+        """,
+        "102B",
+    ),
+    (
+        "Debug-dump",
+        """
+        debug
+        """,
+        "102C",
+    ),
+    (
+        "Time",
+        """
+        time
+        """,
+        "102D",
+    ),
 ]
 
 
