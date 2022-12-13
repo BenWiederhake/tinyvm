@@ -457,6 +457,60 @@ class Assembler:
     # TODO: When the VM implements the instruction "exp", implement it here (0x6E__)
     # TODO: When the VM implements the instruction "root", implement it here (0x6F__)
 
+    # cmp is too powerful to make sense. Instead of offloading the work of translating
+    # the flags to meaning to the user, do it here in the form of enumeration:
+    # LEGS=000_ => No, use "lw rx, 0" instead.
+    # LEGS=001_ => Yes, name it "gt".
+    # LEGS=010_ => Yes, name it "eq".
+    # LEGS=011_ => Yes, name it "ge".
+    # LEGS=100_ => Yes, name it "lt".
+    # LEGS=101_ => Yes, name it "ne".
+    # LEGS=110_ => Yes, name it "le".
+    # LEGS=111_ => No, use "lw rx, 1" instead.
+    # The instructions gt, ge, lt, le have signed variants (gts, ges, lts, les).
+    # The other signed variants don't really make sense (e.g. signed equality).
+    # Also, we re-use the "binary_command" method because "lt r4 r5" really should mean "is r4 < r5?"
+
+    @asm_command
+    def parse_command_gt(self, command, args):
+        return self.binary_command(command, args, 0x8200)
+
+    @asm_command
+    def parse_command_eq(self, command, args):
+        return self.binary_command(command, args, 0x8400)
+
+    @asm_command
+    def parse_command_ge(self, command, args):
+        return self.binary_command(command, args, 0x8600)
+
+    @asm_command
+    def parse_command_lt(self, command, args):
+        return self.binary_command(command, args, 0x8800)
+
+    @asm_command
+    def parse_command_ne(self, command, args):
+        return self.binary_command(command, args, 0x8A00)
+
+    @asm_command
+    def parse_command_le(self, command, args):
+        return self.binary_command(command, args, 0x8C00)
+
+    @asm_command
+    def parse_command_gts(self, command, args):
+        return self.binary_command(command, args, 0x8300)
+
+    @asm_command
+    def parse_command_ges(self, command, args):
+        return self.binary_command(command, args, 0x8700)
+
+    @asm_command
+    def parse_command_lts(self, command, args):
+        return self.binary_command(command, args, 0x8900)
+
+    @asm_command
+    def parse_command_les(self, command, args):
+        return self.binary_command(command, args, 0x8D00)
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.split("#")[0]

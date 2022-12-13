@@ -408,6 +408,96 @@ ASM_TESTS = [
         """,
         "6D00 6D33 6D78 6DFF",
     ),
+    (
+        "gt",
+        """
+        gt r0 r0
+        gt r15 r15
+        gt r7 r8
+        """,
+        "8200 82FF 8278",
+    ),
+    (
+        "eq",
+        """
+        eq r0 r0
+        eq r15 r15
+        eq r7 r8
+        """,
+        "8400 84FF 8478",
+    ),
+    (
+        "ge",
+        """
+        ge r0 r0
+        ge r15 r15
+        ge r7 r8
+        """,
+        "8600 86FF 8678",
+    ),
+    (
+        "lt",
+        """
+        lt r0 r0
+        lt r15 r15
+        lt r7 r8
+        """,
+        "8800 88FF 8878",
+    ),
+    (
+        "ne",
+        """
+        ne r0 r0
+        ne r15 r15
+        ne r7 r8
+        """,
+        "8A00 8AFF 8A78",
+    ),
+    (
+        "le",
+        """
+        le r0 r0
+        le r15 r15
+        le r7 r8
+        """,
+        "8C00 8CFF 8C78",
+    ),
+    (
+        "gts",
+        """
+        gts r0 r0
+        gts r15 r15
+        gts r7 r8
+        """,
+        "8300 83FF 8378",
+    ),
+    (
+        "ges",
+        """
+        ges r0 r0
+        ges r15 r15
+        ges r7 r8
+        """,
+        "8700 87FF 8778",
+    ),
+    (
+        "lts",
+        """
+        lts r0 r0
+        lts r15 r15
+        lts r7 r8
+        """,
+        "8900 89FF 8978",
+    ),
+    (
+        "les",
+        """
+        les r0 r0
+        les r15 r15
+        les r7 r8
+        """,
+        "8D00 8DFF 8D78",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -750,6 +840,13 @@ NEGATIVE_TESTS = [
         sra
         """,
     ),
+    (
+        "lt noargs",
+        """
+        lt
+        """,
+    ),
+    # Skip the other compare instructions, there's not much to test anyway.
 ]
 
 
