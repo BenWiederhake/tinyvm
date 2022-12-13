@@ -1200,6 +1200,118 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "B080",
     ),
+    (
+        "from test_jump_register_extreme_positive_imm",
+        """
+        j r0 +0x7F
+        """,
+        "B07F",
+    ),
+    (
+        "from test_jump_register_extreme_negative_imm",
+        """
+        j r0 -0x80
+        """,
+        "B080",
+    ),
+    (
+        "from test_jump_register_extreme_positive",
+        """
+        lw r7, 0xFFFF
+        j r7 +0x7F
+        """,
+        "37FF B77F",
+    ),
+    (
+        "from test_jump_register_extreme_positive_nowrap",
+        """
+        lw r7, 0x7FFF
+        j r7 +0x7F
+        """,
+        "37FF 477F B77F",
+    ),
+    (
+        "from test_jump_register_extreme_negative",
+        """
+        lw r7, 0xFFFF
+        j r7 -0x80
+        """,
+        "37FF B780",
+    ),
+    (
+        "from test_jump_register_extreme_negative_signedish",
+        """
+        lw r7, 0x8000
+        j r7 -0x80
+        """,
+        # The example doesn't use 3700, but the assembler shouldn't make such optimizations.
+        "3700 4780 B780",
+    ),
+    # FIXME: .offset not implemented
+    # (
+    #     "from test_program_counter_wraps",
+    #     """
+    #     lw r7, 0xFFFF
+    #     j r7 +0x0000
+    #     .offset 0xFFFF
+    #     lw r4, 0x0012
+    #     """,
+    #     "37FF 47FF B700 " + ("0000 " * (65536 - 4)) + "3412",
+    # ),
+    # FIXME: .offset not implemented
+    # (
+    #     "from test_jump_imm_doc1",
+    #     """
+    #     lhi r3, 0x5000
+    #     j r3 +0x0000
+    #     .offset 0x5000
+    #     j +0x125
+    #     """,
+    #     "4350 B300 " + ("0000 " + (0x5000 - 2)) + "A123",
+    # ),
+    # FIXME: .offset not implemented
+    # (
+    #     "from test_jump_imm_doc2",
+    #     """
+    #     lhi r3, 0x1200
+    #     j r3 +0x0034
+    #     .offset 0x1234
+    #     j -0x1
+    #     """,
+    #     "4312 B334 " + ("0000 " + (0x1234 - 2)) + "A800",
+    # ),
+    # FIXME: .offset not implemented
+    # (
+    #     "from test_jump_immediate_overflow",
+    #     """
+    #     lw r3, 0xFF00
+    #     j r3 + 0x0000
+    #     .offset 0xFF00
+    #     j +0x202
+    #     """,
+    #     "43FF B300 " + ("0000 " + (0xFF00 - 2)) + "A200",
+    # ),
+    (
+        "from test_jump_immediate_underflow",
+        """
+        j -0x031
+        """,
+        "A830",
+    ),
+    (
+        "from test_jump_immediate_extreme_positive",
+        """
+        j +0x801
+        """,
+        "A7FF",
+    ),
+    (
+        "from test_jump_immediate_extreme_negative",
+        """
+        j -0x800
+        """,
+        "AFFF",
+    ),
 ]
 
 

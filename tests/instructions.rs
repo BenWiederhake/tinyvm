@@ -729,7 +729,7 @@ fn test_jump_register_underflow() {
 fn test_jump_register_extreme_positive_imm() {
     run_test(
         &[
-            0xB07F, // j r0 + 0x7F
+            0xB07F, // j r0 +0x7F
         ],
         &[],
         1,
@@ -745,7 +745,7 @@ fn test_jump_register_extreme_positive_imm() {
 fn test_jump_register_extreme_negative_imm() {
     run_test(
         &[
-            0xB080, // j r0 - 0x80
+            0xB080, // j r0 -0x80
         ],
         &[],
         1,
@@ -761,13 +761,13 @@ fn test_jump_register_extreme_negative_imm() {
 fn test_jump_register_extreme_positive() {
     run_test(
         &[
-            0x37FF, 0x47FF, // lw r7, 0xFFFF
-            0xB77F, // j r7 + 0x7F
+            0x37FF, // lw r7, 0xFFFF
+            0xB77F, // j r7 +0x7F
         ],
         &[],
-        3,
+        2,
         &[
-            Expectation::ActualNumSteps(3),
+            Expectation::ActualNumSteps(2),
             Expectation::ProgramCounter(0x007E),
             Expectation::LastStep(StepResult::Continue),
         ],
@@ -779,7 +779,7 @@ fn test_jump_register_extreme_positive_nowrap() {
     run_test(
         &[
             0x37FF, 0x477F, // lw r7, 0x7FFF
-            0xB77F, // j r7 + 0x7F
+            0xB77F, // j r7 +0x7F
         ],
         &[],
         3,
@@ -795,13 +795,13 @@ fn test_jump_register_extreme_positive_nowrap() {
 fn test_jump_register_extreme_negative() {
     run_test(
         &[
-            0x37FF, 0x47FF, // lw r7, 0xFFFF
-            0xB780, // j r7 - 0x80
+            0x37FF, // lw r7, 0xFFFF
+            0xB780, // j r7 -0x80
         ],
         &[],
-        3,
+        2,
         &[
-            Expectation::ActualNumSteps(3),
+            Expectation::ActualNumSteps(2),
             Expectation::ProgramCounter(0xFF7F),
             Expectation::LastStep(StepResult::Continue),
         ],
@@ -813,7 +813,7 @@ fn test_jump_register_extreme_negative_signedish() {
     run_test(
         &[
             0x4780, // lhi r7, 0x8000
-            0xB780, // j r7 - 0x80
+            0xB780, // j r7 -0x80
         ],
         &[],
         2,
@@ -830,7 +830,7 @@ fn test_program_counter_wraps() {
     let mut instructions = vec![0; 1 << 16];
     instructions[0x0000] = 0x37FF; // ↓
     instructions[0x0001] = 0x47FF; // lw r7, 0xFFFF
-    instructions[0x0002] = 0xB700; // j r7 + 0x0000
+    instructions[0x0002] = 0xB700; // j r7 +0x0000
     instructions[0xFFFF] = 0x3412; // lw r4, 0x0012
     run_test(
         &instructions,
@@ -852,7 +852,7 @@ fn test_program_counter_wraps() {
 fn test_jump_imm_doc1() {
     let mut instructions = vec![0; 1 << 16];
     instructions[0x0000] = 0x4350; // lhi r3, 0x5000
-    instructions[0x0001] = 0xB300; // j r3 + 0x0000
+    instructions[0x0001] = 0xB300; // j r3 +0x0000
     instructions[0x5000] = 0xA123; // j +0x125
     run_test(
         &instructions,
