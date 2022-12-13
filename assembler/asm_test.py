@@ -245,6 +245,22 @@ ASM_TESTS = [
         """,
         "5F00 5F00 5F55 5F66 5F87 5FFF",
     ),
+    (
+        "nop single",
+        """
+        nop
+        """,
+        "5F00",
+    ),
+    (
+        "nop multi",
+        """
+        nop
+        nop
+        nop
+        """,
+        "5F00 5F00 5F00",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -290,6 +306,18 @@ NEGATIVE_TESTS = [
         "Time with arg",
         """
         time 0x42
+        """,
+    ),
+    (
+        "nop with arg imm",
+        """
+        nop 0x42
+        """,
+    ),
+    (
+        "nop with arg reg",
+        """
+        nop r5
         """,
     ),
     (

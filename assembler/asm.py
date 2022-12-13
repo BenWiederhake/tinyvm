@@ -357,6 +357,14 @@ class Assembler:
             return False
         return self.push_word(0x5F00 | registers_byte)
 
+    @asm_command
+    def parse_command_nop(self, command, args):
+        if args != "":
+            return self.error(
+                f"Command 'nop' does not take any arguments (expected end of line, found '{args}' instead)"
+            )
+        return self.push_word(0x5F00)
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.split("#")[0]
