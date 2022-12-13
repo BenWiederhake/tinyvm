@@ -148,6 +148,18 @@ ASM_TESTS = [
         """,
         "4000 4112 42FF 43AB 4434 45FF",
     ),
+    (
+        "decr",
+        """
+        decr r0
+        decr r0, r0
+        decr r5
+        decr r6, r6
+        decr r7, r8
+        decr r15, r15
+        """,
+        "5800 5800 5855 5866 5887 58FF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -296,6 +308,36 @@ NEGATIVE_TESTS = [
         "Load word data immediate high-only invalid",
         """
         lhi r0, 0x1234
+        """,
+    ),
+    (
+        "decr no args",
+        """
+        decr
+        """,
+    ),
+    (
+        "decr too many args",
+        """
+        decr r1, r2, r3
+        """,
+    ),
+    (
+        "decr 1-arg, imm",
+        """
+        decr 0x123
+        """,
+    ),
+    (
+        "decr 2-arg, imm reg",
+        """
+        decr 123, r0
+        """,
+    ),
+    (
+        "decr 2-arg, reg imm",
+        """
+        decr r0, 123
         """,
     ),
 ]

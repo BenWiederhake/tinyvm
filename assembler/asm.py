@@ -117,6 +117,32 @@ class Assembler:
             return None
         return (ArgType.IMMEDIATE, imm)
 
+    def parse_unary_regs_to_byte(self, command, args):
+        arg_list = [e.strip() for e in args.split(",")]
+        if not (1 <= len(arg_list) <= 2):
+            self.error(
+                f"Command '{command}' expects either one or two register arguments, got '{arg_list}' instead."
+            )
+            return None
+        reg_list = []
+        for i, arg in enumerate(arg_list):
+            register = self.parse_reg(
+                arg, f"argument #{i + 1} (1-indexed) to {command}"
+            )
+            if register is None:
+                # Error already reported
+                return None
+            reg_list.append(register)
+        # Unary functions can be applied in-place, allow this as a short-hand for it.
+        # Example: "decr r5" instead of "decr r5, r5"
+        if len(reg_list) == 1:
+            reg_list.append(reg_list[0])
+        assert len(reg_list) == 2
+        # "decr r1, r2" means that we write into r1, by convention of always writing into the first-mentioned register.
+        # The ISA defines that the written-to register is in the least-significant bits.
+        # I probably fucked up the definitions there, but I'm too lazy to change it now.
+        return (reg_list[1] << 4) | reg_list[0]
+
     @asm_command
     def parse_command_ret(self, command, args):
         if args != "":
@@ -266,6 +292,14 @@ class Assembler:
                 )
         assert 0 <= register < 16
         return self.push_word(0x4000 | (register << 8) | immediate)
+
+    @asm_command
+    def parse_command_decr(self, command, args):
+        registers_byte = self.parse_unary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x5800 | registers_byte)
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
