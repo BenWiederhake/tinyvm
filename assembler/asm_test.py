@@ -118,6 +118,15 @@ ASM_TESTS = [
         "3000 31FF 352A 387F 3980 3AFE",
     ),
     (
+        "Load word data immediate (single insn, extreme)",
+        """
+        lw r7, 0xFFFF
+        lw r11, -42
+        lw r12, -128
+        """,
+        "37FF 3BD6 3C80",
+    ),
+    (
         "Load word data immediate (double insn)",
         """
         lw r0, 0x0081
@@ -1038,6 +1047,161 @@ NEGATIVE_TESTS = [
     ),
 ]
 
+TESTS_INSTRUCTIONS_RS = [
+    (
+        "from test_time_jump",
+        """
+        j r0 +0x0005
+        nop
+        nop
+        nop
+        nop
+        time
+        """,
+        "B005 5F00 5F00 5F00 5F00 102D",
+    ),
+    (
+        "from test_time_long",
+        """
+        lw r7, 0xFFAB
+        decr r7
+        b r7 -0x1
+        time
+        ret
+        """,
+        "37AB 5877 9780 102D 102A",
+    ),
+    # FIXME: Labels not implemented yet
+    # (
+    #     "from test_time_very_long",
+    #     """
+    #     lw r7, 0xB505 # executed 1 time
+    #     mv r1, r7 # executed 1 time
+    #     .label outer_loop
+    #     mv r2, r7 # executed 0xB505 times
+    #     .label inner_loop
+    #     decr r2 # executed 0xB505 * 0xB505 times
+    #     b r2 inner_loop # (offset is -0x1) # executed 0xB505 * 0xB505 times
+    #     decr r1 # executed 0xB505 times
+    #     b r1 outer_loop # (offset is -0x4) # executed 0xB505 times
+    #     time # executed 0 times or 1 time, depending on how you look at it
+    #     ret # executed 0 times
+    #     # Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
+    #     """,
+    #     "3705 47B5 5F71 5F72 5822 9280 5811 9183 102D 102A",
+    # ),
+    (
+        "from test_store_data_doc",
+        """
+        lw r2, 0x1234
+        lw r5, 0x5678
+        sw r2, r5
+        """,
+        "3234 4212 3578 4556 2025",
+    ),
+    (
+        "from test_store_data_simple",
+        """
+        lw r2, 0x0045
+        lw r5, 0x0067
+        sw r2, r5
+        """,
+        "3245 3567 2025",
+    ),
+    (
+        "from test_load_data_doc",
+        """
+        lw r2, 0x1234
+        lw r5, r2
+        """,
+        "3234 4212 2125",
+    ),
+    (
+        "from test_load_data_simple",
+        """
+        lw r2, 0x0005
+        lw r5, r2
+        """,
+        "3205 2125",
+    ),
+    (
+        "from test_load_instruction_doc",
+        """
+        lw r2, 0x1234
+        lwi r5, r2
+        """,
+        "3234 4212 2225",
+    ),
+    (
+        "from test_load_instruction_simple",
+        """
+        lw r2, 0x0005
+        lwi r5, r2
+        """,
+        "3205 2225",
+    ),
+    (
+        "from test_load_imm_high_doc_setup",
+        """
+        lw r10, 0x1234
+        """,
+        "3A34 4A12",
+    ),
+    (
+        "from test_load_imm_high_doc",
+        """
+        lw r10, 0x1234
+        lhi r10, 0x5600
+        """,
+        "3A34 4A12 4A56",
+    ),
+    (
+        "from test_load_imm_high_simple",
+        """
+        lhi r5, 0xAB00
+        """,
+        "45AB",
+    ),
+    (
+        "from test_jump_register_doc1",
+        """
+        lhi r7, 0x1200
+        j r7 +0x0034
+        """,
+        "4712 B734",
+    ),
+    (
+        "from test_jump_register_doc2",
+        """
+        lw r7, 0x1234
+        j r7 -0x0001
+        """,
+        "3734 4712 B7FF",
+    ),
+    (
+        "from test_jump_register_simple",
+        """
+        j r0 +0x0042
+        """,
+        "B042",
+    ),
+    (
+        "from test_jump_register_overflow",
+        """
+        lw r7, 0xFFFF
+        j r7 +0x0010
+        """,
+        "37FF B710",
+    ),
+    (
+        "from test_jump_register_underflow",
+        """
+        j r0 -0x0080
+        """,
+        "B080",
+    ),
+]
+
 
 class AsmTests(unittest.TestCase):
     def test_empty(self):
@@ -1071,6 +1235,17 @@ class AsmTests(unittest.TestCase):
         for i, (name, asm_text) in enumerate(NEGATIVE_TESTS):
             with self.subTest(i=i, name=name):
                 self.assertIsNone(asm.compile_to_segment(asm_text))
+
+    def test_from_instructions_rs(self):
+        asm.ERROR_OUTPUT = False
+        for i, (name, asm_text, code_prefix_hex) in enumerate(TESTS_INSTRUCTIONS_RS):
+            with self.subTest(i=i, name=name):
+                expected_segment = bytearray.fromhex(code_prefix_hex)
+                self.assertTrue(len(expected_segment) <= asm.SEGMENT_LENGTH)
+                self.assertEqual(len(expected_segment) % 2, 0)
+                padding = b"\x00" * (asm.SEGMENT_LENGTH - len(expected_segment))
+                expected_segment.extend(padding)
+                self.assertEqual(expected_segment, asm.compile_to_segment(asm_text))
 
 
 if __name__ == "__main__":

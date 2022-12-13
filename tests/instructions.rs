@@ -363,7 +363,7 @@ fn test_time_doc() {
 fn test_time_jump() {
     run_test(
         &[
-            0xB005, // j r0 + 0x0005
+            0xB005, // j r0 +0x0005
             0,      // padding
             0,      // padding
             0,      // padding
@@ -416,17 +416,17 @@ fn test_time_very_long() {
     #[rustfmt::skip] // Would break the labels. See https://github.com/rust-lang/rustfmt/issues/5630
     run_test(
         &[
-            0x3705, 0x47B5, // lw r7, 0xB505 // executed 1 time
-            0x5F71, // mv r1, r7 // executed 1 time
+            0x3705, 0x47B5, // lw r7, 0xB505 # executed 1 time
+            0x5F71, // mv r1, r7 # executed 1 time
                     // .label outer_loop
-            0x5F72, // mv r2, r7 // executed 0xB505 times
+            0x5F72, // mv r2, r7 # executed 0xB505 times
                     // .label inner_loop
-            0x5822, // decr r2 // executed 0xB505 * 0xB505 times
-            0x9280, // b r2 inner_loop // (offset is -0x1) // executed 0xB505 * 0xB505 times
-            0x5811, // decr r1 // executed 0xB505 times
-            0x9183, // b r1 outer_loop // (offset is -0x4) // executed 0xB505 times
-            0x102D, // time // executed 0 times or 1 time, depending on how you look at it
-            0x102A, // ret // executed 0 times
+            0x5822, // decr r2 # executed 0xB505 * 0xB505 times
+            0x9280, // b r2 inner_loop # (offset is -0x1) # executed 0xB505 * 0xB505 times
+            0x5811, // decr r1 # executed 0xB505 times
+            0x9183, // b r1 outer_loop # (offset is -0x4) # executed 0xB505 times
+            0x102D, // time # executed 0 times or 1 time, depending on how you look at it
+            0x102A, // ret # executed 0 times
             // Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
         ],
         &[],
@@ -642,7 +642,7 @@ fn test_jump_register_doc1() {
     run_test(
         &[
             0x4712, // lhi r7, 0x1200
-            0xB734, // j r7 + 0x0034
+            0xB734, // j r7 +0x0034
         ],
         &[],
         2,
@@ -662,7 +662,7 @@ fn test_jump_register_doc2() {
     run_test(
         &[
             0x3734, 0x4712, // lw r7, 0x1234
-            0xB7FF, // j r7 - 0x0001
+            0xB7FF, // j r7 -0x0001
         ],
         &[],
         3,
@@ -679,7 +679,7 @@ fn test_jump_register_doc2() {
 fn test_jump_register_simple() {
     run_test(
         &[
-            0xB042, // j r0 + 0x0042
+            0xB042, // j r0 +0x0042
         ],
         &[],
         1,
@@ -695,15 +695,15 @@ fn test_jump_register_simple() {
 fn test_jump_register_overflow() {
     run_test(
         &[
-            0x37FF, 0x47FF, // lw r7, 0xFFFF
-            0xB710, // j r7 + 0x0010
+            0x37FF, // lw r7, 0xFFFF
+            0xB710, // j r7 +0x0010
         ],
         &[],
-        3,
+        2,
         &[
             Expectation::Register(7, 0xFFFF),
             Expectation::ProgramCounter(0x000F),
-            Expectation::ActualNumSteps(3),
+            Expectation::ActualNumSteps(2),
             Expectation::LastStep(StepResult::Continue),
         ],
     );
@@ -713,7 +713,7 @@ fn test_jump_register_overflow() {
 fn test_jump_register_underflow() {
     run_test(
         &[
-            0xB080, // j r0 - 0x0080
+            0xB080, // j r0 -0x0080
         ],
         &[],
         1,
