@@ -243,16 +243,13 @@ ASM_TESTS = [
     ),
     (
         "mov",
-        # TODO: Should probably forbid single-arg mov?
         """
-        mov r0
-        mov r0, r0
-        mov r5
-        mov r6, r6
+        mov r0, r1
+        mov r6, r2
         mov r7, r8
-        mov r15, r15
+        mov r15, r14
         """,
-        "5F00 5F00 5F55 5F66 5F87 5FFF",
+        "5F10 5F26 5F87 5FEF",
     ),
     (
         "nop single",
@@ -1148,6 +1145,18 @@ NEGATIVE_TESTS = [
         "literal too negative hex",
         """
         .word -0x8001
+        """,
+    ),
+    (
+        "mov single-arg",
+        """
+        mov r0
+        """,
+    ),
+    (
+        "mov noop",
+        """
+        mov r1, r1
         """,
     ),
 ]

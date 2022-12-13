@@ -401,6 +401,13 @@ class Assembler:
         if registers_byte is None:
             # Error already reported
             return False
+        reg1 = registers_byte >> 4
+        reg2 = registers_byte & 0x000F
+        if reg1 == reg2:
+            return self.error(
+                "Refusing noop-mov: This does nothing, and is likely an error."
+                f" Use '.word 5F{reg1:X}{reg2:X}' or 'nop' instead."
+            )
         return self.push_word(0x5F00 | registers_byte)
 
     @asm_command
