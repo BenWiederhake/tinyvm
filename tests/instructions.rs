@@ -1005,7 +1005,7 @@ fn test_compare_doc() {
         &[
             0x3305, // lw r3, 0x0005
             0x3407, // lw r4, 0x0007
-            0x8A34, // ne r4, r3 (or cmp.lg r4, r3)
+            0x8A34, // ne r3 r4 # In some sense: cmp.lg r4, r3
         ],
         &[],
         3,
@@ -1724,7 +1724,7 @@ fn test_fibonacci() {
             0x6021, // add r2 r1
             0x5800, // decr r0
             0x2001, // sw r0, r1
-            0x9085, // b r0 start // (offset is -0x6)
+            0x9085, // b r0 start # (offset is -0x6)
             0x102A, // ret
         ],
         &[],

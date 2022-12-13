@@ -1312,6 +1312,97 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "AFFF",
     ),
+    # FIXME: .offset not implemented
+    # (
+    #     "from test_branch_doc1",
+    #     """
+    #     lw r3, 0x0001
+    #     lhi r7, 0x1200
+    #     j r7 + 0x0034
+    #     .offset 0x1234
+    #     b r3 -0x1
+    #     """,
+    #     "3301 4712 B734 " + ("0000 " * (0x1234 - 3)) + "9380",
+    # ),
+    (
+        "from test_branch_doc2",
+        """
+        b r5 -0x1
+        """,
+        "9580",
+    ),
+    (
+        "from test_compare_doc",
+        """
+        lw r3, 0x0005
+        lw r4, 0x0007
+        ne r3 r4
+        """,
+        "3305 3407 8A34",
+    ),
+    (
+        "from test_unary_doc1",
+        """
+        lw r5, 0x1234
+        not r6, r5
+        """,
+        "3534 4512 5A56",
+    ),
+    (
+        "from test_unary_doc2",
+        """
+        lw r3, 41
+        incr r3
+        """,
+        "3329 5933",
+    ),
+    (
+        "from test_unary_rnd_inclusive",
+        """
+        lw r1, 5
+        rnd r2, r1
+        le r2 r1
+        ge r2 r0
+        """,
+        "3105 5E12 8C21 8620",
+    ),
+    (
+        "from test_unary_rnd_extreme",
+        """
+        lw r1, 0xFFFF
+        rnd r2, r1
+        eq r2 r1
+        eq r2 r0
+        """,
+        "31FF 5E12 8421 8420",
+    ),
+    (
+        "from test_binary_doc",
+        """
+        lw r5, 5
+        lw r6, 7
+        mul r5 r6
+        """,
+        "3505 3607 6256",
+    ),
+    # FIXME: labels not yet implemented
+    # (
+    #     "from test_fibonacci",
+    #     """
+    #     lw r0, 24
+    #     lw r1, 1
+    #     .label start:
+    #     add r1 r2
+    #     decr r0
+    #     sw r0, r2
+    #     add r2 r1
+    #     decr r0
+    #     sw r0, r1
+    #     b r0 start # (offset is -0x6)
+    #     ret
+    #     """,
+    #     "3018 3101 6012 5800 2002 6021 5800 2001 9085 102A",
+    # ),
 ]
 
 
