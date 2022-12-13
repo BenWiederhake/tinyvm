@@ -236,6 +236,37 @@ class Assembler:
         assert 0 <= value_register < 16
         return self.push_word(0x2200 | (addr_register << 4) | value_register)
 
+    @asm_command
+    def parse_command_lhi(self, command, args):
+        arg_list = [e.strip() for e in args.split(",")]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command 'lhi' expects exactly two arguments, got '{arg_list}' instead."
+            )
+        register = self.parse_reg(arg_list[0], "first argument to lhi")
+        if register is None:
+            # Error already reported
+            return False
+        immediate = self.parse_imm(arg_list[1], "second argument to lhi")
+        if immediate is None:
+            # Error already reported
+            return False
+        if immediate < 0:
+            return self.error(
+                f"Unsure how to load the high byte of negative word {immediate}. "
+                f"Specify the byte as a positive number instead."
+            )
+        if immediate > 0xFF:
+            if immediate & 0xFF == 0:
+                immediate >>= 8
+            else:
+                return self.error(
+                    f"Unsure how to load the high byte of a two-byte word 0x{immediate:04X}. "
+                    f"Specify the byte either as 0xAB00 or as 0xAB instead."
+                )
+        assert 0 <= register < 16
+        return self.push_word(0x4000 | (register << 8) | immediate)
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.split("#")[0]

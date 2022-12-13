@@ -136,6 +136,18 @@ ASM_TESTS = [
         """,
         "300A 3153",
     ),
+    (
+        "Load word data immediate high-only",
+        """
+        lhi r0, 0
+        lhi r1, 0x12
+        lhi r2, 0xFF
+        lhi r3, 0xAB00
+        lhi r4, 0x3400
+        lhi r5, 0xFF00
+        """,
+        "4000 4112 42FF 43AB 4434 45FF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -272,6 +284,18 @@ NEGATIVE_TESTS = [
         "Load word data immediate (garbage)",
         """
         lw r0, garbage
+        """,
+    ),
+    (
+        "Load word data immediate high-only from register",
+        """
+        lhi r0, r1
+        """,
+    ),
+    (
+        "Load word data immediate high-only invalid",
+        """
+        lhi r0, 0x1234
         """,
     ),
 ]
