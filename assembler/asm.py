@@ -167,6 +167,15 @@ class Assembler:
         assert len(reg_list) == 2
         return (reg_list[0] << 4) | reg_list[1]
 
+    def binary_command(self, command, args, high_byte):
+        assert high_byte & 0x00FF == 0
+        assert high_byte & 0xFF00 != 0
+        registers_byte = self.parse_binary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(high_byte | registers_byte)
+
     @asm_command
     def parse_command_ret(self, command, args):
         if args != "":
@@ -391,11 +400,62 @@ class Assembler:
 
     @asm_command
     def parse_command_add(self, command, args):
-        registers_byte = self.parse_binary_regs_to_byte(command, args)
-        if registers_byte is None:
-            # Error already reported
-            return False
-        return self.push_word(0x6000 | registers_byte)
+        return self.binary_command(command, args, 0x6000)
+
+    @asm_command
+    def parse_command_sub(self, command, args):
+        return self.binary_command(command, args, 0x6100)
+
+    @asm_command
+    def parse_command_mul(self, command, args):
+        return self.binary_command(command, args, 0x6200)
+
+    @asm_command
+    def parse_command_mulh(self, command, args):
+        return self.binary_command(command, args, 0x6300)
+
+    @asm_command
+    def parse_command_divu(self, command, args):
+        return self.binary_command(command, args, 0x6400)
+
+    @asm_command
+    def parse_command_divs(self, command, args):
+        return self.binary_command(command, args, 0x6500)
+
+    @asm_command
+    def parse_command_modu(self, command, args):
+        return self.binary_command(command, args, 0x6600)
+
+    @asm_command
+    def parse_command_mods(self, command, args):
+        return self.binary_command(command, args, 0x6700)
+
+    @asm_command
+    def parse_command_and(self, command, args):
+        return self.binary_command(command, args, 0x6800)
+
+    @asm_command
+    def parse_command_or(self, command, args):
+        return self.binary_command(command, args, 0x6900)
+
+    @asm_command
+    def parse_command_xor(self, command, args):
+        return self.binary_command(command, args, 0x6A00)
+
+    @asm_command
+    def parse_command_sl(self, command, args):
+        return self.binary_command(command, args, 0x6B00)
+
+    @asm_command
+    def parse_command_srl(self, command, args):
+        return self.binary_command(command, args, 0x6C00)
+
+    @asm_command
+    def parse_command_sra(self, command, args):
+        return self.binary_command(command, args, 0x6D00)
+
+    # TODO: When the VM implements the instruction "exp", implement it here (0x6E__)
+    # TODO: When the VM implements the instruction "root", implement it here (0x6F__)
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno

@@ -278,6 +278,136 @@ ASM_TESTS = [
         """,
         "6012",
     ),
+    (
+        "sub",
+        """
+        sub r0 r0
+        sub r3 r3
+        sub r7 r8
+        sub r15 r15
+        """,
+        "6100 6133 6178 61FF",
+    ),
+    (
+        "mul",
+        """
+        mul r0 r0
+        mul r3 r3
+        mul r7 r8
+        mul r15 r15
+        """,
+        "6200 6233 6278 62FF",
+    ),
+    (
+        "mulh",
+        """
+        mulh r0 r0
+        mulh r3 r3
+        mulh r7 r8
+        mulh r15 r15
+        """,
+        "6300 6333 6378 63FF",
+    ),
+    (
+        "divu",
+        """
+        divu r0 r0
+        divu r3 r3
+        divu r7 r8
+        divu r15 r15
+        """,
+        "6400 6433 6478 64FF",
+    ),
+    (
+        "divs",
+        """
+        divs r0 r0
+        divs r3 r3
+        divs r7 r8
+        divs r15 r15
+        """,
+        "6500 6533 6578 65FF",
+    ),
+    (
+        "modu",
+        """
+        modu r0 r0
+        modu r3 r3
+        modu r7 r8
+        modu r15 r15
+        """,
+        "6600 6633 6678 66FF",
+    ),
+    (
+        "mods",
+        """
+        mods r0 r0
+        mods r3 r3
+        mods r7 r8
+        mods r15 r15
+        """,
+        "6700 6733 6778 67FF",
+    ),
+    (
+        "and",
+        """
+        and r0 r0
+        and r3 r3
+        and r7 r8
+        and r15 r15
+        """,
+        "6800 6833 6878 68FF",
+    ),
+    (
+        "or",
+        """
+        or r0 r0
+        or r3 r3
+        or r7 r8
+        or r15 r15
+        """,
+        "6900 6933 6978 69FF",
+    ),
+    (
+        "xor",
+        """
+        xor r0 r0
+        xor r3 r3
+        xor r7 r8
+        xor r15 r15
+        """,
+        "6A00 6A33 6A78 6AFF",
+    ),
+    (
+        "sl",
+        """
+        sl r0 r0
+        sl r3 r3
+        sl r7 r8
+        sl r15 r15
+        """,
+        "6B00 6B33 6B78 6BFF",
+    ),
+    (
+        "srl",
+        """
+        srl r0 r0
+        srl r3 r3
+        srl r7 r8
+        srl r15 r15
+        """,
+        "6C00 6C33 6C78 6CFF",
+    ),
+    (
+        "sra",
+        """
+        sra r0 r0
+        sra r3 r3
+        sra r7 r8
+        sra r15 r15
+        """,
+        "6D00 6D33 6D78 6DFF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -540,6 +670,84 @@ NEGATIVE_TESTS = [
         "add space comma space",
         """
         add r4 , r5
+        """,
+    ),
+    (
+        "sub noargs",
+        """
+        sub
+        """,
+    ),
+    (
+        "mul noargs",
+        """
+        mul
+        """,
+    ),
+    (
+        "mulh noargs",
+        """
+        mulh
+        """,
+    ),
+    (
+        "divu noargs",
+        """
+        divu
+        """,
+    ),
+    (
+        "divs noargs",
+        """
+        divs
+        """,
+    ),
+    (
+        "modu noargs",
+        """
+        modu
+        """,
+    ),
+    (
+        "mods noargs",
+        """
+        mods
+        """,
+    ),
+    (
+        "and noargs",
+        """
+        and
+        """,
+    ),
+    (
+        "or noargs",
+        """
+        or
+        """,
+    ),
+    (
+        "xor noargs",
+        """
+        xor
+        """,
+    ),
+    (
+        "sl noargs",
+        """
+        sl
+        """,
+    ),
+    (
+        "srl noargs",
+        """
+        srl
+        """,
+    ),
+    (
+        "sra noargs",
+        """
+        sra
         """,
     ),
 ]
