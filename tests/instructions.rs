@@ -422,9 +422,9 @@ fn test_time_very_long() {
             0x5F72, // mv r2, r7 // executed 0xB505 times
                     // .label inner_loop
             0x5822, // decr r2 // executed 0xB505 * 0xB505 times
-            0x9280, // b r2 inner_loop (offset is -0x1) // executed 0xB505 * 0xB505 times
+            0x9280, // b r2 inner_loop // (offset is -0x1) // executed 0xB505 * 0xB505 times
             0x5811, // decr r1 // executed 0xB505 times
-            0x9183, // b r1 outer_loop (offset is -0x4) // executed 0xB505 times
+            0x9183, // b r1 outer_loop // (offset is -0x4) // executed 0xB505 times
             0x102D, // time // executed 0 times or 1 time, depending on how you look at it
             0x102A, // ret // executed 0 times
             // Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
@@ -963,7 +963,7 @@ fn test_branch_doc1() {
     instructions[0x0000] = 0x3301; // lw r3, 0x0001
     instructions[0x0001] = 0x4712; // lhi r7, 0x1200
     instructions[0x0002] = 0xB734; // j r7 + 0x0034
-    instructions[0x1234] = 0x9380; // b r3, -0x1
+    instructions[0x1234] = 0x9380; // b r3 -0x1
     run_test(
         &instructions,
         &[],
@@ -984,7 +984,7 @@ fn test_branch_doc1() {
 fn test_branch_doc2() {
     run_test(
         &[
-            0x9580, // b r5, -0x1
+            0x9580, // b r5 -0x1
         ],
         &[],
         1,

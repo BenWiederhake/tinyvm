@@ -498,6 +498,36 @@ ASM_TESTS = [
         """,
         "8D00 8DFF 8D78",
     ),
+    (
+        "branch simple",
+        """
+        b r0 2
+        b r1 8
+        b r7 16
+        b r8 +5
+        b r15 +0x2
+        b r7 -0x1
+        """,
+        "9000 9106 970E 9803 9F00 9780",
+    ),
+    (
+        "branch extreme positive",
+        """
+        b r3 +0x7f
+        b r4 127
+        b r5 128
+        b r6 129
+        """,
+        "937D 947D 957E 967F",
+    ),
+    (
+        "branch extreme negative",
+        """
+        b r9 -127
+        b r10 -128
+        """,
+        "99FE 9AFF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -847,6 +877,48 @@ NEGATIVE_TESTS = [
         """,
     ),
     # Skip the other compare instructions, there's not much to test anyway.
+    (
+        "branch comma",
+        """
+        b r5, 5
+        """,
+    ),
+    (
+        "branch too large",
+        """
+        b r5 130
+        """,
+    ),
+    (
+        "branch too negative",
+        """
+        b r10 -129
+        """,
+    ),
+    (
+        "branch single arg",
+        """
+        b r10
+        """,
+    ),
+    (
+        "branch to reg",
+        """
+        b r10 r5
+        """,
+    ),
+    (
+        "branch by 0",
+        """
+        b r10 0
+        """,
+    ),
+    (
+        "branch by 1",
+        """
+        b r10 1
+        """,
+    ),
 ]
 
 

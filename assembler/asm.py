@@ -244,6 +244,8 @@ class Assembler:
                 f"Command 'lw' expects exactly two arguments, got '{arg_list}' instead."
             )
         # TODO: Support immediate address
+        # TODO: Support labels
+        # TODO: Support labels with offset
         value_register = self.parse_reg(arg_list[0], "first argument to lw")
         if value_register is None:
             # Error already reported
@@ -510,6 +512,53 @@ class Assembler:
     @asm_command
     def parse_command_les(self, command, args):
         return self.binary_command(command, args, 0x8D00)
+
+    @asm_command
+    def parse_command_b(self, command, args):
+        arg_list = [e.strip() for e in args.split(" ", 1)]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two space-separated register arguments, got '{arg_list}' instead."
+            )
+        # In case some maniac writes more than one space, like "add r4  r5":
+        arg_list[1] = arg_list[1].strip()
+        condition_reg = self.parse_reg(arg_list[0], "first argument to b")
+        if condition_reg is None:
+            # Error already reported
+            return False
+        # FIXME: Support labels and labels with offset
+        # FIXME: Support long branches?
+        # FIXME: Support combined branches? ("beq", "blt", etc.)
+        offset_value = self.parse_imm(arg_list[1], "second argument to b")
+        if offset_value is None:
+            # Error already reported
+            return False
+        if offset_value >= 0xFF80:
+            return self.error(
+                f"Ambiguous offset 0x{offset_value:04X} to command '{command}': Try a value in [-128, 129] instead."
+            )
+        if not (-128 <= offset_value <= 129):
+            return self.error(
+                f"Command '{command}' can only branch by offsets in [-128, 129], but not by {offset_value}."
+                " Try using 'j' instead, which supports larger jumps."
+            )
+        if offset_value == 0:
+            return self.error(
+                f"Command '{command}' cannot encode an infinite loop (offset 0). Try using 'j' instead."
+            )
+        if offset_value == 1:
+            return self.error(
+                f"Command '{command}' cannot encode the nop-branch (offset 1). Try using 'nop' instead."
+            )
+        if offset_value < 0:
+            sign_mask = 0x80
+            offset_value = -offset_value - 1
+        else:
+            assert offset_value > 0
+            sign_mask = 0x00
+            offset_value = offset_value - 2
+        assert 0 <= offset_value <= 0x7F
+        return self.push_word(0x9000 | (condition_reg << 8) | sign_mask | offset_value)
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
