@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from enum import Enum
 import sys
 
 SEGMENT_LENGTH = 131072
@@ -17,6 +18,11 @@ def asm_command(fn):
     assert command_name not in ASM_COMMANDS
     ASM_COMMANDS[command_name] = fn
     return fn
+
+
+class ArgType(Enum):
+    REGISTER = 1
+    IMMEDIATE = 2
 
 
 class Assembler:
@@ -42,6 +48,12 @@ class Assembler:
         self.segment_words[self.current_pointer] = word
         self.current_pointer += 1
         self.current_pointer %= SEGMENT_LENGTH // 2
+        return True
+
+    def push_words(self, *words):
+        for word in words:
+            if not self.push_word(word):
+                return False
         return True
 
     def parse_reg(self, reg_string, context):
@@ -74,6 +86,36 @@ class Assembler:
             )
             return None
         return number
+
+    def parse_imm(self, imm_string, context):
+        # TODO: Add value alias support?
+        # TODO: Add inline-expression support?
+        try:
+            # "Base 0" automatically handles base detection, yay!
+            number = int(imm_string, 0)
+        except ValueError:
+            self.error(
+                f"Cannot parse immediate for {context}: Expected integer number, "
+                f"instead got '{imm_string}'. Try something like '42', '0xABCD', or '-0x123' instead."
+            )
+            return None
+        return number
+
+    def parse_reg_or_imm(self, reg_or_imm_string, context):
+        # ArgType
+        reg = self.parse_reg(reg_or_imm_string, context)
+        if reg is not None:
+            return (ArgType.REGISTER, reg)
+        # FIXME: Shouldn't report the error message about it not being a register just yet
+        imm = self.parse_imm(reg_or_imm_string, context)
+        if imm is None:
+            return None
+        if not (-0x8000 <= imm <= 0xFFFF):
+            self.error(
+                f"Immediate value {imm} (hex: {imm:+05X}) is out out bounds [-0x8000, 0xFFFF]"
+            )
+            return None
+        return (ArgType.IMMEDIATE, imm)
 
     @asm_command
     def parse_command_ret(self, command, args):
@@ -143,18 +185,36 @@ class Assembler:
                 f"Command 'lw' expects exactly two arguments, got '{arg_list}' instead."
             )
         # TODO: Support immediate address
-        # TODO: Support immediate value
         value_register = self.parse_reg(arg_list[0], "first argument to lw")
         if value_register is None:
             # Error already reported
             return False
-        addr_register = self.parse_reg(arg_list[1], "second argument to lw")
-        if addr_register is None:
+        addr = self.parse_reg_or_imm(arg_list[1], "second argument to lw")
+        if addr is None:
             # Error already reported
             return False
-        assert 0 <= addr_register < 16
-        assert 0 <= value_register < 16
-        return self.push_word(0x2100 | (addr_register << 4) | value_register)
+        if addr[0] == ArgType.REGISTER:
+            addr_register = addr[1]
+            assert 0 <= value_register < 16
+            assert 0 <= addr_register < 16
+            return self.push_word(0x2100 | (addr_register << 4) | value_register)
+        elif addr[0] == ArgType.IMMEDIATE:
+            imm_value = addr[1]
+            assert 0 <= value_register < 16
+            assert -0x8000 <= imm_value <= 0xFFFF
+            if -0x80 <= imm_value <= 0x7F or 0xFF80 <= imm_value <= 0xFFFF:
+                return self.push_word(
+                    0x3000 | (value_register << 8) | (imm_value & 0xFF)
+                )
+            else:
+                low_byte = imm_value & 0xFF
+                high_byte = (imm_value & 0xFF00) >> 8
+                return self.push_words(
+                    0x3000 | (value_register << 8) | low_byte,
+                    0x4000 | (value_register << 8) | high_byte,
+                )
+        else:
+            raise AssertionError(f"Unexpected argtype {addr[0]} in {addr}")
 
     @asm_command
     def parse_command_lwi(self, command, args):

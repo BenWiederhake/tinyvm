@@ -105,6 +105,37 @@ ASM_TESTS = [
         """,
         "2100 2110 21AF",
     ),
+    (
+        "Load word data immediate (single insn)",
+        """
+        lw r0, 0x0000
+        lw r1, -1
+        lw r5, 42
+        lw r8, 0x7F
+        lw r9, 0xFF80
+        lw r10, 0xFFFE
+        """,
+        "3000 31FF 352A 387F 3980 3AFE",
+    ),
+    (
+        "Load word data immediate (double insn)",
+        """
+        lw r0, 0x0081
+        lw r1, -0x81
+        lw r2, 0xABCD
+        lw r3, 0x1234
+        lw r9, 0xFF7F
+        """,
+        "3081 4000 317F 41FF 32CD 42AB 3334 4312 397F 49FF",
+    ),
+    (
+        "Load word data immediate (alternate bases)",
+        """
+        lw r0, 0b1010
+        lw r1, 0o123
+        """,
+        "300A 3153",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -220,16 +251,27 @@ NEGATIVE_TESTS = [
         """,
     ),
     (
-        "Load word data immediate address-as-used-value",
-        # FIXME: This should be a feature!
-        """
-        lw r4, 0x1234
-        """,
-    ),
-    (
         "Load word data immediate value",
         """
         lw 0x1234, r5
+        """,
+    ),
+    (
+        "Load word data immediate (too low)",
+        """
+        lw r1, -0x8001
+        """,
+    ),
+    (
+        "Load word data immediate (too high)",
+        """
+        lw r0, 65536
+        """,
+    ),
+    (
+        "Load word data immediate (garbage)",
+        """
+        lw r0, garbage
         """,
     ),
 ]
