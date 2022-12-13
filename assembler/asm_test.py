@@ -665,6 +665,25 @@ ASM_TESTS = [
         """,
         "FFFF 8000 8001",
     ),
+    (
+        "label simple",
+        """
+        .label _hello_world
+        ret
+        """,
+        "102A",
+    ),
+    (
+        "label multi",
+        """
+        .label _hello_world
+        .label _hello_world_again
+        ret
+        .label _hello_more_world
+        lw r4, 0x56
+        """,
+        "102A 3456",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1165,6 +1184,98 @@ NEGATIVE_TESTS = [
         .word 0x0000
         .offset 0
         .word 0x0000
+        """,
+    ),
+    (
+        "label no name",
+        """
+        .label
+        """,
+    ),
+    (
+        "label bad name",
+        """
+        .label 1234
+        """,
+    ),
+    (
+        "label no underscore",
+        """
+        .label foobar
+        """,
+    ),
+    (
+        "label too short",
+        """
+        .label _
+        """,
+    ),
+    (
+        "label multidef",
+        """
+        .label _hello_world
+        ret
+        .label _hello_world
+        """,
+    ),
+    (
+        "label special $",
+        """
+        .label _$hello_world
+        """,
+    ),
+    (
+        "label special %",
+        """
+        .label _%hello_world
+        """,
+    ),
+    (
+        "label special &",
+        """
+        .label _&hello_world
+        """,
+    ),
+    (
+        "label special (",
+        """
+        .label _(hello_world
+        """,
+    ),
+    (
+        "label special )",
+        """
+        .label _)hello_world
+        """,
+    ),
+    (
+        "label special =",
+        """
+        .label _=hello_world
+        """,
+    ),
+    (
+        "label special single quote",
+        """
+        .label _'hello_world
+        """,
+    ),
+    (
+        "label special double quote",
+        """
+        .label _"hello_world
+        """,
+    ),
+    (
+        "label special [",
+        """
+        .label _[hello_world
+        """,
+    ),
+    (
+        "label special ]",
+        """
+        .label _]hello_world
         """,
     ),
 ]

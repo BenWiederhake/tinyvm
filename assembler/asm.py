@@ -41,6 +41,7 @@ class Assembler:
         self.segment_words = [None] * (SEGMENT_LENGTH // 2)
         self.current_lineno = None
         self.current_pointer = 0x0000
+        self.known_labels = dict()
 
     def error(self, msg):
         if DEBUG_OUTPUT or ERROR_OUTPUT:
@@ -704,6 +705,34 @@ class Assembler:
         if value < 0:
             value &= 0xFFFF
         return self.push_word(value)
+
+    @asm_directive
+    def parse_directive_label(self, command, args):
+        args = args.strip()
+        arg_parts = args.split(" ", 1)
+        if len(arg_parts) > 1 or not arg_parts[0]:
+            return self.error(
+                f"Directive '.label' takes exactly one argument (the literal label name), found '{args}' instead"
+            )
+        label_name = arg_parts[0]
+        if label_name[0] != "_" or len(label_name) < 2:
+            return self.error(
+                f"Label name must start with a '_' and contain at least two characters, found name '{args}' instead"
+            )
+        special_chars = "$%&()='\"[]"
+        if any(c in label_name for c in special_chars):
+            return self.error(
+                f"Label name must not contain any special characters ({special_chars}), found name '{args}' instead"
+            )
+        if label_name in self.known_labels.keys():
+            old_offset, old_line = self.known_labels[label_name]
+            return self.error(
+                f"Label '{label_name}' already defined in line {old_line} (offset {old_offset:04X})"
+            )
+        self.known_labels[label_name] = (self.current_pointer, self.current_lineno)
+        # FIXME: Resolve previous forward-references to this label
+        # No codegen
+        return True
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
