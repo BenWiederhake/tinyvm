@@ -87,6 +87,15 @@ ASM_TESTS = [
         """,
         "2000 2010 20AF",
     ),
+    (
+        "Load word instruction",
+        """
+        lwi r0, r0
+        lwi r0, r1
+        lwi r15, r10
+        """,
+        "2200 2210 22AF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -174,6 +183,31 @@ NEGATIVE_TESTS = [
         "Store word underscore register",
         """
         sw r1_3, r1
+        """,
+    ),
+    (
+        "Store word immediate address",
+        """
+        sw 0x1234, r1
+        """,
+    ),
+    (
+        "Store word immediate value",
+        """
+        sw r4, 0x1234
+        """,
+    ),
+    (
+        "Load word instruction immediate value",
+        """
+        lwi 0x1234, r4
+        """,
+    ),
+    (
+        "Load word instruction immediate address",
+        # FIXME: This should be a feature!
+        """
+        lwi r5, 0x1234
         """,
     ),
 ]
