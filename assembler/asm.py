@@ -678,6 +678,26 @@ class Assembler:
         # No codegen
         return True
 
+    @asm_directive
+    def parse_directive_word(self, command, args):
+        args = args.strip()
+        arg_parts = args.split(" ", 1)
+        if len(arg_parts) > 1 or not arg_parts[0]:
+            return self.error(
+                f"Directive '.word' takes exactly one argument (the literal word), found '{args}' instead"
+            )
+        value = self.parse_imm(arg_parts[0], "argument of .offset")
+        if value is None:
+            # Error was already reported
+            return False
+        if not (-0x8000 <= value <= 0xFFFF):
+            return self.error(
+                f"Argument to '.word' must be in range [-0x8000, 0xFFFF], found '{value}' instead"
+            )
+        if value < 0:
+            value &= 0xFFFF
+        return self.push_word(value)
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.split("#")[0]

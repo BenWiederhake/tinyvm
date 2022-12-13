@@ -649,6 +649,25 @@ ASM_TESTS = [
         """,
         "3456" + (" 0000" * (0x1_0000 - 2)) + " 3123",
     ),
+    (
+        "literal simple",
+        """
+        .word 0xABCD
+        .word 1234
+        .word 0
+        .word -9
+        """,
+        "ABCD 04D2 0000 FFF7",
+    ),
+    (
+        "literal extreme",
+        """
+        .word 0xFFFF
+        .word -0x8000
+        .word -0x7FFF
+        """,
+        "FFFF 8000 8001",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1111,6 +1130,24 @@ NEGATIVE_TESTS = [
         ret
         ret
         ret # Bam!
+        """,
+    ),
+    (
+        "literal too positive",
+        """
+        .word 65536
+        """,
+    ),
+    (
+        "literal too negative decimal",
+        """
+        .word -32769
+        """,
+    ),
+    (
+        "literal too negative hex",
+        """
+        .word -0x8001
         """,
     ),
 ]
