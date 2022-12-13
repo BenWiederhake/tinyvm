@@ -143,6 +143,30 @@ class Assembler:
         # I probably fucked up the definitions there, but I'm too lazy to change it now.
         return (reg_list[1] << 4) | reg_list[0]
 
+    def parse_binary_regs_to_byte(self, command, args):
+        # In case of sub, div, mod, etc. the usual argument order is just stupid.
+        # So we change it for *all* binary commands, and also use a different separator
+        # to ensure that the user notices the "unusual" order, specifically the space character.
+        arg_list = [e.strip() for e in args.split(" ", 1)]
+        if len(arg_list) != 2:
+            self.error(
+                f"Command '{command}' expects exactly two space-separated register arguments, got '{arg_list}' instead."
+            )
+            return None
+        # In case some maniac writes more than one space, like "add r4  r5":
+        arg_list[1] = arg_list[1].strip()
+        reg_list = []
+        for i, arg in enumerate(arg_list):
+            register = self.parse_reg(
+                arg, f"argument #{i + 1} (1-indexed) to {command}"
+            )
+            if register is None:
+                # Error already reported
+                return None
+            reg_list.append(register)
+        assert len(reg_list) == 2
+        return (reg_list[0] << 4) | reg_list[1]
+
     @asm_command
     def parse_command_ret(self, command, args):
         if args != "":
@@ -364,6 +388,14 @@ class Assembler:
                 f"Command 'nop' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0x5F00)
+
+    @asm_command
+    def parse_command_add(self, command, args):
+        registers_byte = self.parse_binary_regs_to_byte(command, args)
+        if registers_byte is None:
+            # Error already reported
+            return False
+        return self.push_word(0x6000 | registers_byte)
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno

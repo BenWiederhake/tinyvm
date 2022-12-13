@@ -261,6 +261,23 @@ ASM_TESTS = [
         """,
         "5F00 5F00 5F00",
     ),
+    (
+        "add",
+        """
+        add r0 r0
+        add r3 r3
+        add r7 r8
+        add r15 r15
+        """,
+        "6000 6033 6078 60FF",
+    ),
+    (
+        "add multi-space",
+        """
+        add r1    r2
+        """,
+        "6012",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -493,6 +510,36 @@ NEGATIVE_TESTS = [
         "popcnt no args",
         """
         popcnt
+        """,
+    ),
+    (
+        "add comma space",
+        """
+        add r4, r5
+        """,
+    ),
+    (
+        "add comma nospace",
+        """
+        add r4,r5
+        """,
+    ),
+    (
+        "add three args",
+        """
+        add r4 r5 r6
+        """,
+    ),
+    (
+        "add noargs",
+        """
+        add
+        """,
+    ),
+    (
+        "add space comma space",
+        """
+        add r4 , r5
         """,
     ),
 ]
