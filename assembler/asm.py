@@ -544,7 +544,7 @@ class Assembler:
             )
         if offset_value == 0:
             return self.error(
-                f"Command '{command}' cannot encode an infinite loop (offset 0). Try using 'j' instead."
+                f"Command '{command}' cannot encode an infinite loop (offset 0). Try using 'j reg' instead."
             )
         if offset_value == 1:
             return self.error(
@@ -559,6 +559,83 @@ class Assembler:
             offset_value = offset_value - 2
         assert 0 <= offset_value <= 0x7F
         return self.push_word(0x9000 | (condition_reg << 8) | sign_mask | offset_value)
+
+    def command_j_register(self, register, offset):
+        raise NotImplementedError()
+
+    def command_j_immediate(self, offset):
+        # FIXME: Support long jumps
+        assert offset is not None
+        if offset >= 0xFF80:
+            return self.error(
+                f"Ambiguous offset 0x{offset:04X} to command 'j'. Note that this value is relative."
+            )
+        if not (-(1 + 0x7FF) <= offset <= (2 + 0x7FF)):
+            return self.error(
+                f"Command 'j' can only branch by offsets in [-2048, 2049], but not by {offset}."
+                " Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+            )
+        if offset == 0:
+            return self.error(
+                "Command 'j' cannot encode an infinite loop (offset 0). Try using 'j reg' instead."
+            )
+        if offset == 1:
+            return self.error(
+                "Command 'j' cannot encode the nop-jump (offset 1). Try using 'nop' instead."
+            )
+        if offset < 0:
+            sign_mask = 0x0800
+            offset = -offset - 1
+        else:
+            assert offset > 0
+            sign_mask = 0
+            offset = offset - 2
+        assert 0 <= offset <= 0x7FF
+        return self.push_word(0xA000 | sign_mask | offset)
+
+    def command_j_onearg(self, arg):
+        if not arg:
+            return self.error(
+                "Command 'j' expects either one or two arguments, got none instead."
+            )
+        # FIXME: Support labels and labels with offset
+        reg_or_imm = self.parse_reg_or_imm(arg, "first argument of one-arg-j")
+        if reg_or_imm is None:
+            return self.error(
+                f"Command 'j' with a single argument expects either immediate or register, got '{arg}' instead."
+                " Note that offsets have to use a space, like 'r4 +5'."
+            )
+        if reg_or_imm[0] == ArgType.REGISTER:
+            reg = reg_or_imm[1]
+            return self.command_j_register(reg, 0)
+        elif reg_or_imm[0] == ArgType.IMMEDIATE:
+            imm = reg_or_imm[1]
+            return self.command_j_immediate(imm)
+        raise AssertionError(f"Unexpected type {reg_or_imm}")
+
+    def command_j_twoarg(self, reg_string, imm_string):
+        reg = self.parse_reg(reg_string, "first argument to two-arg-j")
+        if reg is None:
+            return self.error(
+                f"Command 'j' with two arguments expects first a register, got '{reg_string}' instead."
+                " Note that no comma should be used."
+            )
+        imm = self.parse_imm(imm_string, "second argument to two-arg-j")
+        if imm is None:
+            return self.error(
+                f"Command 'j' with two arguments expects second an offset, got '{imm_string}' instead."
+            )
+        return self.command_j_register(reg, imm)
+
+    @asm_command
+    def parse_command_j(self, command, args):
+        args = args.strip()
+        arg_parts = args.split(" ", 1)
+        if len(arg_parts) == 1:
+            return self.command_j_onearg(arg_parts[0])
+        if len(arg_parts) == 2:
+            return self.command_j_twoarg(arg_parts[0], arg_parts[1])
+        raise AssertionError(f"Wtf .split(, 1) returned {arg_parts}?")
 
     def parse_line(self, line, lineno):
         self.current_lineno = lineno

@@ -528,6 +528,39 @@ ASM_TESTS = [
         """,
         "99FE 9AFF",
     ),
+    (
+        "jump by immediate simple",
+        """
+        j +5
+        j +2
+        j -1
+        j -42
+        """,
+        "A003 A000 A800 A829",
+    ),
+    (
+        "jump by immediate extreme positive",
+        """
+        j 123
+        j 0x123
+        j 0x7FE
+        j 0x7FF
+        j 0x800
+        j 0x801
+        """,
+        "A079 A121 A7FC A7FD A7FE A7FF",
+    ),
+    (
+        "jump by immediate extreme negative",
+        """
+        j -123
+        j -0x123
+        j -0x7FE
+        j -0x7FF
+        j -0x800
+        """,
+        "A87A A922 AFFD AFFE AFFF",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -917,6 +950,36 @@ NEGATIVE_TESTS = [
         "branch by 1",
         """
         b r10 1
+        """,
+    ),
+    (
+        "jump noarg",
+        """
+        j
+        """,
+    ),
+    (
+        "jump two arg immediate, comma",
+        """
+        j 0x12, 0x34
+        """,
+    ),
+    (
+        "jump two arg immediate, space",
+        """
+        j 0x12 0x34
+        """,
+    ),
+    (
+        "jump by immediate extreme positive",
+        """
+        j 0x802
+        """,
+    ),
+    (
+        "jump by immediate extreme negative",
+        """
+        j -0x801
         """,
     ),
 ]
