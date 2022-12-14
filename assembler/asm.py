@@ -36,12 +36,54 @@ class ArgType(Enum):
     IMMEDIATE = 2
 
 
+class ForwardReference:
+    def __init__(self, bound_method, orig_lineno, orig_pointer, data):
+        self.bound_method = bound_method
+        self.orig_lineno = orig_lineno
+        self.orig_pointer = orig_pointer
+        self.data = data
+
+    def resolve(self):
+        return self.bound_method(self.data)
+
+
+class Recursion:
+    def __init__(self, assembler, spoofed_lineno, spoofed_pointer):
+        self.assembler = assembler
+        self.lineno = spoofed_lineno
+        self.pointer = spoofed_pointer
+        self.is_entered = False
+
+    def do_switch(self):
+        self.assembler.current_lineno, self.lineno = (
+            self.lineno,
+            self.assembler.current_lineno,
+        )
+        self.assembler.current_pointer, self.pointer = (
+            self.pointer,
+            self.assembler.current_pointer,
+        )
+
+    def __enter__(self):
+        assert not self.is_entered  # Not re-entrant
+        self.is_entered = True
+        self.do_switch()
+        # Forbid "with … as …"
+        return None
+
+    def __exit__(self, _type, _value, _traceback):
+        assert self.is_entered
+        self.is_entered = False
+        self.do_switch()
+
+
 class Assembler:
     def __init__(self):
         self.segment_words = [None] * (SEGMENT_LENGTH // 2)
         self.current_lineno = None
         self.current_pointer = 0x0000
         self.known_labels = dict()
+        self.forward_references = dict()
 
     def error(self, msg):
         if DEBUG_OUTPUT or ERROR_OUTPUT:
@@ -730,7 +772,16 @@ class Assembler:
                 f"Label '{label_name}' already defined in line {old_line} (offset {old_offset:04X})"
             )
         self.known_labels[label_name] = (self.current_pointer, self.current_lineno)
-        # FIXME: Resolve previous forward-references to this label
+        old_references = self.forward_references.get(label_name)
+        if old_references is not None:
+            any_reference_failed = False
+            del self.forward_references[label_name]
+            for fwd_ref in old_references:
+                with Recursion(self, fwd_ref.orig_lineno, fwd_ref.orig_pointer):
+                    if not fwd_ref.resolve():
+                        any_reference_failed = True
+            if any_reference_failed:
+                return self.error(f"When label {label_name} was defined.")
         # No codegen
         return True
 
@@ -758,6 +809,16 @@ class Assembler:
 
     def segment_bytes(self):
         assert len(self.segment_words) == 65536
+        if self.forward_references:
+            error_text = ", ".join(
+                f"line {fwd_ref.orig_lineno} at offset {fwd_ref.orig_pointer} references label {label_name}"
+                for label_name, fwd_refs in self.forward_references.items()
+                for fwd_ref in fwd_refs
+            )
+            self.error(
+                f"Found end of asm text, but some forward references are unresolved: {error_text}"
+            )
+            return None
         segment = bytearray(SEGMENT_LENGTH)
         for i, word in enumerate(self.segment_words):
             if word is not None:
