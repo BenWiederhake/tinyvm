@@ -1159,6 +1159,14 @@ NEGATIVE_TESTS = [
         mov r1, r1
         """,
     ),
+    (
+        "overwrite zeros",
+        """
+        .word 0x0000
+        .offset 0
+        .word 0x0000
+        """,
+    ),
 ]
 
 TESTS_INSTRUCTIONS_RS = [

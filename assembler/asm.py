@@ -38,7 +38,7 @@ class ArgType(Enum):
 
 class Assembler:
     def __init__(self):
-        self.segment_words = [0] * (SEGMENT_LENGTH // 2)
+        self.segment_words = [None] * (SEGMENT_LENGTH // 2)
         self.current_lineno = None
         self.current_pointer = 0x0000
 
@@ -52,7 +52,7 @@ class Assembler:
         if DEBUG_OUTPUT:
             print(f"  pushing {word:04X}")
         assert 0 <= word <= 0xFFFF
-        if self.segment_words[self.current_pointer] != 0:
+        if self.segment_words[self.current_pointer] is not None:
             return self.error(
                 f"Would overwrite word {self.segment_words[self.current_pointer]} at {self.current_pointer:04X}."
             )
@@ -731,8 +731,9 @@ class Assembler:
         assert len(self.segment_words) == 65536
         segment = bytearray(SEGMENT_LENGTH)
         for i, word in enumerate(self.segment_words):
-            segment[2 * i] = word >> 8
-            segment[2 * i + 1] = word & 0xFF
+            if word is not None:
+                segment[2 * i] = word >> 8
+                segment[2 * i + 1] = word & 0xFF
         return bytes(segment)
 
 
