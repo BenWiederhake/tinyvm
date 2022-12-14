@@ -153,23 +153,51 @@ class Assembler:
                 f"instead got '{imm_string}'. Try something like '42', '0xABCD', or '-0x123' instead."
             )
             return None
-        return number
-
-    def parse_reg_or_imm(self, reg_or_imm_string, context):
-        # ArgType
-        reg = self.parse_reg(reg_or_imm_string, context)
-        if reg is not None:
-            return (ArgType.REGISTER, reg)
-        # FIXME: Shouldn't report the error message about it not being a register just yet
-        imm = self.parse_imm(reg_or_imm_string, context)
-        if imm is None:
-            return None
-        if not (-0x8000 <= imm <= 0xFFFF):
+        if not (-0x8000 <= number <= 0xFFFF):
             self.error(
-                f"Immediate value {imm} (hex: {imm:+05X}) is out out bounds [-0x8000, 0xFFFF]"
+                f"Immediate value {number} (hex: {number:+05X}) in {context} is out of bounds [-0x8000, 0xFFFF]"
             )
             return None
-        return (ArgType.IMMEDIATE, imm)
+        return number
+
+    def parse_label(self, label_name, context):
+        if label_name[0] != "_" or len(label_name) < 2:
+            self.error(
+                f"Label name for {context} must start with a '_' and contain"
+                f" at least two characters, found name '{label_name}' instead"
+            )
+            return None
+        special_chars = "$%&()='\"[]"
+        if any(c in label_name for c in special_chars):
+            self.error(
+                f"Label name for {context} must not contain any special characters"
+                f" ({special_chars}), found name '{label_name}' instead"
+            )
+            return None
+        return label_name
+
+    def parse_some(self, accepted_types, reg_or_imm_string, context):
+        if ArgType.REGISTER in accepted_types:
+            reg = self.parse_reg(reg_or_imm_string, context)
+            if reg is not None:
+                return (ArgType.REGISTER, reg)
+            # FIXME: Shouldn't report the error message about it not being a register just yet
+        if ArgType.IMMEDIATE in accepted_types:
+            imm = self.parse_imm(reg_or_imm_string, context)
+            if imm is not None:
+                return (ArgType.IMMEDIATE, imm)
+            # FIXME: Shouldn't report the error message about it not being a register just yet
+        # if ArgType.LABEL in accepted_types:
+        #     label_name = self.parse_label(reg_or_imm_string, context)
+        #     if label_name is not None:
+        #         return (ArgType.LABEL, label_name)
+        # FIXME: Should report all errors in a sensible combination
+        return None
+
+    def parse_reg_or_imm(self, reg_or_imm_string, context):
+        return self.parse_some(
+            (ArgType.REGISTER, ArgType.IMMEDIATE), reg_or_imm_string, context
+        )
 
     def parse_unary_regs_to_byte(self, command, args):
         arg_list = [e.strip() for e in args.split(",")]
@@ -574,26 +602,7 @@ class Assembler:
     def parse_command_les(self, command, args):
         return self.binary_command(command, args, 0x8D00)
 
-    @asm_command
-    def parse_command_b(self, command, args):
-        arg_list = [e.strip() for e in args.split(" ", 1)]
-        if len(arg_list) != 2:
-            return self.error(
-                f"Command '{command}' expects exactly two space-separated register arguments, got '{arg_list}' instead."
-            )
-        # In case some maniac writes more than one space, like "add r4  r5":
-        arg_list[1] = arg_list[1].strip()
-        condition_reg = self.parse_reg(arg_list[0], "first argument to b")
-        if condition_reg is None:
-            # Error already reported
-            return False
-        # FIXME: Support labels and labels with offset
-        # FIXME: Support long branches?
-        # FIXME: Support combined branches? ("beq", "blt", etc.)
-        offset_value = self.parse_imm(arg_list[1], "second argument to b")
-        if offset_value is None:
-            # Error already reported
-            return False
+    def emit_b_by_value(self, command, condition_reg, offset_value):
         if offset_value >= 0xFF80:
             return self.error(
                 f"Ambiguous offset 0x{offset_value:04X} to command '{command}': Try a value in [-128, 129] instead."
@@ -620,6 +629,28 @@ class Assembler:
             offset_value = offset_value - 2
         assert 0 <= offset_value <= 0x7F
         return self.push_word(0x9000 | (condition_reg << 8) | sign_mask | offset_value)
+
+    @asm_command
+    def parse_command_b(self, command, args):
+        arg_list = [e.strip() for e in args.split(" ", 1)]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two space-separated register arguments, got '{arg_list}' instead."
+            )
+        # In case some maniac writes more than one space, like "add r4  r5":
+        arg_list[1] = arg_list[1].strip()
+        condition_reg = self.parse_reg(arg_list[0], "first argument to b")
+        if condition_reg is None:
+            # Error already reported
+            return False
+        # FIXME: Support labels and labels with offset
+        # FIXME: Support long branches?
+        # FIXME: Support combined branches? ("beq", "blt", etc.)
+        offset_value = self.parse_imm(arg_list[1], "second argument to b")
+        if offset_value is None:
+            # Error already reported
+            return False
+        return self.emit_b_by_value(command, condition_reg, offset_value)
 
     def command_j_register(self, register, offset):
         if offset >= 0xFF80:
@@ -736,14 +767,10 @@ class Assembler:
             return self.error(
                 f"Directive '.word' takes exactly one argument (the literal word), found '{args}' instead"
             )
-        value = self.parse_imm(arg_parts[0], "argument of .offset")
+        value = self.parse_imm(arg_parts[0], "argument of .word")
         if value is None:
             # Error was already reported
             return False
-        if not (-0x8000 <= value <= 0xFFFF):
-            return self.error(
-                f"Argument to '.word' must be in range [-0x8000, 0xFFFF], found '{value}' instead"
-            )
         if value < 0:
             value &= 0xFFFF
         return self.push_word(value)
@@ -756,16 +783,10 @@ class Assembler:
             return self.error(
                 f"Directive '.label' takes exactly one argument (the literal label name), found '{args}' instead"
             )
-        label_name = arg_parts[0]
-        if label_name[0] != "_" or len(label_name) < 2:
-            return self.error(
-                f"Label name must start with a '_' and contain at least two characters, found name '{args}' instead"
-            )
-        special_chars = "$%&()='\"[]"
-        if any(c in label_name for c in special_chars):
-            return self.error(
-                f"Label name must not contain any special characters ({special_chars}), found name '{args}' instead"
-            )
+        label_name = self.parse_label(arg_parts[0], "argument of .label")
+        if label_name is None:
+            # Error already reported
+            return False
         if label_name in self.known_labels.keys():
             old_offset, old_line = self.known_labels[label_name]
             return self.error(
