@@ -4,6 +4,35 @@ from collections import Counter
 import asm
 import unittest
 
+
+class ModTests(unittest.TestCase):
+    def test_simple(self):
+        self.assertEqual(0, asm.mod_s16(0))
+
+    def test_identity(self):
+        identities = [1, -1, 2, -2, 0x1234, 0x7FFE, 0x7FFF, -0x1234, -0x7FFF, -0x8000]
+        for i, value in enumerate(identities):
+            with self.subTest(i=i):
+                self.assertEqual(value, asm.mod_s16(value))
+
+    def test_wrapping(self):
+        pairs = [
+            (0x8000, -0x8000),
+            (0x8001, -0x7FFF),
+            (0x8002, -0x7FFE),
+            (0xFFFE, -2),
+            (0xFFFF, -1),
+            (0x10000, 0),
+            (-0x8001, 0x7FFF),
+            (-0x8002, 0x7FFE),
+            (-0xFFFF, 1),
+            (-0x10000, 0),
+        ]
+        for given, expected in pairs:
+            with self.subTest(given=given):
+                self.assertEqual(expected, asm.mod_s16(given))
+
+
 ASM_TESTS = [
     ("empty", "", ""),
     (

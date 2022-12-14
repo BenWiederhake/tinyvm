@@ -9,6 +9,10 @@ DEBUG_OUTPUT = False
 ERROR_OUTPUT = True
 
 
+def mod_s16(value):
+    return (value + 0x8000) % 0x1_0000 - 0x8000
+
+
 def asm_command(fn):
     name = fn.__name__
     prefix = "parse_command_"
