@@ -371,7 +371,7 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'sw' expects exactly two arguments, got '{arg_list}' instead."
+                f"Command 'sw' expects exactly two comma-separated arguments, got {arg_list} instead."
             )
         # TODO: Support immediates?
         addr_register = self.parse_reg(arg_list[0], "first argument to sw")
@@ -906,7 +906,7 @@ class Assembler:
         command_fn = ASM_COMMANDS.get(command)
         if command_fn is None:
             return self.error(
-                f"Command '{command}' not found. Did you mean any of {ASM_COMMANDS.keys()}' instead?"
+                f"Command '{command}' not found. Did you mean any of {sorted(list(ASM_COMMANDS.keys()))}' instead?"
             )
 
         return command_fn(self, command, args)

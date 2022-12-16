@@ -940,14 +940,18 @@ NEGATIVE_TESTS = [
         """
         garbage
         """,
-        None,
+        [
+            "line 1: Command 'garbage' not found. Did you mean any of ['.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
+        ],
     ),
     (
         "return with arg",
         """
         ret 42
         """,
-        None,
+        [
+            "line 1: Command 'ret' does not take any arguments (expected end of line, found '42' instead)"
+        ],
     ),
     (
         "late garbage",
@@ -955,7 +959,9 @@ NEGATIVE_TESTS = [
         ret
         garbage
         """,
-        None,
+        [
+            "line 2: Command 'garbage' not found. Did you mean any of ['.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
+        ],
     ),
     (
         "late return with arg",
@@ -963,105 +969,136 @@ NEGATIVE_TESTS = [
         ret
         ret 42
         """,
-        None,
+        [
+            "line 2: Command 'ret' does not take any arguments (expected end of line, found '42' instead)"
+        ],
     ),
     (
         "CPUID with arg",
         """
         cpuid 42
         """,
-        None,
+        [
+            "line 1: Command 'cpuid' does not take any arguments (expected end of line, found '42' instead)"
+        ],
     ),
     (
         "Debug-dump with arg",
         """
         debug 1337
         """,
-        None,
+        [
+            "line 1: Command 'debug' does not take any arguments (expected end of line, found '1337' instead)"
+        ],
     ),
     (
         "Time with arg",
         """
         time 0x42
         """,
-        None,
+        [
+            "line 1: Command 'time' does not take any arguments (expected end of line, found '0x42' instead)"
+        ],
     ),
     (
         "nop with arg imm",
         """
         nop 0x42
         """,
-        None,
+        [
+            "line 1: Command 'nop' does not take any arguments (expected end of line, found '0x42' instead)"
+        ],
     ),
     (
         "nop with arg reg",
         """
         nop r5
         """,
-        None,
+        [
+            "line 1: Command 'nop' does not take any arguments (expected end of line, found 'r5' instead)"
+        ],
     ),
     (
         "Store word no arg",
         """
         sw
         """,
-        None,
+        [
+            "line 1: Command 'sw' expects exactly two comma-separated arguments, got [''] instead."
+        ],
     ),
     (
         "Store word one arg",
         """
         sw r4
         """,
-        None,
+        [
+            "line 1: Command 'sw' expects exactly two comma-separated arguments, got ['r4'] instead."
+        ],
     ),
     (
         "Store word no comma",
         """
         sw r4 r4
         """,
-        None,
+        [
+            "line 1: Command 'sw' expects exactly two comma-separated arguments, got ['r4 r4'] instead."
+        ],
     ),
     (
         "Store word too many",
         """
         sw r4, r4, r4
         """,
-        None,
+        [
+            "line 1: Command 'sw' expects exactly two comma-separated arguments, got ['r4', 'r4', 'r4'] instead."
+        ],
     ),
     (
         "Store word illegal register",
         """
         sw r16, r1
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to sw: Expected register with index in 0,1,…,15, instead got 'r16'. Try something like 'r0' instead."
+        ],
     ),
     (
         "Store word other illegal register",
         """
         sw r4, r16
         """,
-        None,
+        [
+            "line 1: Cannot parse register for second argument to sw: Expected register with index in 0,1,…,15, instead got 'r16'. Try something like 'r0' instead."
+        ],
     ),
     (
         "Store word underscore register",
         """
         sw r1_3, r1
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to sw: Refusing underscores in register index 'r1_3'. Try something like 'r0' instead."
+        ],
     ),
     (
         "Store word immediate address",
+        # FIXME: This would be a nifty feature though!
         """
         sw 0x1234, r1
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to sw: Expected register (beginning with 'r'), instead got '0x1234'. Try something like 'r0' instead."
+        ],
     ),
     (
         "Store word immediate value",
         """
         sw r4, 0x1234
         """,
-        None,
+        [
+            "line 1: Cannot parse register for second argument to sw: Expected register (beginning with 'r'), instead got '0x1234'. Try something like 'r0' instead."
+        ],
     ),
     (
         "Load word instruction immediate value",
