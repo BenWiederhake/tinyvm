@@ -1478,9 +1478,55 @@ NEGATIVE_TESTS = [
         """
         lt
         """,
-        None,
+        [
+            "line 1: Command 'lt' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
-    # Skip the other compare instructions, there's not much to test anyway.
+    (
+        "le one-arg",
+        """
+        le r3
+        """,
+        [
+            "line 1: Command 'le' expects exactly two space-separated register arguments, got ['r3'] instead."
+        ],
+    ),
+    (
+        "gt reg imm",
+        """
+        gt r4 1234
+        """,
+        [
+            "line 1: Cannot parse register for argument #2 (1-indexed) to gt: Expected register (beginning with 'r'), instead got '1234'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "ge imm reg",
+        """
+        ge 1234 r5
+        """,
+        [
+            "line 1: Cannot parse register for argument #1 (1-indexed) to ge: Expected register (beginning with 'r'), instead got '1234'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "eq comma-arg",
+        """
+        eq r3, r5
+        """,
+        [
+            "line 1: Cannot parse register for argument #1 (1-indexed) to eq: Expected register with numeric index, instead got 'r3,'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "ne three-arg",
+        """
+        ne r3 r4 r5
+        """,
+        [
+            "line 1: Cannot parse register for argument #2 (1-indexed) to ne: Expected register with numeric index, instead got 'r4 r5'. Try something like 'r0' instead."
+        ],
+    ),
     (
         "branch comma",
         """
