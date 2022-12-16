@@ -132,7 +132,7 @@ class Assembler:
         assert 0 <= word <= 0xFFFF
         if self.segment_words[self.current_pointer] is not None:
             return self.error(
-                f"Would overwrite word 0x{self.segment_words[self.current_pointer]:04X} at 0x{self.current_pointer:04X}."
+                f"Attempted to overwrite word 0x{self.segment_words[self.current_pointer]:04X} at 0x{self.current_pointer:04X} with 0x{word:04X}."
             )
         self.segment_words[self.current_pointer] = word
         self.advance(1)

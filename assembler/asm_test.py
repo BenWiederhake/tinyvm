@@ -1668,7 +1668,7 @@ NEGATIVE_TESTS = [
         """
         .offset -1
         """,
-        None,
+        ["line 1: Argument to '.offset' must be positive, found '-1' instead"],
     ),
     (
         "offset overwrite",
@@ -1677,19 +1677,19 @@ NEGATIVE_TESTS = [
         .offset 0
         ret
         """,
-        None,
+        ["line 3: Attempted to overwrite word 0x102A at 0x0000 with 0x102A."],
     ),
     (
         "offset overwrite indirect",
         """
         .offset 2
-        ret
+        lw r4, 0x56
         .offset 0
         ret
         ret
         ret # Bam!
         """,
-        None,
+        ["line 6: Attempted to overwrite word 0x3456 at 0x0002 with 0x102A."],
     ),
     (
         "literal too positive",
