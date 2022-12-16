@@ -1105,7 +1105,9 @@ NEGATIVE_TESTS = [
         """
         lwi 0x1234, r4
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to lwi: Expected register (beginning with 'r'), instead got '0x1234'. Try something like 'r0' instead."
+        ],
     ),
     (
         "Load word instruction immediate address",
@@ -1113,49 +1115,93 @@ NEGATIVE_TESTS = [
         """
         lwi r5, 0x1234
         """,
-        None,
+        [
+            "line 1: Cannot parse register for second argument to lwi: Expected register (beginning with 'r'), instead got '0x1234'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "Load word instruction three-arg",
+        """
+        lwi r1, r2, r3
+        """,
+        [
+            "line 1: Command 'lwi' expects exactly two arguments, got ['r1', 'r2', 'r3'] instead."
+        ],
+    ),
+    (
+        "Load word data three-arg",
+        """
+        lw r1, r2, r3
+        """,
+        [
+            "line 1: Command 'lw' expects exactly two arguments, got ['r1', 'r2', 'r3'] instead."
+        ],
     ),
     (
         "Load word data immediate value",
         """
         lw 0x1234, r5
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to lw: Expected register (beginning with 'r'), instead got '0x1234'. Try something like 'r0' instead."
+        ],
     ),
     (
         "Load word data immediate (too low)",
         """
         lw r1, -0x8001
         """,
-        None,
+        [
+            "line 1: Cannot parse register for second argument to lw: Expected register (beginning with 'r'), instead got '-0x8001'. Try something like 'r0' instead.",
+            "line 1: Immediate value -32769 (hex: -8001) in second argument to lw is out of bounds [-0x8000, 0xFFFF]",
+        ],
     ),
     (
         "Load word data immediate (too high)",
         """
         lw r0, 65536
         """,
-        None,
+        [
+            "line 1: Cannot parse register for second argument to lw: Expected register (beginning with 'r'), instead got '65536'. Try something like 'r0' instead.",
+            "line 1: Immediate value 65536 (hex: +10000) in second argument to lw is out of bounds [-0x8000, 0xFFFF]",
+        ],
     ),
     (
         "Load word data immediate (garbage)",
         """
         lw r0, garbage
         """,
-        None,
+        [
+            "line 1: Cannot parse register for second argument to lw: Expected register (beginning with 'r'), instead got 'garbage'. Try something like 'r0' instead.",
+            "line 1: Cannot parse immediate for second argument to lw: Expected integer number, instead got 'garbage'. Try something like '42', '0xABCD', or '-0x123' instead.",
+        ],
+    ),
+    (
+        "Load word data immediate three-arg",
+        """
+        lhi r1, r2, r3
+        """,
+        [
+            "line 1: Command 'lhi' expects exactly two arguments, got ['r1', 'r2', 'r3'] instead."
+        ],
     ),
     (
         "Load word data immediate high-only from register",
         """
         lhi r0, r1
         """,
-        None,
+        [
+            "line 1: Cannot parse immediate for second argument to lhi: Expected integer number, instead got 'r1'. Try something like '42', '0xABCD', or '-0x123' instead."
+        ],
     ),
     (
         "Load word data immediate high-only invalid",
         """
         lhi r0, 0x1234
         """,
-        None,
+        [
+            "line 1: Unsure how to load the high byte of a two-byte word 0x1234. Specify the byte either as 0xAB00 or as 0xAB instead."
+        ],
     ),
     (
         "decr no args",

@@ -391,7 +391,7 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'lw' expects exactly two arguments, got '{arg_list}' instead."
+                f"Command 'lw' expects exactly two arguments, got {arg_list} instead."
             )
         # TODO: Support immediate address
         # TODO: Support labels
@@ -432,7 +432,7 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'lwi' expects exactly two arguments, got '{arg_list}' instead."
+                f"Command 'lwi' expects exactly two arguments, got {arg_list} instead."
             )
         # TODO: Support immediate address
         value_register = self.parse_reg(arg_list[0], "first argument to lwi")
@@ -452,7 +452,7 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'lhi' expects exactly two arguments, got '{arg_list}' instead."
+                f"Command 'lhi' expects exactly two arguments, got {arg_list} instead."
             )
         register = self.parse_reg(arg_list[0], "first argument to lhi")
         if register is None:
