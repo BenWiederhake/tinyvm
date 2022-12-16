@@ -1696,35 +1696,45 @@ NEGATIVE_TESTS = [
         """
         .word 65536
         """,
-        None,
+        [
+            "line 1: Immediate value 65536 (hex: +10000) in argument of .word is out of bounds [-0x8000, 0xFFFF]"
+        ],
     ),
     (
         "literal too negative decimal",
         """
         .word -32769
         """,
-        None,
+        [
+            "line 1: Immediate value -32769 (hex: -8001) in argument of .word is out of bounds [-0x8000, 0xFFFF]"
+        ],
     ),
     (
         "literal too negative hex",
         """
         .word -0x8001
         """,
-        None,
+        [
+            "line 1: Immediate value -32769 (hex: -8001) in argument of .word is out of bounds [-0x8000, 0xFFFF]"
+        ],
     ),
     (
         "mov single-arg",
         """
         mov r0
         """,
-        None,
+        [
+            "line 1: Refusing noop-mov: This does nothing, and is likely an error. Use '.word 5F00' or 'nop' instead."
+        ],
     ),
     (
         "mov noop",
         """
         mov r1, r1
         """,
-        None,
+        [
+            "line 1: Refusing noop-mov: This does nothing, and is likely an error. Use '.word 5F11' or 'nop' instead."
+        ],
     ),
     (
         "overwrite zeros",
@@ -1733,7 +1743,7 @@ NEGATIVE_TESTS = [
         .offset 0
         .word 0x0000
         """,
-        None,
+        ["line 3: Attempted to overwrite word 0x0000 at 0x0000 with 0x0000."],
     ),
     (
         "label no name",
