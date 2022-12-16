@@ -1316,126 +1316,162 @@ NEGATIVE_TESTS = [
         """
         add r4, r5
         """,
-        None,
+        [
+            "line 1: Cannot parse register for argument #1 (1-indexed) to add: Expected register with numeric index, instead got 'r4,'. Try something like 'r0' instead."
+        ],
     ),
     (
         "add comma nospace",
         """
         add r4,r5
         """,
-        None,
+        [
+            "line 1: Command 'add' expects exactly two space-separated register arguments, got ['r4,r5'] instead."
+        ],
     ),
     (
         "add three args",
         """
         add r4 r5 r6
         """,
-        None,
+        [
+            "line 1: Cannot parse register for argument #2 (1-indexed) to add: Expected register with numeric index, instead got 'r5 r6'. Try something like 'r0' instead."
+        ],
     ),
     (
         "add noargs",
         """
         add
         """,
-        None,
+        [
+            "line 1: Command 'add' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "add space comma space",
         """
         add r4 , r5
         """,
-        None,
+        [
+            "line 1: Cannot parse register for argument #2 (1-indexed) to add: Expected register (beginning with 'r'), instead got ', r5'. Try something like 'r0' instead."
+        ],
     ),
     (
         "sub noargs",
         """
         sub
         """,
-        None,
+        [
+            "line 1: Command 'sub' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "mul noargs",
         """
         mul
         """,
-        None,
+        [
+            "line 1: Command 'mul' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "mulh noargs",
         """
         mulh
         """,
-        None,
+        [
+            "line 1: Command 'mulh' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "divu noargs",
         """
         divu
         """,
-        None,
+        [
+            "line 1: Command 'divu' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "divs noargs",
         """
         divs
         """,
-        None,
+        [
+            "line 1: Command 'divs' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "modu noargs",
         """
         modu
         """,
-        None,
+        [
+            "line 1: Command 'modu' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "mods noargs",
         """
         mods
         """,
-        None,
+        [
+            "line 1: Command 'mods' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "and noargs",
         """
         and
         """,
-        None,
+        [
+            "line 1: Command 'and' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "or noargs",
         """
         or
         """,
-        None,
+        [
+            "line 1: Command 'or' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "xor noargs",
         """
         xor
         """,
-        None,
+        [
+            "line 1: Command 'xor' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "sl noargs",
         """
         sl
         """,
-        None,
+        [
+            "line 1: Command 'sl' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "srl noargs",
         """
         srl
         """,
-        None,
+        [
+            "line 1: Command 'srl' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "sra noargs",
         """
         sra
         """,
-        None,
+        [
+            "line 1: Command 'sra' expects exactly two space-separated register arguments, got [''] instead."
+        ],
     ),
     (
         "lt noargs",

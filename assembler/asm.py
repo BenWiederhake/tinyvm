@@ -305,7 +305,7 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(" ", 1)]
         if len(arg_list) != 2:
             self.error(
-                f"Command '{command}' expects exactly two space-separated register arguments, got '{arg_list}' instead."
+                f"Command '{command}' expects exactly two space-separated register arguments, got {arg_list} instead."
             )
             return None
         # In case some maniac writes more than one space, like "add r4  r5":
