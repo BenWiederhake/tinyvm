@@ -1208,84 +1208,108 @@ NEGATIVE_TESTS = [
         """
         decr
         """,
-        None,
+        [
+            "line 1: Command 'decr' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "decr too many args",
         """
         decr r1, r2, r3
         """,
-        None,
+        [
+            "line 1: Command 'decr' expects either one or two register arguments, got ['r1', 'r2', 'r3'] instead."
+        ],
     ),
     (
         "decr 1-arg, imm",
         """
         decr 0x123
         """,
-        None,
+        [
+            "line 1: Cannot parse register for argument #1 (1-indexed) to decr: Expected register (beginning with 'r'), instead got '0x123'. Try something like 'r0' instead."
+        ],
     ),
     (
         "decr 2-arg, imm reg",
         """
         decr 123, r0
         """,
-        None,
+        [
+            "line 1: Cannot parse register for argument #1 (1-indexed) to decr: Expected register (beginning with 'r'), instead got '123'. Try something like 'r0' instead."
+        ],
     ),
     (
         "decr 2-arg, reg imm",
         """
         decr r0, 123
         """,
-        None,
+        [
+            "line 1: Cannot parse register for argument #2 (1-indexed) to decr: Expected register (beginning with 'r'), instead got '123'. Try something like 'r0' instead."
+        ],
     ),
     (
         "incr no args",
         """
         incr
         """,
-        None,
+        [
+            "line 1: Command 'incr' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "not no args",
         """
         not
         """,
-        None,
+        [
+            "line 1: Command 'not' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "clz no args",
         """
         clz
         """,
-        None,
+        [
+            "line 1: Command 'clz' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "ctz no args",
         """
         ctz
         """,
-        None,
+        [
+            "line 1: Command 'ctz' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "rnd no args",
         """
         rnd
         """,
-        None,
+        [
+            "line 1: Command 'rnd' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "mov no args",
         """
         mov
         """,
-        None,
+        [
+            "line 1: Command 'mov' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "popcnt no args",
         """
         popcnt
         """,
-        None,
+        [
+            "line 1: Command 'popcnt' expects either one or two register arguments, got none instead."
+        ],
     ),
     (
         "add comma space",

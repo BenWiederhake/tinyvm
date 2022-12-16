@@ -269,9 +269,14 @@ class Assembler:
 
     def parse_unary_regs_to_byte(self, command, args):
         arg_list = [e.strip() for e in args.split(",")]
+        if arg_list == [""]:
+            self.error(
+                f"Command '{command}' expects either one or two register arguments, got none instead."
+            )
+            return None
         if not (1 <= len(arg_list) <= 2):
             self.error(
-                f"Command '{command}' expects either one or two register arguments, got '{arg_list}' instead."
+                f"Command '{command}' expects either one or two register arguments, got {arg_list} instead."
             )
             return None
         reg_list = []
