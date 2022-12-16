@@ -1532,105 +1532,136 @@ NEGATIVE_TESTS = [
         """
         b r5, 5
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to b: Expected register with numeric index, instead got 'r5,'. Try something like 'r0' instead."
+        ],
     ),
     (
         "branch too large",
         """
         b r5 130
         """,
-        None,
+        [
+            "line 1: Command 'b' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps."
+        ],
     ),
     (
         "branch too negative",
         """
         b r10 -129
         """,
-        None,
+        [
+            "line 1: Command 'b' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps."
+        ],
     ),
     (
         "branch single arg",
         """
         b r10
         """,
-        None,
+        [
+            "line 1: Command 'b' expects exactly two space-separated register arguments, got ['r10'] instead."
+        ],
     ),
     (
         "branch to reg",
         """
         b r10 r5
         """,
-        None,
+        [
+            "line 1: Cannot parse immediate for second argument to b: Expected integer number, instead got 'r5'. Try something like '42', '0xABCD', or '-0x123' instead.",
+            "line 1: Label name for second argument to b must start with a '_' and contain at least two characters, found name 'r5' instead",
+        ],
     ),
     (
         "branch by 0",
         """
         b r10 0
         """,
-        None,
+        [
+            "line 1: Command 'b' cannot encode an infinite loop (offset 0). Try using 'j reg' instead."
+        ],
     ),
     (
         "branch by 1",
         """
         b r10 1
         """,
-        None,
+        [
+            "line 1: Command 'b' cannot encode the nop-branch (offset 1). Try using 'nop' instead."
+        ],
     ),
     (
         "jump noarg",
         """
         j
         """,
-        None,
+        ["line 1: Command 'j' expects either one or two arguments, got none instead."],
     ),
     (
         "jump two arg immediate, comma",
         """
         j 0x12, 0x34
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to two-arg-j: Expected register (beginning with 'r'), instead got '0x12,'. Try something like 'r0' instead."
+        ],
     ),
     (
         "jump two arg immediate, space",
         """
         j 0x12 0x34
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument to two-arg-j: Expected register (beginning with 'r'), instead got '0x12'. Try something like 'r0' instead."
+        ],
     ),
     (
         "jump by immediate extreme positive",
         """
         j 0x802
         """,
-        None,
+        [
+            "line 1: Command 'j' can only branch by offsets in [-2048, 2049], but not by 2050. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+        ],
     ),
     (
         "jump by immediate extreme negative",
         """
         j -0x801
         """,
-        None,
+        [
+            "line 1: Command 'j' can only branch by offsets in [-2048, 2049], but not by -2049. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+        ],
     ),
     (
         "jump to register onearg",
         """
         j r16
         """,
-        None,
+        [
+            "line 1: Cannot parse register for first argument of one-arg-j: Expected register with index in 0,1,…,15, instead got 'r16'. Try something like 'r0' instead.",
+            "line 1: Cannot parse immediate for first argument of one-arg-j: Expected integer number, instead got 'r16'. Try something like '42', '0xABCD', or '-0x123' instead.",
+            "line 1: Command 'j' with a single argument expects either immediate or register, got 'r16' instead. Note that offsets have to use a space, like 'r4 +5'.",
+        ],
     ),
     (
         "jump to register twoarg extreme positive",
         """
         j r3 +128
         """,
-        None,
+        [
+            "line 1: Command 'j' can only branch by offsets in [-128, 127], but not by 128. Try manually loading the final address into a register first."
+        ],
     ),
     (
         "jump to register twoarg extreme negative",
         """
         j r8 -129
         """,
-        None,
+        [
+            "line 1: Command 'j' can only branch by offsets in [-128, 127], but not by -129. Try manually loading the final address into a register first."
+        ],
     ),
     (
         "offset negative",

@@ -717,7 +717,7 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(" ", 1)]
         if len(arg_list) != 2:
             return self.error(
-                f"Command '{command}' expects exactly two space-separated register arguments, got '{arg_list}' instead."
+                f"Command '{command}' expects exactly two space-separated register arguments, got {arg_list} instead."
             )
         # In case some maniac writes more than one space, like "add r4  r5":
         arg_list[1] = arg_list[1].strip()
@@ -807,15 +807,12 @@ class Assembler:
     def command_j_twoarg(self, reg_string, imm_string):
         reg = self.parse_reg(reg_string, "first argument to two-arg-j")
         if reg is None:
-            return self.error(
-                f"Command 'j' with two arguments expects first a register, got '{reg_string}' instead."
-                " Note that no comma should be used."
-            )
+            # Error already reported
+            return False
         imm = self.parse_imm(imm_string, "second argument to two-arg-j")
         if imm is None:
-            return self.error(
-                f"Command 'j' with two arguments expects second an offset, got '{imm_string}' instead."
-            )
+            # Error already reported
+            return False
         return self.command_j_register(reg, imm)
 
     @asm_command
