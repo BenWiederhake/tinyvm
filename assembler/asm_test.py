@@ -1910,7 +1910,10 @@ NEGATIVE_TESTS = [
         lw r3, 0x33
         b r4 _wrong_label
         """,
-        None,
+        [
+            "line 5: Found end of asm text, but some forward references are unresolved: line 4 at offset 2 references label _wrong_label",
+            "line 5: Did you mean any of these defined labels? ['_some_label']",
+        ],
     ),
     (
         "branch label zero",
@@ -1919,7 +1922,9 @@ NEGATIVE_TESTS = [
         .label _some_label
         b r4 _some_label
         """,
-        None,
+        [
+            "line 3: Command 'b (to label _some_label=0x0001, defined in line 2)' cannot encode an infinite loop (offset 0). Try using 'j reg' instead."
+        ],
     ),
     (
         "branch label one",
@@ -1929,7 +1934,10 @@ NEGATIVE_TESTS = [
         .label _some_label
         lw r2, 0x10
         """,
-        None,
+        [
+            "line 2: Command 'b (to label _some_label=0x0002, defined in line 3)' cannot encode the nop-branch (offset 1). Try using 'nop' instead.",
+            "line 3: When label _some_label was defined.",
+        ],
     ),
     (
         "branch label one overflow",
@@ -1939,7 +1947,9 @@ NEGATIVE_TESTS = [
         .offset 0xFFFF
         b r4 _some_label
         """,
-        None,
+        [
+            "line 4: Command 'b (to label _some_label=0x0000, defined in line 1)' cannot encode the nop-branch (offset 1). Try using 'nop' instead."
+        ],
     ),
     (
         "branch label too extreme negative",
@@ -1950,7 +1960,9 @@ NEGATIVE_TESTS = [
         .offset 0x0082
         b r4 _some_label # the label is at relative -0x81
         """,
-        None,
+        [
+            "line 5: Command 'b (to label _some_label=0x0001, defined in line 2)' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps."
+        ],
     ),
     (
         "branch label too extreme positive",
@@ -1962,7 +1974,37 @@ NEGATIVE_TESTS = [
         .label _some_label
         nop
         """,
-        None,
+        [
+            "line 2: Command 'b (to label _some_label=0x0083, defined in line 5)' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps.",
+            "line 5: When label _some_label was defined.",
+        ],
+    ),
+    (
+        "branch label zero after the fact",
+        """
+        lw r2, 0x10
+        b r4 _some_label
+        .offset 1
+        .label _some_label
+        """,
+        [
+            "line 2: Command 'b (to label _some_label=0x0001, defined in line 4)' cannot encode an infinite loop (offset 0). Try using 'j reg' instead.",
+            "line 4: When label _some_label was defined.",
+        ],
+    ),
+    (
+        "branch label one already defined",
+        """
+        .offset 2
+        .label _some_label
+        .offset 0
+        lw r2, 0x10
+        b r4 _some_label
+        lw r2, 0x10
+        """,
+        [
+            "line 5: Command 'b (to label _some_label=0x0002, defined in line 2)' cannot encode the nop-branch (offset 1). Try using 'nop' instead.",
+        ],
     ),
 ]
 
@@ -2383,9 +2425,7 @@ class AsmTests(unittest.TestCase):
     def assert_assembly(self, asm_text, expected_segment, expected_error_log):
         actual_segment, actual_error_log = asm.compile_to_segment(asm_text)
         self.assertEqual(expected_segment, actual_segment)
-        if expected_error_log is not None:
-            self.assertEqual(expected_error_log, actual_error_log)
-        # TODO: Errors are currently too flaky, especially for overloads.
+        self.assertEqual(expected_error_log, actual_error_log)
 
     def parse_and_extend_hex(self, code_prefix_hex):
         segment = bytearray.fromhex(code_prefix_hex)
