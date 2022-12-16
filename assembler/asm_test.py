@@ -1750,28 +1750,45 @@ NEGATIVE_TESTS = [
         """
         .label
         """,
-        None,
+        [
+            "line 1: Directive '.label' takes exactly one argument (the literal label name), found nothing instead"
+        ],
+    ),
+    (
+        "label two-arg",
+        """
+        .label _foo _bar
+        """,
+        [
+            "line 1: Directive '.label' takes exactly one argument (the literal label name), found ['_foo', '_bar'] instead"
+        ],
     ),
     (
         "label bad name",
         """
         .label 1234
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must start with a '_' and contain at least two characters, found name '1234' instead"
+        ],
     ),
     (
         "label no underscore",
         """
         .label foobar
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must start with a '_' and contain at least two characters, found name 'foobar' instead"
+        ],
     ),
     (
         "label too short",
         """
         .label _
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must start with a '_' and contain at least two characters, found name '_' instead"
+        ],
     ),
     (
         "label multidef",
@@ -1780,77 +1797,110 @@ NEGATIVE_TESTS = [
         ret
         .label _hello_world
         """,
-        None,
+        [
+            "line 3: Label '_hello_world' previously defined in line 1 (old offset 0x0000, new offset 0x0001)"
+        ],
+    ),
+    (
+        "label multidef same offset",
+        """
+        .label _hello_world
+        .label _hello_world
+        """,
+        [
+            "line 2: Label '_hello_world' previously defined in line 1 (old offset 0x0000, new offset 0x0000)"
+        ],
     ),
     (
         "label special $",
         """
         .label _$hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_$hello_world' instead"
+        ],
     ),
     (
         "label special %",
         """
         .label _%hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_%hello_world' instead"
+        ],
     ),
     (
         "label special &",
         """
         .label _&hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_&hello_world' instead"
+        ],
     ),
     (
         "label special (",
         """
         .label _(hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_(hello_world' instead"
+        ],
     ),
     (
         "label special )",
         """
         .label _)hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_)hello_world' instead"
+        ],
     ),
     (
         "label special =",
         """
         .label _=hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_=hello_world' instead"
+        ],
     ),
     (
         "label special single quote",
         """
         .label _'hello_world
         """,
-        None,
+        [
+            # TODO: Escape it maybe?
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_'hello_world' instead"
+        ],
     ),
     (
         "label special double quote",
         """
         .label _"hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_\"hello_world' instead"
+        ],
     ),
     (
         "label special [",
         """
         .label _[hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_[hello_world' instead"
+        ],
     ),
     (
         "label special ]",
         """
         .label _]hello_world
         """,
-        None,
+        [
+            "line 1: Label name for argument of .label must not contain any special characters ($%&()='\"[]), found name '_]hello_world' instead"
+        ],
     ),
     (
         "branch unknown label",

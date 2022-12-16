@@ -865,9 +865,13 @@ class Assembler:
     def parse_directive_label(self, command, args):
         args = args.strip()
         arg_parts = args.split(" ", 1)
+        if not arg_parts[0]:
+            return self.error(
+                "Directive '.label' takes exactly one argument (the literal label name), found nothing instead"
+            )
         if len(arg_parts) > 1 or not arg_parts[0]:
             return self.error(
-                f"Directive '.label' takes exactly one argument (the literal label name), found '{args}' instead"
+                f"Directive '.label' takes exactly one argument (the literal label name), found {arg_parts} instead"
             )
         label_name = self.parse_label(arg_parts[0], "argument of .label")
         if label_name is None:
@@ -876,7 +880,7 @@ class Assembler:
         if label_name in self.known_labels.keys():
             old_offset, old_line = self.known_labels[label_name]
             return self.error(
-                f"Label '{label_name}' already defined in line {old_line} (offset {old_offset:04X})"
+                f"Label '{label_name}' previously defined in line {old_line} (old offset 0x{old_offset:04X}, new offset 0x{self.current_pointer:04X})"
             )
         self.known_labels[label_name] = (self.current_pointer, self.current_lineno)
         old_references = self.forward_references.get(label_name)
