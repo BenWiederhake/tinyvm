@@ -34,12 +34,13 @@ class ModTests(unittest.TestCase):
 
 
 ASM_TESTS = [
-    ("empty", "", ""),
+    ("empty", "", "", []),
     (
         "newline",
         """
         """,
         "0000",
+        [],
     ),
     (
         "comment",
@@ -47,6 +48,7 @@ ASM_TESTS = [
         # Hello, world!
         """,
         "",
+        [],
     ),
     (
         "return",
@@ -54,6 +56,7 @@ ASM_TESTS = [
         ret
         """,
         "102A",
+        [],
     ),
     (
         "inline comment",
@@ -63,6 +66,7 @@ ASM_TESTS = [
         # Hooray!
         """,
         "102A",
+        [],
     ),
     (
         "inline comment multi",
@@ -70,6 +74,7 @@ ASM_TESTS = [
         ret # Return   # but you knew that already, didn't you?
         """,
         "102A",
+        [],
     ),
     (
         "illegal",
@@ -77,6 +82,7 @@ ASM_TESTS = [
         ill
         """,
         "FFFF",
+        [],
     ),
     (
         "more than one instruction",
@@ -85,6 +91,7 @@ ASM_TESTS = [
         ill
         """,
         "102A FFFF",
+        [],
     ),
     (
         "CPUID",
@@ -92,6 +99,7 @@ ASM_TESTS = [
         cpuid
         """,
         "102B",
+        [],
     ),
     (
         "Debug-dump",
@@ -99,6 +107,7 @@ ASM_TESTS = [
         debug
         """,
         "102C",
+        [],
     ),
     (
         "Time",
@@ -106,6 +115,7 @@ ASM_TESTS = [
         time
         """,
         "102D",
+        [],
     ),
     (
         "Store word",
@@ -115,6 +125,7 @@ ASM_TESTS = [
         sw r10, r15
         """,
         "2000 2010 20AF",
+        [],
     ),
     (
         "Load word instruction",
@@ -124,6 +135,7 @@ ASM_TESTS = [
         lwi r15, r10
         """,
         "2200 2210 22AF",
+        [],
     ),
     (
         "Load word data, memory-only",
@@ -133,6 +145,7 @@ ASM_TESTS = [
         lw r15, r10
         """,
         "2100 2110 21AF",
+        [],
     ),
     (
         "Load word data immediate (single insn)",
@@ -145,6 +158,7 @@ ASM_TESTS = [
         lw r10, 0xFFFE
         """,
         "3000 31FF 352A 387F 3980 3AFE",
+        [],
     ),
     (
         "Load word data immediate (single insn, extreme)",
@@ -154,6 +168,7 @@ ASM_TESTS = [
         lw r12, -128
         """,
         "37FF 3BD6 3C80",
+        [],
     ),
     (
         "Load word data immediate (double insn)",
@@ -165,6 +180,7 @@ ASM_TESTS = [
         lw r9, 0xFF7F
         """,
         "3081 4000 317F 41FF 32CD 42AB 3334 4312 397F 49FF",
+        [],
     ),
     (
         "Load word data immediate (alternate bases)",
@@ -173,6 +189,7 @@ ASM_TESTS = [
         lw r1, 0o123
         """,
         "300A 3153",
+        [],
     ),
     (
         "Load word data immediate high-only",
@@ -185,6 +202,7 @@ ASM_TESTS = [
         lhi r5, 0xFF00
         """,
         "4000 4112 42FF 43AB 4434 45FF",
+        [],
     ),
     (
         "decr",
@@ -197,6 +215,7 @@ ASM_TESTS = [
         decr r15, r15
         """,
         "5800 5800 5855 5866 5887 58FF",
+        [],
     ),
     (
         "incr",
@@ -209,6 +228,7 @@ ASM_TESTS = [
         incr r15, r15
         """,
         "5900 5900 5955 5966 5987 59FF",
+        [],
     ),
     (
         "not",
@@ -221,6 +241,7 @@ ASM_TESTS = [
         not r15, r15
         """,
         "5A00 5A00 5A55 5A66 5A87 5AFF",
+        [],
     ),
     (
         "popcnt",
@@ -233,6 +254,7 @@ ASM_TESTS = [
         popcnt r15, r15
         """,
         "5B00 5B00 5B55 5B66 5B87 5BFF",
+        [],
     ),
     (
         "clz",
@@ -245,6 +267,7 @@ ASM_TESTS = [
         clz r15, r15
         """,
         "5C00 5C00 5C55 5C66 5C87 5CFF",
+        [],
     ),
     (
         "ctz",
@@ -257,6 +280,7 @@ ASM_TESTS = [
         ctz r15, r15
         """,
         "5D00 5D00 5D55 5D66 5D87 5DFF",
+        [],
     ),
     (
         "rnd",
@@ -269,6 +293,7 @@ ASM_TESTS = [
         rnd r15, r15
         """,
         "5E00 5E00 5E55 5E66 5E87 5EFF",
+        [],
     ),
     (
         "mov",
@@ -279,6 +304,7 @@ ASM_TESTS = [
         mov r15, r14
         """,
         "5F10 5F26 5F87 5FEF",
+        [],
     ),
     (
         "nop single",
@@ -286,6 +312,7 @@ ASM_TESTS = [
         nop
         """,
         "5F00",
+        [],
     ),
     (
         "nop multi",
@@ -295,6 +322,7 @@ ASM_TESTS = [
         nop
         """,
         "5F00 5F00 5F00",
+        [],
     ),
     (
         "add",
@@ -305,6 +333,7 @@ ASM_TESTS = [
         add r15 r15
         """,
         "6000 6033 6078 60FF",
+        [],
     ),
     (
         "add multi-space",
@@ -312,6 +341,7 @@ ASM_TESTS = [
         add r1    r2
         """,
         "6012",
+        [],
     ),
     (
         "sub",
@@ -322,6 +352,7 @@ ASM_TESTS = [
         sub r15 r15
         """,
         "6100 6133 6178 61FF",
+        [],
     ),
     (
         "mul",
@@ -332,6 +363,7 @@ ASM_TESTS = [
         mul r15 r15
         """,
         "6200 6233 6278 62FF",
+        [],
     ),
     (
         "mulh",
@@ -342,6 +374,7 @@ ASM_TESTS = [
         mulh r15 r15
         """,
         "6300 6333 6378 63FF",
+        [],
     ),
     (
         "divu",
@@ -352,6 +385,7 @@ ASM_TESTS = [
         divu r15 r15
         """,
         "6400 6433 6478 64FF",
+        [],
     ),
     (
         "divs",
@@ -362,6 +396,7 @@ ASM_TESTS = [
         divs r15 r15
         """,
         "6500 6533 6578 65FF",
+        [],
     ),
     (
         "modu",
@@ -372,6 +407,7 @@ ASM_TESTS = [
         modu r15 r15
         """,
         "6600 6633 6678 66FF",
+        [],
     ),
     (
         "mods",
@@ -382,6 +418,7 @@ ASM_TESTS = [
         mods r15 r15
         """,
         "6700 6733 6778 67FF",
+        [],
     ),
     (
         "and",
@@ -392,6 +429,7 @@ ASM_TESTS = [
         and r15 r15
         """,
         "6800 6833 6878 68FF",
+        [],
     ),
     (
         "or",
@@ -402,6 +440,7 @@ ASM_TESTS = [
         or r15 r15
         """,
         "6900 6933 6978 69FF",
+        [],
     ),
     (
         "xor",
@@ -412,6 +451,7 @@ ASM_TESTS = [
         xor r15 r15
         """,
         "6A00 6A33 6A78 6AFF",
+        [],
     ),
     (
         "sl",
@@ -422,6 +462,7 @@ ASM_TESTS = [
         sl r15 r15
         """,
         "6B00 6B33 6B78 6BFF",
+        [],
     ),
     (
         "srl",
@@ -432,6 +473,7 @@ ASM_TESTS = [
         srl r15 r15
         """,
         "6C00 6C33 6C78 6CFF",
+        [],
     ),
     (
         "sra",
@@ -442,6 +484,7 @@ ASM_TESTS = [
         sra r15 r15
         """,
         "6D00 6D33 6D78 6DFF",
+        [],
     ),
     (
         "gt",
@@ -451,6 +494,7 @@ ASM_TESTS = [
         gt r7 r8
         """,
         "8200 82FF 8278",
+        [],
     ),
     (
         "eq",
@@ -460,6 +504,7 @@ ASM_TESTS = [
         eq r7 r8
         """,
         "8400 84FF 8478",
+        [],
     ),
     (
         "ge",
@@ -469,6 +514,7 @@ ASM_TESTS = [
         ge r7 r8
         """,
         "8600 86FF 8678",
+        [],
     ),
     (
         "lt",
@@ -478,6 +524,7 @@ ASM_TESTS = [
         lt r7 r8
         """,
         "8800 88FF 8878",
+        [],
     ),
     (
         "ne",
@@ -487,6 +534,7 @@ ASM_TESTS = [
         ne r7 r8
         """,
         "8A00 8AFF 8A78",
+        [],
     ),
     (
         "le",
@@ -496,6 +544,7 @@ ASM_TESTS = [
         le r7 r8
         """,
         "8C00 8CFF 8C78",
+        [],
     ),
     (
         "gts",
@@ -505,6 +554,7 @@ ASM_TESTS = [
         gts r7 r8
         """,
         "8300 83FF 8378",
+        [],
     ),
     (
         "ges",
@@ -514,6 +564,7 @@ ASM_TESTS = [
         ges r7 r8
         """,
         "8700 87FF 8778",
+        [],
     ),
     (
         "lts",
@@ -523,6 +574,7 @@ ASM_TESTS = [
         lts r7 r8
         """,
         "8900 89FF 8978",
+        [],
     ),
     (
         "les",
@@ -532,6 +584,7 @@ ASM_TESTS = [
         les r7 r8
         """,
         "8D00 8DFF 8D78",
+        [],
     ),
     (
         "branch simple",
@@ -544,6 +597,7 @@ ASM_TESTS = [
         b r7 -0x1
         """,
         "9000 9106 970E 9803 9F00 9780",
+        [],
     ),
     (
         "branch extreme positive",
@@ -554,6 +608,7 @@ ASM_TESTS = [
         b r6 129
         """,
         "937D 947D 957E 967F",
+        [],
     ),
     (
         "branch extreme negative",
@@ -562,6 +617,7 @@ ASM_TESTS = [
         b r10 -128
         """,
         "99FE 9AFF",
+        [],
     ),
     (
         "jump by immediate simple",
@@ -572,6 +628,7 @@ ASM_TESTS = [
         j -42
         """,
         "A003 A000 A800 A829",
+        [],
     ),
     (
         "jump by immediate extreme positive",
@@ -584,6 +641,7 @@ ASM_TESTS = [
         j 0x801
         """,
         "A079 A121 A7FC A7FD A7FE A7FF",
+        [],
     ),
     (
         "jump by immediate extreme negative",
@@ -595,6 +653,7 @@ ASM_TESTS = [
         j -0x800
         """,
         "A87A A922 AFFD AFFE AFFF",
+        [],
     ),
     (
         "jump to register onearg",
@@ -604,6 +663,7 @@ ASM_TESTS = [
         j r15
         """,
         "B000 B100 BF00",
+        [],
     ),
     (
         "jump to register twoarg positive",
@@ -614,6 +674,7 @@ ASM_TESTS = [
         j r3 +127
         """,
         "B000 B101 B212 B37F",
+        [],
     ),
     (
         "jump to register twoarg negative",
@@ -623,6 +684,7 @@ ASM_TESTS = [
         j r6 -0x12
         """,
         "B400 B5FF B6EE",
+        [],
     ),
     (
         "jump to register twoarg negative extreme",
@@ -631,6 +693,7 @@ ASM_TESTS = [
         j r8 -128
         """,
         "B781 B880",
+        [],
     ),
     (
         "offset empty",
@@ -638,6 +701,7 @@ ASM_TESTS = [
         .offset 0x1234
         """,
         "0000",
+        [],
     ),
     (
         "offset basic",
@@ -646,6 +710,7 @@ ASM_TESTS = [
         ret
         """,
         "0000 " * 0x1234 + "102A",
+        [],
     ),
     (
         "offset low",
@@ -655,6 +720,7 @@ ASM_TESTS = [
         ret
         """,
         "3123 0000 0000 102A",
+        [],
     ),
     (
         "offset weird order",
@@ -665,6 +731,7 @@ ASM_TESTS = [
         lw r1, 0x23
         """,
         "3123 0000 0000 102A",
+        [],
     ),
     (
         "offset extreme",
@@ -674,6 +741,7 @@ ASM_TESTS = [
         lw r4, 0x56
         """,
         "3456" + (" 0000" * (0x1_0000 - 2)) + " 3123",
+        [],
     ),
     (
         "literal simple",
@@ -684,6 +752,7 @@ ASM_TESTS = [
         .word -9
         """,
         "ABCD 04D2 0000 FFF7",
+        [],
     ),
     (
         "literal extreme",
@@ -693,6 +762,7 @@ ASM_TESTS = [
         .word -0x7FFF
         """,
         "FFFF 8000 8001",
+        [],
     ),
     (
         "label simple",
@@ -701,6 +771,7 @@ ASM_TESTS = [
         ret
         """,
         "102A",
+        [],
     ),
     (
         "label multi",
@@ -712,6 +783,7 @@ ASM_TESTS = [
         lw r4, 0x56
         """,
         "102A 3456",
+        [],
     ),
     (
         "branch label low negative",
@@ -722,6 +794,7 @@ ASM_TESTS = [
         b r4 _some_label
         """,
         "3210 3333 9480",
+        [],
     ),
     (
         "branch label medium negative",
@@ -733,6 +806,7 @@ ASM_TESTS = [
         b r4 _some_label
         """,
         "3333 3444 3555 9482",
+        [],
     ),
     (
         "branch label barely-overflow negative",
@@ -744,6 +818,7 @@ ASM_TESTS = [
         b r4 _some_label
         """,
         "102A 3333" + (" 0000" * (65536 - 3)) + " 9400",
+        [],
     ),
     (
         "branch label overflow negative",
@@ -756,6 +831,7 @@ ASM_TESTS = [
         lw r5, 0x79
         """,
         "102A 3333" + (" 0000" * (65536 - 4)) + " 9401 3579",
+        [],
     ),
     (
         "branch label extreme negative",
@@ -767,6 +843,7 @@ ASM_TESTS = [
         b r4 _some_label # the label is at relative -0x80
         """,
         "102A 3333" + (" 0000" * (0x81 - 2)) + " 94FF",
+        [],
     ),
     (
         "branch label negative to undef",
@@ -777,6 +854,7 @@ ASM_TESTS = [
         b r4 _some_label # the label is at relative -4
         """,
         "102A 0000 0000 0000 0000 9483",
+        [],
     ),
     (
         "branch label low positive",
@@ -787,6 +865,7 @@ ASM_TESTS = [
         lw r3, 0x33
         """,
         "9600 3222 3333",
+        [],
     ),
     (
         "branch label medium positive",
@@ -800,6 +879,7 @@ ASM_TESTS = [
         lw r7, 0x77
         """,
         "3333 9702 3444 3555 3666 3777",
+        [],
     ),
     (
         "branch label barely-overflow positive",
@@ -811,6 +891,7 @@ ASM_TESTS = [
         lw r3, 0x33
         """,
         "9480 102A" + (" 0000" * (65536 - 3)) + " 3333",
+        [],
     ),
     (
         "branch label overflow positive",
@@ -825,6 +906,7 @@ ASM_TESTS = [
         lw r2, 0x10
         """,
         "3333 3456 9483 102A" + (" 0000" * (65536 - 6)) + " 3666 3210",
+        [],
     ),
     (
         "branch label extreme positive",
@@ -837,6 +919,7 @@ ASM_TESTS = [
         nop
         """,
         "3333 947F 3456" + (" 0000" * (0x82 - 3)) + " 5F00",
+        [],
     ),
     (
         "branch label positive to undef",
@@ -847,6 +930,7 @@ ASM_TESTS = [
         .label _some_label
         """,
         "9403 102A",
+        [],
     ),
 ]
 
@@ -856,12 +940,14 @@ NEGATIVE_TESTS = [
         """
         garbage
         """,
+        [],
     ),
     (
         "return with arg",
         """
         ret 42
         """,
+        [],
     ),
     (
         "late garbage",
@@ -869,6 +955,7 @@ NEGATIVE_TESTS = [
         ret
         garbage
         """,
+        [],
     ),
     (
         "late return with arg",
@@ -876,96 +963,112 @@ NEGATIVE_TESTS = [
         ret
         ret 42
         """,
+        [],
     ),
     (
         "CPUID with arg",
         """
         cpuid 42
         """,
+        [],
     ),
     (
         "Debug-dump with arg",
         """
         debug 1337
         """,
+        [],
     ),
     (
         "Time with arg",
         """
         time 0x42
         """,
+        [],
     ),
     (
         "nop with arg imm",
         """
         nop 0x42
         """,
+        [],
     ),
     (
         "nop with arg reg",
         """
         nop r5
         """,
+        [],
     ),
     (
         "Store word no arg",
         """
         sw
         """,
+        [],
     ),
     (
         "Store word one arg",
         """
         sw r4
         """,
+        [],
     ),
     (
         "Store word no comma",
         """
         sw r4 r4
         """,
+        [],
     ),
     (
         "Store word too many",
         """
         sw r4, r4, r4
         """,
+        [],
     ),
     (
         "Store word illegal register",
         """
         sw r16, r1
         """,
+        [],
     ),
     (
         "Store word other illegal register",
         """
         sw r4, r16
         """,
+        [],
     ),
     (
         "Store word underscore register",
         """
         sw r1_3, r1
         """,
+        [],
     ),
     (
         "Store word immediate address",
         """
         sw 0x1234, r1
         """,
+        [],
     ),
     (
         "Store word immediate value",
         """
         sw r4, 0x1234
         """,
+        [],
     ),
     (
         "Load word instruction immediate value",
         """
         lwi 0x1234, r4
         """,
+        [],
     ),
     (
         "Load word instruction immediate address",
@@ -973,228 +1076,266 @@ NEGATIVE_TESTS = [
         """
         lwi r5, 0x1234
         """,
+        [],
     ),
     (
         "Load word data immediate value",
         """
         lw 0x1234, r5
         """,
+        [],
     ),
     (
         "Load word data immediate (too low)",
         """
         lw r1, -0x8001
         """,
+        [],
     ),
     (
         "Load word data immediate (too high)",
         """
         lw r0, 65536
         """,
+        [],
     ),
     (
         "Load word data immediate (garbage)",
         """
         lw r0, garbage
         """,
+        [],
     ),
     (
         "Load word data immediate high-only from register",
         """
         lhi r0, r1
         """,
+        [],
     ),
     (
         "Load word data immediate high-only invalid",
         """
         lhi r0, 0x1234
         """,
+        [],
     ),
     (
         "decr no args",
         """
         decr
         """,
+        [],
     ),
     (
         "decr too many args",
         """
         decr r1, r2, r3
         """,
+        [],
     ),
     (
         "decr 1-arg, imm",
         """
         decr 0x123
         """,
+        [],
     ),
     (
         "decr 2-arg, imm reg",
         """
         decr 123, r0
         """,
+        [],
     ),
     (
         "decr 2-arg, reg imm",
         """
         decr r0, 123
         """,
+        [],
     ),
     (
         "incr no args",
         """
         incr
         """,
+        [],
     ),
     (
         "not no args",
         """
         not
         """,
+        [],
     ),
     (
         "clz no args",
         """
         clz
         """,
+        [],
     ),
     (
         "ctz no args",
         """
         ctz
         """,
+        [],
     ),
     (
         "rnd no args",
         """
         rnd
         """,
+        [],
     ),
     (
         "mov no args",
         """
         mov
         """,
+        [],
     ),
     (
         "popcnt no args",
         """
         popcnt
         """,
+        [],
     ),
     (
         "add comma space",
         """
         add r4, r5
         """,
+        [],
     ),
     (
         "add comma nospace",
         """
         add r4,r5
         """,
+        [],
     ),
     (
         "add three args",
         """
         add r4 r5 r6
         """,
+        [],
     ),
     (
         "add noargs",
         """
         add
         """,
+        [],
     ),
     (
         "add space comma space",
         """
         add r4 , r5
         """,
+        [],
     ),
     (
         "sub noargs",
         """
         sub
         """,
+        [],
     ),
     (
         "mul noargs",
         """
         mul
         """,
+        [],
     ),
     (
         "mulh noargs",
         """
         mulh
         """,
+        [],
     ),
     (
         "divu noargs",
         """
         divu
         """,
+        [],
     ),
     (
         "divs noargs",
         """
         divs
         """,
+        [],
     ),
     (
         "modu noargs",
         """
         modu
         """,
+        [],
     ),
     (
         "mods noargs",
         """
         mods
         """,
+        [],
     ),
     (
         "and noargs",
         """
         and
         """,
+        [],
     ),
     (
         "or noargs",
         """
         or
         """,
+        [],
     ),
     (
         "xor noargs",
         """
         xor
         """,
+        [],
     ),
     (
         "sl noargs",
         """
         sl
         """,
+        [],
     ),
     (
         "srl noargs",
         """
         srl
         """,
+        [],
     ),
     (
         "sra noargs",
         """
         sra
         """,
+        [],
     ),
     (
         "lt noargs",
         """
         lt
         """,
+        [],
     ),
     # Skip the other compare instructions, there's not much to test anyway.
     (
@@ -1202,96 +1343,112 @@ NEGATIVE_TESTS = [
         """
         b r5, 5
         """,
+        [],
     ),
     (
         "branch too large",
         """
         b r5 130
         """,
+        [],
     ),
     (
         "branch too negative",
         """
         b r10 -129
         """,
+        [],
     ),
     (
         "branch single arg",
         """
         b r10
         """,
+        [],
     ),
     (
         "branch to reg",
         """
         b r10 r5
         """,
+        [],
     ),
     (
         "branch by 0",
         """
         b r10 0
         """,
+        [],
     ),
     (
         "branch by 1",
         """
         b r10 1
         """,
+        [],
     ),
     (
         "jump noarg",
         """
         j
         """,
+        [],
     ),
     (
         "jump two arg immediate, comma",
         """
         j 0x12, 0x34
         """,
+        [],
     ),
     (
         "jump two arg immediate, space",
         """
         j 0x12 0x34
         """,
+        [],
     ),
     (
         "jump by immediate extreme positive",
         """
         j 0x802
         """,
+        [],
     ),
     (
         "jump by immediate extreme negative",
         """
         j -0x801
         """,
+        [],
     ),
     (
         "jump to register onearg",
         """
         j r16
         """,
+        [],
     ),
     (
         "jump to register twoarg extreme positive",
         """
         j r3 +128
         """,
+        [],
     ),
     (
         "jump to register twoarg extreme negative",
         """
         j r8 -129
         """,
+        [],
     ),
     (
         "offset negative",
         """
         .offset -1
         """,
+        [],
     ),
     (
         "offset overwrite",
@@ -1300,6 +1457,7 @@ NEGATIVE_TESTS = [
         .offset 0
         ret
         """,
+        [],
     ),
     (
         "offset overwrite indirect",
@@ -1311,36 +1469,42 @@ NEGATIVE_TESTS = [
         ret
         ret # Bam!
         """,
+        [],
     ),
     (
         "literal too positive",
         """
         .word 65536
         """,
+        [],
     ),
     (
         "literal too negative decimal",
         """
         .word -32769
         """,
+        [],
     ),
     (
         "literal too negative hex",
         """
         .word -0x8001
         """,
+        [],
     ),
     (
         "mov single-arg",
         """
         mov r0
         """,
+        [],
     ),
     (
         "mov noop",
         """
         mov r1, r1
         """,
+        [],
     ),
     (
         "overwrite zeros",
@@ -1349,30 +1513,35 @@ NEGATIVE_TESTS = [
         .offset 0
         .word 0x0000
         """,
+        [],
     ),
     (
         "label no name",
         """
         .label
         """,
+        [],
     ),
     (
         "label bad name",
         """
         .label 1234
         """,
+        [],
     ),
     (
         "label no underscore",
         """
         .label foobar
         """,
+        [],
     ),
     (
         "label too short",
         """
         .label _
         """,
+        [],
     ),
     (
         "label multidef",
@@ -1381,66 +1550,77 @@ NEGATIVE_TESTS = [
         ret
         .label _hello_world
         """,
+        [],
     ),
     (
         "label special $",
         """
         .label _$hello_world
         """,
+        [],
     ),
     (
         "label special %",
         """
         .label _%hello_world
         """,
+        [],
     ),
     (
         "label special &",
         """
         .label _&hello_world
         """,
+        [],
     ),
     (
         "label special (",
         """
         .label _(hello_world
         """,
+        [],
     ),
     (
         "label special )",
         """
         .label _)hello_world
         """,
+        [],
     ),
     (
         "label special =",
         """
         .label _=hello_world
         """,
+        [],
     ),
     (
         "label special single quote",
         """
         .label _'hello_world
         """,
+        [],
     ),
     (
         "label special double quote",
         """
         .label _"hello_world
         """,
+        [],
     ),
     (
         "label special [",
         """
         .label _[hello_world
         """,
+        [],
     ),
     (
         "label special ]",
         """
         .label _]hello_world
         """,
+        [],
     ),
     (
         "branch unknown label",
@@ -1450,6 +1630,7 @@ NEGATIVE_TESTS = [
         lw r3, 0x33
         b r4 _wrong_label
         """,
+        [],
     ),
     (
         "branch label zero",
@@ -1458,6 +1639,7 @@ NEGATIVE_TESTS = [
         .label _some_label
         b r4 _some_label
         """,
+        [],
     ),
     (
         "branch label one",
@@ -1467,6 +1649,7 @@ NEGATIVE_TESTS = [
         .label _some_label
         lw r2, 0x10
         """,
+        [],
     ),
     (
         "branch label one overflow",
@@ -1476,6 +1659,7 @@ NEGATIVE_TESTS = [
         .offset 0xFFFF
         b r4 _some_label
         """,
+        [],
     ),
     (
         "branch label too extreme negative",
@@ -1486,6 +1670,7 @@ NEGATIVE_TESTS = [
         .offset 0x0082
         b r4 _some_label # the label is at relative -0x81
         """,
+        [],
     ),
     (
         "branch label too extreme positive",
@@ -1497,6 +1682,7 @@ NEGATIVE_TESTS = [
         .label _some_label
         nop
         """,
+        [],
     ),
 ]
 
@@ -1512,6 +1698,7 @@ TESTS_INSTRUCTIONS_RS = [
         time
         """,
         "B005 5F00 5F00 5F00 5F00 102D",
+        [],
     ),
     (
         "from test_time_long",
@@ -1523,6 +1710,7 @@ TESTS_INSTRUCTIONS_RS = [
         ret
         """,
         "37AB 5877 9780 102D 102A",
+        [],
     ),
     # FIXME: Labels not implemented yet
     # (
@@ -1542,6 +1730,7 @@ TESTS_INSTRUCTIONS_RS = [
     #     # Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
     #     """,
     #     "3705 47B5 5F71 5F72 5822 9280 5811 9183 102D 102A",
+    #     [],
     # ),
     (
         "from test_store_data_doc",
@@ -1551,6 +1740,7 @@ TESTS_INSTRUCTIONS_RS = [
         sw r2, r5
         """,
         "3234 4212 3578 4556 2025",
+        [],
     ),
     (
         "from test_store_data_simple",
@@ -1560,6 +1750,7 @@ TESTS_INSTRUCTIONS_RS = [
         sw r2, r5
         """,
         "3245 3567 2025",
+        [],
     ),
     (
         "from test_load_data_doc",
@@ -1568,6 +1759,7 @@ TESTS_INSTRUCTIONS_RS = [
         lw r5, r2
         """,
         "3234 4212 2125",
+        [],
     ),
     (
         "from test_load_data_simple",
@@ -1576,6 +1768,7 @@ TESTS_INSTRUCTIONS_RS = [
         lw r5, r2
         """,
         "3205 2125",
+        [],
     ),
     (
         "from test_load_instruction_doc",
@@ -1584,6 +1777,7 @@ TESTS_INSTRUCTIONS_RS = [
         lwi r5, r2
         """,
         "3234 4212 2225",
+        [],
     ),
     (
         "from test_load_instruction_simple",
@@ -1592,6 +1786,7 @@ TESTS_INSTRUCTIONS_RS = [
         lwi r5, r2
         """,
         "3205 2225",
+        [],
     ),
     (
         "from test_load_imm_high_doc_setup",
@@ -1599,6 +1794,7 @@ TESTS_INSTRUCTIONS_RS = [
         lw r10, 0x1234
         """,
         "3A34 4A12",
+        [],
     ),
     (
         "from test_load_imm_high_doc",
@@ -1607,6 +1803,7 @@ TESTS_INSTRUCTIONS_RS = [
         lhi r10, 0x5600
         """,
         "3A34 4A12 4A56",
+        [],
     ),
     (
         "from test_load_imm_high_simple",
@@ -1614,6 +1811,7 @@ TESTS_INSTRUCTIONS_RS = [
         lhi r5, 0xAB00
         """,
         "45AB",
+        [],
     ),
     (
         "from test_jump_register_doc1",
@@ -1622,6 +1820,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r7 +0x0034
         """,
         "4712 B734",
+        [],
     ),
     (
         "from test_jump_register_doc2",
@@ -1630,6 +1829,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r7 -0x0001
         """,
         "3734 4712 B7FF",
+        [],
     ),
     (
         "from test_jump_register_simple",
@@ -1637,6 +1837,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r0 +0x0042
         """,
         "B042",
+        [],
     ),
     (
         "from test_jump_register_overflow",
@@ -1645,6 +1846,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r7 +0x0010
         """,
         "37FF B710",
+        [],
     ),
     (
         "from test_jump_register_underflow",
@@ -1652,6 +1854,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r0 -0x0080
         """,
         "B080",
+        [],
     ),
     (
         "from test_jump_register_extreme_positive_imm",
@@ -1659,6 +1862,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r0 +0x7F
         """,
         "B07F",
+        [],
     ),
     (
         "from test_jump_register_extreme_negative_imm",
@@ -1666,6 +1870,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r0 -0x80
         """,
         "B080",
+        [],
     ),
     (
         "from test_jump_register_extreme_positive",
@@ -1674,6 +1879,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r7 +0x7F
         """,
         "37FF B77F",
+        [],
     ),
     (
         "from test_jump_register_extreme_positive_nowrap",
@@ -1682,6 +1888,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r7 +0x7F
         """,
         "37FF 477F B77F",
+        [],
     ),
     (
         "from test_jump_register_extreme_negative",
@@ -1690,6 +1897,7 @@ TESTS_INSTRUCTIONS_RS = [
         j r7 -0x80
         """,
         "37FF B780",
+        [],
     ),
     (
         "from test_jump_register_extreme_negative_signedish",
@@ -1699,6 +1907,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         # The example doesn't use 3700, but the assembler shouldn't make such optimizations.
         "3700 4780 B780",
+        [],
     ),
     (
         "from test_program_counter_wraps",
@@ -1709,6 +1918,7 @@ TESTS_INSTRUCTIONS_RS = [
         lw r4, 0x0012
         """,
         "37FF B700 " + ("0000 " * (65536 - 3)) + "3412",
+        [],
     ),
     (
         "from test_jump_imm_doc1",
@@ -1719,6 +1929,7 @@ TESTS_INSTRUCTIONS_RS = [
         j +0x125
         """,
         "4350 B300 " + ("0000 " * (0x5000 - 2)) + "A123",
+        [],
     ),
     (
         "from test_jump_imm_doc2",
@@ -1729,6 +1940,7 @@ TESTS_INSTRUCTIONS_RS = [
         j -0x1
         """,
         "4312 B334 " + ("0000 " * (0x1234 - 2)) + "A800",
+        [],
     ),
     (
         "from test_jump_immediate_overflow",
@@ -1740,6 +1952,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         # The example doesn't use 3300, but the assembler shouldn't make such optimizations.
         "3300 43FF B300 " + ("0000 " * (0xFF00 - 3)) + "A200" + (" 0000" * 0xFF),
+        [],
     ),
     (
         "from test_jump_immediate_underflow",
@@ -1747,6 +1960,7 @@ TESTS_INSTRUCTIONS_RS = [
         j -0x031
         """,
         "A830",
+        [],
     ),
     (
         "from test_jump_immediate_extreme_positive",
@@ -1754,6 +1968,7 @@ TESTS_INSTRUCTIONS_RS = [
         j +0x801
         """,
         "A7FF",
+        [],
     ),
     (
         "from test_jump_immediate_extreme_negative",
@@ -1761,6 +1976,7 @@ TESTS_INSTRUCTIONS_RS = [
         j -0x800
         """,
         "AFFF",
+        [],
     ),
     (
         "from test_branch_doc1",
@@ -1772,6 +1988,7 @@ TESTS_INSTRUCTIONS_RS = [
         b r3 -0x1
         """,
         "3301 4712 B734 " + ("0000 " * (0x1234 - 3)) + "9380",
+        [],
     ),
     (
         "from test_branch_doc2",
@@ -1779,6 +1996,7 @@ TESTS_INSTRUCTIONS_RS = [
         b r5 -0x1
         """,
         "9580",
+        [],
     ),
     (
         "from test_compare_doc",
@@ -1788,6 +2006,7 @@ TESTS_INSTRUCTIONS_RS = [
         ne r3 r4
         """,
         "3305 3407 8A34",
+        [],
     ),
     (
         "from test_unary_doc1",
@@ -1796,6 +2015,7 @@ TESTS_INSTRUCTIONS_RS = [
         not r6, r5
         """,
         "3534 4512 5A56",
+        [],
     ),
     (
         "from test_unary_doc2",
@@ -1804,6 +2024,7 @@ TESTS_INSTRUCTIONS_RS = [
         incr r3
         """,
         "3329 5933",
+        [],
     ),
     (
         "from test_unary_rnd_inclusive",
@@ -1814,6 +2035,7 @@ TESTS_INSTRUCTIONS_RS = [
         ge r2 r0
         """,
         "3105 5E12 8C21 8620",
+        [],
     ),
     (
         "from test_unary_rnd_extreme",
@@ -1824,6 +2046,7 @@ TESTS_INSTRUCTIONS_RS = [
         eq r2 r0
         """,
         "31FF 5E12 8421 8420",
+        [],
     ),
     (
         "from test_binary_doc",
@@ -1833,6 +2056,7 @@ TESTS_INSTRUCTIONS_RS = [
         mul r5 r6
         """,
         "3505 3607 6256",
+        [],
     ),
     # FIXME: labels not yet implemented
     # (
@@ -1851,59 +2075,68 @@ TESTS_INSTRUCTIONS_RS = [
     #     ret
     #     """,
     #     "3018 3101 6012 5800 2002 6021 5800 2001 9085 102A",
+    #     [],
     # ),
 ]
 
 
 class AsmTests(unittest.TestCase):
     def test_empty(self):
-        asm.ERROR_OUTPUT = False
-        self.assertEqual(b"\x00" * asm.SEGMENT_LENGTH, asm.compile_to_segment(""))
-        self.assertEqual(b"\x00" * asm.SEGMENT_LENGTH, asm.compile_to_segment("\n"))
+        empty_result = (b"\x00" * asm.SEGMENT_LENGTH, [])
+        self.assertEqual(empty_result, asm.compile_to_segment(""))
+        self.assertEqual(empty_result, asm.compile_to_segment("\n"))
 
     def test_testsuite_names(self):
-        nameCounter = Counter(name for name, _, _ in ASM_TESTS)
+        nameCounter = Counter(name for name, _, _, _ in ASM_TESTS)
         for name, count in nameCounter.items():
             with self.subTest(t="ASM_TESTS", name=name):
                 self.assertEqual(count, 1)
-        nameCounter = Counter(name for name, _ in NEGATIVE_TESTS)
+        nameCounter = Counter(name for name, _, _ in NEGATIVE_TESTS)
         for name, count in nameCounter.items():
             with self.subTest(t="NEGATIVE_TESTS", name=name):
                 self.assertEqual(count, 1)
+        nameCounter = Counter(name for name, _, _, _ in TESTS_INSTRUCTIONS_RS)
+        for name, count in nameCounter.items():
+            with self.subTest(t="TESTS_INSTRUCTIONS_RS", name=name):
+                self.assertEqual(count, 1)
+
+    def assert_assembly(self, asm_text, expected_segment, expected_error_log):
+        actual_segment, actual_error_log = asm.compile_to_segment(asm_text)
+        self.assertEqual(expected_segment, actual_segment)
+        # self.assertEqual(error_log, actual_error_log)
+        # TODO: Errors are currently too flaky, especially for overloads.
+
+    def parse_and_extend_hex(self, code_prefix_hex):
+        segment = bytearray.fromhex(code_prefix_hex)
+        self.assertTrue(len(segment) <= asm.SEGMENT_LENGTH)
+        if len(segment) > asm.SEGMENT_LENGTH // 2:
+            # If a very long sequence is specified, it's probably supposed to be the entire program.
+            self.assertEqual(len(segment), asm.SEGMENT_LENGTH)
+        else:
+            self.assertEqual(len(segment) % 2, 0)
+            padding = b"\x00" * (asm.SEGMENT_LENGTH - len(segment))
+            segment.extend(padding)
+        return segment
 
     def test_hardcoded(self):
-        asm.ERROR_OUTPUT = False
-        for i, (name, asm_text, code_prefix_hex) in enumerate(ASM_TESTS):
+        for i, data_tuple in enumerate(ASM_TESTS):
+            name, asm_text, code_prefix_hex, expected_error_log = data_tuple
             with self.subTest(i=i, name=name):
-                expected_segment = bytearray.fromhex(code_prefix_hex)
-                self.assertTrue(len(expected_segment) <= asm.SEGMENT_LENGTH)
-                if len(expected_segment) > asm.SEGMENT_LENGTH // 2:
-                    # If a very long sequence is specified, it's probably supposed to be the entire program.
-                    self.assertEqual(len(expected_segment), asm.SEGMENT_LENGTH)
-                self.assertEqual(len(expected_segment) % 2, 0)
-                padding = b"\x00" * (asm.SEGMENT_LENGTH - len(expected_segment))
-                expected_segment.extend(padding)
-                self.assertEqual(expected_segment, asm.compile_to_segment(asm_text))
+                expected_segment = self.parse_and_extend_hex(code_prefix_hex)
+                self.assert_assembly(asm_text, expected_segment, expected_error_log)
 
     def test_negative(self):
-        asm.ERROR_OUTPUT = False
-        for i, (name, asm_text) in enumerate(NEGATIVE_TESTS):
+        for i, data_tuple in enumerate(NEGATIVE_TESTS):
+            name, asm_text, expected_error_log = data_tuple
             with self.subTest(i=i, name=name):
-                self.assertIsNone(asm.compile_to_segment(asm_text))
+                self.assert_assembly(asm_text, None, expected_error_log)
 
     def test_from_instructions_rs(self):
-        asm.ERROR_OUTPUT = False
-        for i, (name, asm_text, code_prefix_hex) in enumerate(TESTS_INSTRUCTIONS_RS):
+        for i, data_tuple in enumerate(TESTS_INSTRUCTIONS_RS):
+            name, asm_text, code_prefix_hex, expected_error_log = data_tuple
             with self.subTest(i=i, name=name):
-                expected_segment = bytearray.fromhex(code_prefix_hex)
-                self.assertTrue(len(expected_segment) <= asm.SEGMENT_LENGTH)
-                if len(expected_segment) > asm.SEGMENT_LENGTH // 2:
-                    # If a very long sequence is specified, it's probably supposed to be the entire program.
-                    self.assertEqual(len(expected_segment), asm.SEGMENT_LENGTH)
-                self.assertEqual(len(expected_segment) % 2, 0)
-                padding = b"\x00" * (asm.SEGMENT_LENGTH - len(expected_segment))
-                expected_segment.extend(padding)
-                self.assertEqual(expected_segment, asm.compile_to_segment(asm_text))
+                expected_segment = self.parse_and_extend_hex(code_prefix_hex)
+                self.assert_assembly(asm_text, expected_segment, expected_error_log)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,6 @@ import sys
 SEGMENT_LENGTH = 131072
 ASM_COMMANDS = dict()
 DEBUG_OUTPUT = False
-ERROR_OUTPUT = True
 
 
 def mod_s16(value):
@@ -110,11 +109,10 @@ class Assembler:
         self.current_pointer = 0x0000
         self.known_labels = dict()
         self.forward_references = dict()
+        self.error_log = []
 
     def error(self, msg):
-        if DEBUG_OUTPUT or ERROR_OUTPUT:
-            print(f"line {self.current_lineno}: {msg}", file=sys.stderr)
-            # TODO: Do something more clever?
+        self.error_log.append(f"line {self.current_lineno}: {msg}")
         return False
 
     def advance(self, by_words):
@@ -927,18 +925,25 @@ class Assembler:
 
 
 def compile_to_segment(asm_text):
+    """
+    Returns a tuple of (asm_bytes, error_log), where:
+    - asm_bytes is an instance of 'bytes' (in case of success) or is 'None' (in case of failure).
+    - error_log is an instance of 'list', containing a list of warning and error message strings.
+    """
     asm = Assembler()
     for i, line in enumerate(asm_text.split("\n")):
         if not asm.parse_line(line, i):
-            return None
-    return asm.segment_bytes()
+            return None, asm.error_log
+    return asm.segment_bytes(), asm.error_log
 
 
 def run_on_files(infile, outfile):
     with open(infile, "r") as fp:
         asm_text = fp.read()
-    segment = compile_to_segment(asm_text)
-    if not isinstance(segment, bytes):
+    segment, error_log = compile_to_segment(asm_text)
+    for e in error_log:
+        print(e, file=sys.stderr)
+    if segment is None:
         return False
     assert len(segment) == 2 * (1 << 16)  # 64K two-byte words
     with open(outfile, "wb") as fp:
