@@ -120,7 +120,9 @@ class Assembler:
         unwrapped_pointer = self.current_pointer
         self.current_pointer %= SEGMENT_LENGTH // 2
         if unwrapped_pointer != self.current_pointer:
-            self.error(f"segment pointer overflow, now at 0x{self.current_pointer:04X}")
+            self.error(
+                f"segment pointer overflow, now at 0x{self.current_pointer:04X} (non-fatal)"
+            )
             # Not really an error though.
         return True
 
@@ -230,22 +232,30 @@ class Assembler:
         return label_name
 
     def parse_some(self, accepted_types, reg_or_imm_string, context):
-        if ArgType.REGISTER in accepted_types:
-            reg = self.parse_reg(reg_or_imm_string, context)
-            if reg is not None:
-                return (ArgType.REGISTER, reg)
-            # FIXME: Shouldn't report the error message about it not being a register just yet
-        if ArgType.IMMEDIATE in accepted_types:
-            imm = self.parse_imm(reg_or_imm_string, context)
-            if imm is not None:
-                return (ArgType.IMMEDIATE, imm)
-            # FIXME: Shouldn't report the error message about it not being a register just yet
-        if ArgType.LABEL in accepted_types:
-            label_name = self.parse_label(reg_or_imm_string, context)
-            if label_name is not None:
-                return (ArgType.LABEL, label_name)
-        # FIXME: Should report all errors in a sensible combination
-        return None
+        old_error_log = self.error_log
+        self.error_log = []
+        keep_new_errors = False
+        try:
+            if ArgType.REGISTER in accepted_types:
+                reg = self.parse_reg(reg_or_imm_string, context)
+                if reg is not None:
+                    return (ArgType.REGISTER, reg)
+            if ArgType.IMMEDIATE in accepted_types:
+                imm = self.parse_imm(reg_or_imm_string, context)
+                if imm is not None:
+                    return (ArgType.IMMEDIATE, imm)
+            if ArgType.LABEL in accepted_types:
+                label_name = self.parse_label(reg_or_imm_string, context)
+                if label_name is not None:
+                    return (ArgType.LABEL, label_name)
+            keep_new_errors = True
+            return None
+        finally:
+            new_error_log = self.error_log
+            self.error_log = old_error_log
+            if keep_new_errors:
+                assert new_error_log
+                self.error_log.extend(new_error_log)
 
     def parse_reg_or_imm(self, reg_or_imm_string, context):
         return self.parse_some(

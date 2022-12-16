@@ -741,7 +741,7 @@ ASM_TESTS = [
         lw r4, 0x56
         """,
         "3456" + (" 0000" * (0x1_0000 - 2)) + " 3123",
-        [],
+        ["line 2: segment pointer overflow, now at 0x0000 (non-fatal)"],
     ),
     (
         "literal simple",
@@ -818,7 +818,7 @@ ASM_TESTS = [
         b r4 _some_label
         """,
         "102A 3333" + (" 0000" * (65536 - 3)) + " 9400",
-        [],
+        ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
     ),
     (
         "branch label overflow negative",
@@ -831,7 +831,7 @@ ASM_TESTS = [
         lw r5, 0x79
         """,
         "102A 3333" + (" 0000" * (65536 - 4)) + " 9401 3579",
-        [],
+        ["line 6: segment pointer overflow, now at 0x0000 (non-fatal)"],
     ),
     (
         "branch label extreme negative",
@@ -891,7 +891,7 @@ ASM_TESTS = [
         lw r3, 0x33
         """,
         "9480 102A" + (" 0000" * (65536 - 3)) + " 3333",
-        [],
+        ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
     ),
     (
         "branch label overflow positive",
@@ -906,7 +906,7 @@ ASM_TESTS = [
         lw r2, 0x10
         """,
         "3333 3456 9483 102A" + (" 0000" * (65536 - 6)) + " 3666 3210",
-        [],
+        ["line 8: segment pointer overflow, now at 0x0000 (non-fatal)"],
     ),
     (
         "branch label extreme positive",
@@ -940,14 +940,14 @@ NEGATIVE_TESTS = [
         """
         garbage
         """,
-        [],
+        None,
     ),
     (
         "return with arg",
         """
         ret 42
         """,
-        [],
+        None,
     ),
     (
         "late garbage",
@@ -955,7 +955,7 @@ NEGATIVE_TESTS = [
         ret
         garbage
         """,
-        [],
+        None,
     ),
     (
         "late return with arg",
@@ -963,112 +963,112 @@ NEGATIVE_TESTS = [
         ret
         ret 42
         """,
-        [],
+        None,
     ),
     (
         "CPUID with arg",
         """
         cpuid 42
         """,
-        [],
+        None,
     ),
     (
         "Debug-dump with arg",
         """
         debug 1337
         """,
-        [],
+        None,
     ),
     (
         "Time with arg",
         """
         time 0x42
         """,
-        [],
+        None,
     ),
     (
         "nop with arg imm",
         """
         nop 0x42
         """,
-        [],
+        None,
     ),
     (
         "nop with arg reg",
         """
         nop r5
         """,
-        [],
+        None,
     ),
     (
         "Store word no arg",
         """
         sw
         """,
-        [],
+        None,
     ),
     (
         "Store word one arg",
         """
         sw r4
         """,
-        [],
+        None,
     ),
     (
         "Store word no comma",
         """
         sw r4 r4
         """,
-        [],
+        None,
     ),
     (
         "Store word too many",
         """
         sw r4, r4, r4
         """,
-        [],
+        None,
     ),
     (
         "Store word illegal register",
         """
         sw r16, r1
         """,
-        [],
+        None,
     ),
     (
         "Store word other illegal register",
         """
         sw r4, r16
         """,
-        [],
+        None,
     ),
     (
         "Store word underscore register",
         """
         sw r1_3, r1
         """,
-        [],
+        None,
     ),
     (
         "Store word immediate address",
         """
         sw 0x1234, r1
         """,
-        [],
+        None,
     ),
     (
         "Store word immediate value",
         """
         sw r4, 0x1234
         """,
-        [],
+        None,
     ),
     (
         "Load word instruction immediate value",
         """
         lwi 0x1234, r4
         """,
-        [],
+        None,
     ),
     (
         "Load word instruction immediate address",
@@ -1076,266 +1076,266 @@ NEGATIVE_TESTS = [
         """
         lwi r5, 0x1234
         """,
-        [],
+        None,
     ),
     (
         "Load word data immediate value",
         """
         lw 0x1234, r5
         """,
-        [],
+        None,
     ),
     (
         "Load word data immediate (too low)",
         """
         lw r1, -0x8001
         """,
-        [],
+        None,
     ),
     (
         "Load word data immediate (too high)",
         """
         lw r0, 65536
         """,
-        [],
+        None,
     ),
     (
         "Load word data immediate (garbage)",
         """
         lw r0, garbage
         """,
-        [],
+        None,
     ),
     (
         "Load word data immediate high-only from register",
         """
         lhi r0, r1
         """,
-        [],
+        None,
     ),
     (
         "Load word data immediate high-only invalid",
         """
         lhi r0, 0x1234
         """,
-        [],
+        None,
     ),
     (
         "decr no args",
         """
         decr
         """,
-        [],
+        None,
     ),
     (
         "decr too many args",
         """
         decr r1, r2, r3
         """,
-        [],
+        None,
     ),
     (
         "decr 1-arg, imm",
         """
         decr 0x123
         """,
-        [],
+        None,
     ),
     (
         "decr 2-arg, imm reg",
         """
         decr 123, r0
         """,
-        [],
+        None,
     ),
     (
         "decr 2-arg, reg imm",
         """
         decr r0, 123
         """,
-        [],
+        None,
     ),
     (
         "incr no args",
         """
         incr
         """,
-        [],
+        None,
     ),
     (
         "not no args",
         """
         not
         """,
-        [],
+        None,
     ),
     (
         "clz no args",
         """
         clz
         """,
-        [],
+        None,
     ),
     (
         "ctz no args",
         """
         ctz
         """,
-        [],
+        None,
     ),
     (
         "rnd no args",
         """
         rnd
         """,
-        [],
+        None,
     ),
     (
         "mov no args",
         """
         mov
         """,
-        [],
+        None,
     ),
     (
         "popcnt no args",
         """
         popcnt
         """,
-        [],
+        None,
     ),
     (
         "add comma space",
         """
         add r4, r5
         """,
-        [],
+        None,
     ),
     (
         "add comma nospace",
         """
         add r4,r5
         """,
-        [],
+        None,
     ),
     (
         "add three args",
         """
         add r4 r5 r6
         """,
-        [],
+        None,
     ),
     (
         "add noargs",
         """
         add
         """,
-        [],
+        None,
     ),
     (
         "add space comma space",
         """
         add r4 , r5
         """,
-        [],
+        None,
     ),
     (
         "sub noargs",
         """
         sub
         """,
-        [],
+        None,
     ),
     (
         "mul noargs",
         """
         mul
         """,
-        [],
+        None,
     ),
     (
         "mulh noargs",
         """
         mulh
         """,
-        [],
+        None,
     ),
     (
         "divu noargs",
         """
         divu
         """,
-        [],
+        None,
     ),
     (
         "divs noargs",
         """
         divs
         """,
-        [],
+        None,
     ),
     (
         "modu noargs",
         """
         modu
         """,
-        [],
+        None,
     ),
     (
         "mods noargs",
         """
         mods
         """,
-        [],
+        None,
     ),
     (
         "and noargs",
         """
         and
         """,
-        [],
+        None,
     ),
     (
         "or noargs",
         """
         or
         """,
-        [],
+        None,
     ),
     (
         "xor noargs",
         """
         xor
         """,
-        [],
+        None,
     ),
     (
         "sl noargs",
         """
         sl
         """,
-        [],
+        None,
     ),
     (
         "srl noargs",
         """
         srl
         """,
-        [],
+        None,
     ),
     (
         "sra noargs",
         """
         sra
         """,
-        [],
+        None,
     ),
     (
         "lt noargs",
         """
         lt
         """,
-        [],
+        None,
     ),
     # Skip the other compare instructions, there's not much to test anyway.
     (
@@ -1343,112 +1343,112 @@ NEGATIVE_TESTS = [
         """
         b r5, 5
         """,
-        [],
+        None,
     ),
     (
         "branch too large",
         """
         b r5 130
         """,
-        [],
+        None,
     ),
     (
         "branch too negative",
         """
         b r10 -129
         """,
-        [],
+        None,
     ),
     (
         "branch single arg",
         """
         b r10
         """,
-        [],
+        None,
     ),
     (
         "branch to reg",
         """
         b r10 r5
         """,
-        [],
+        None,
     ),
     (
         "branch by 0",
         """
         b r10 0
         """,
-        [],
+        None,
     ),
     (
         "branch by 1",
         """
         b r10 1
         """,
-        [],
+        None,
     ),
     (
         "jump noarg",
         """
         j
         """,
-        [],
+        None,
     ),
     (
         "jump two arg immediate, comma",
         """
         j 0x12, 0x34
         """,
-        [],
+        None,
     ),
     (
         "jump two arg immediate, space",
         """
         j 0x12 0x34
         """,
-        [],
+        None,
     ),
     (
         "jump by immediate extreme positive",
         """
         j 0x802
         """,
-        [],
+        None,
     ),
     (
         "jump by immediate extreme negative",
         """
         j -0x801
         """,
-        [],
+        None,
     ),
     (
         "jump to register onearg",
         """
         j r16
         """,
-        [],
+        None,
     ),
     (
         "jump to register twoarg extreme positive",
         """
         j r3 +128
         """,
-        [],
+        None,
     ),
     (
         "jump to register twoarg extreme negative",
         """
         j r8 -129
         """,
-        [],
+        None,
     ),
     (
         "offset negative",
         """
         .offset -1
         """,
-        [],
+        None,
     ),
     (
         "offset overwrite",
@@ -1457,7 +1457,7 @@ NEGATIVE_TESTS = [
         .offset 0
         ret
         """,
-        [],
+        None,
     ),
     (
         "offset overwrite indirect",
@@ -1469,42 +1469,42 @@ NEGATIVE_TESTS = [
         ret
         ret # Bam!
         """,
-        [],
+        None,
     ),
     (
         "literal too positive",
         """
         .word 65536
         """,
-        [],
+        None,
     ),
     (
         "literal too negative decimal",
         """
         .word -32769
         """,
-        [],
+        None,
     ),
     (
         "literal too negative hex",
         """
         .word -0x8001
         """,
-        [],
+        None,
     ),
     (
         "mov single-arg",
         """
         mov r0
         """,
-        [],
+        None,
     ),
     (
         "mov noop",
         """
         mov r1, r1
         """,
-        [],
+        None,
     ),
     (
         "overwrite zeros",
@@ -1513,35 +1513,35 @@ NEGATIVE_TESTS = [
         .offset 0
         .word 0x0000
         """,
-        [],
+        None,
     ),
     (
         "label no name",
         """
         .label
         """,
-        [],
+        None,
     ),
     (
         "label bad name",
         """
         .label 1234
         """,
-        [],
+        None,
     ),
     (
         "label no underscore",
         """
         .label foobar
         """,
-        [],
+        None,
     ),
     (
         "label too short",
         """
         .label _
         """,
-        [],
+        None,
     ),
     (
         "label multidef",
@@ -1550,77 +1550,77 @@ NEGATIVE_TESTS = [
         ret
         .label _hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special $",
         """
         .label _$hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special %",
         """
         .label _%hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special &",
         """
         .label _&hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special (",
         """
         .label _(hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special )",
         """
         .label _)hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special =",
         """
         .label _=hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special single quote",
         """
         .label _'hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special double quote",
         """
         .label _"hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special [",
         """
         .label _[hello_world
         """,
-        [],
+        None,
     ),
     (
         "label special ]",
         """
         .label _]hello_world
         """,
-        [],
+        None,
     ),
     (
         "branch unknown label",
@@ -1630,7 +1630,7 @@ NEGATIVE_TESTS = [
         lw r3, 0x33
         b r4 _wrong_label
         """,
-        [],
+        None,
     ),
     (
         "branch label zero",
@@ -1639,7 +1639,7 @@ NEGATIVE_TESTS = [
         .label _some_label
         b r4 _some_label
         """,
-        [],
+        None,
     ),
     (
         "branch label one",
@@ -1649,7 +1649,7 @@ NEGATIVE_TESTS = [
         .label _some_label
         lw r2, 0x10
         """,
-        [],
+        None,
     ),
     (
         "branch label one overflow",
@@ -1659,7 +1659,7 @@ NEGATIVE_TESTS = [
         .offset 0xFFFF
         b r4 _some_label
         """,
-        [],
+        None,
     ),
     (
         "branch label too extreme negative",
@@ -1670,7 +1670,7 @@ NEGATIVE_TESTS = [
         .offset 0x0082
         b r4 _some_label # the label is at relative -0x81
         """,
-        [],
+        None,
     ),
     (
         "branch label too extreme positive",
@@ -1682,7 +1682,7 @@ NEGATIVE_TESTS = [
         .label _some_label
         nop
         """,
-        [],
+        None,
     ),
 ]
 
@@ -1918,7 +1918,7 @@ TESTS_INSTRUCTIONS_RS = [
         lw r4, 0x0012
         """,
         "37FF B700 " + ("0000 " * (65536 - 3)) + "3412",
-        [],
+        ["line 4: segment pointer overflow, now at 0x0000 (non-fatal)"],
     ),
     (
         "from test_jump_imm_doc1",
@@ -2103,7 +2103,8 @@ class AsmTests(unittest.TestCase):
     def assert_assembly(self, asm_text, expected_segment, expected_error_log):
         actual_segment, actual_error_log = asm.compile_to_segment(asm_text)
         self.assertEqual(expected_segment, actual_segment)
-        # self.assertEqual(error_log, actual_error_log)
+        if expected_error_log is not None:
+            self.assertEqual(expected_error_log, actual_error_log)
         # TODO: Errors are currently too flaky, especially for overloads.
 
     def parse_and_extend_hex(self, code_prefix_hex):
