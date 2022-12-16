@@ -713,6 +713,141 @@ ASM_TESTS = [
         """,
         "102A 3456",
     ),
+    (
+        "branch label low negative",
+        """
+        lw r2, 0x10
+        .label _some_label
+        lw r3, 0x33
+        b r4 _some_label
+        """,
+        "3210 3333 9480",
+    ),
+    (
+        "branch label medium negative",
+        """
+        .label _some_label
+        lw r3, 0x33
+        lw r4, 0x44
+        lw r5, 0x55
+        b r4 _some_label
+        """,
+        "3333 3444 3555 9482",
+    ),
+    (
+        "branch label barely-overflow negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0xFFFF
+        b r4 _some_label
+        """,
+        "102A 3333" + (" 0000" * (65536 - 3)) + " 9400",
+    ),
+    (
+        "branch label overflow negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0xFFFE
+        b r4 _some_label
+        lw r5, 0x79
+        """,
+        "102A 3333" + (" 0000" * (65536 - 4)) + " 9401 3579",
+    ),
+    (
+        "branch label extreme negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0x0081
+        b r4 _some_label # the label is at relative -0x80
+        """,
+        "102A 3333" + (" 0000" * (0x81 - 2)) + " 94FF",
+    ),
+    (
+        "branch label negative to undef",
+        """
+        ret
+        .label _some_label
+        .offset 0x005
+        b r4 _some_label # the label is at relative -4
+        """,
+        "102A 0000 0000 0000 0000 9483",
+    ),
+    (
+        "branch label low positive",
+        """
+        b r6 _some_label
+        lw r2, 0x22
+        .label _some_label
+        lw r3, 0x33
+        """,
+        "9600 3222 3333",
+    ),
+    (
+        "branch label medium positive",
+        """
+        lw r3, 0x33
+        b r7 _some_label
+        lw r4, 0x44
+        lw r5, 0x55
+        lw r6, 0x66
+        .label _some_label
+        lw r7, 0x77
+        """,
+        "3333 9702 3444 3555 3666 3777",
+    ),
+    (
+        "branch label barely-overflow positive",
+        """
+        b r4 _some_label
+        ret
+        .offset 0xFFFF
+        .label _some_label
+        lw r3, 0x33
+        """,
+        "9480 102A" + (" 0000" * (65536 - 3)) + " 3333",
+    ),
+    (
+        "branch label overflow positive",
+        """
+        lw r3, 0x33
+        lw r4, 0x56
+        b r4 _some_label # offset is -4
+        ret
+        .offset 0xFFFE
+        .label _some_label
+        lw r6, 0x66
+        lw r2, 0x10
+        """,
+        "3333 3456 9483 102A" + (" 0000" * (65536 - 6)) + " 3666 3210",
+    ),
+    (
+        "branch label extreme positive",
+        """
+        lw r3, 0x33
+        b r4 _some_label # the label is at relative +0x81
+        lw r4, 0x56
+        .offset 0x0082
+        .label _some_label
+        nop
+        """,
+        "3333 947F 3456" + (" 0000" * (0x82 - 3)) + " 5F00",
+    ),
+    (
+        "branch label positive to undef",
+        """
+        b r4 _some_label
+        ret
+        .offset 5
+        .label _some_label
+        """,
+        "9403 102A",
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1305,6 +1440,62 @@ NEGATIVE_TESTS = [
         "label special ]",
         """
         .label _]hello_world
+        """,
+    ),
+    (
+        "branch unknown label",
+        """
+        lw r2, 0x10
+        .label _some_label
+        lw r3, 0x33
+        b r4 _wrong_label
+        """,
+    ),
+    (
+        "branch label zero",
+        """
+        lw r2, 0x10
+        .label _some_label
+        b r4 _some_label
+        """,
+    ),
+    (
+        "branch label one",
+        """
+        lw r2, 0x10
+        b r4 _some_label
+        .label _some_label
+        lw r2, 0x10
+        """,
+    ),
+    (
+        "branch label one overflow",
+        """
+        .label _some_label
+        lw r2, 0x10
+        .offset 0xFFFF
+        b r4 _some_label
+        """,
+    ),
+    (
+        "branch label too extreme negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0x0082
+        b r4 _some_label # the label is at relative -0x81
+        """,
+    ),
+    (
+        "branch label too extreme positive",
+        """
+        lw r3, 0x33
+        b r4 _some_label # the label is at relative +0x82
+        lw r4, 0x56
+        .offset 0x0083
+        .label _some_label
+        nop
         """,
     ),
 ]

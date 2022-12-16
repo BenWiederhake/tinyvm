@@ -38,17 +38,7 @@ def asm_directive(fn):
 class ArgType(Enum):
     REGISTER = 1
     IMMEDIATE = 2
-
-
-class ForwardReference:
-    def __init__(self, bound_method, orig_lineno, orig_pointer, data):
-        self.bound_method = bound_method
-        self.orig_lineno = orig_lineno
-        self.orig_pointer = orig_pointer
-        self.data = data
-
-    def resolve(self):
-        return self.bound_method(self.data)
+    LABEL = 3
 
 
 class Recursion:
@@ -81,6 +71,38 @@ class Recursion:
         self.do_switch()
 
 
+class ForwardReference:
+    def __init__(self, assembler, by_words, bound_method, data):
+        self.assembler = assembler
+        self.by_words = by_words
+        self.bound_method = bound_method
+        self.orig_lineno = assembler.current_lineno
+        self.orig_pointer = assembler.current_pointer
+        self.data = data
+
+    def resolve_afterwards(self):
+        with Recursion(self.assembler, self.orig_lineno, self.orig_pointer):
+            return self.apply()
+
+    def apply(self):
+        assert self.assembler.current_lineno == self.orig_lineno
+        assert self.assembler.current_pointer == self.orig_pointer
+        # FIXME: Test two-word patches across the 0xFFFF boundary.
+        result = self.bound_method(*self.data)
+        if result:
+            word_diff = self.assembler.current_pointer - self.orig_pointer
+            actual_words = word_diff % 0x1_0000
+            assert actual_words == self.by_words, (
+                actual_words,
+                self.by_words,
+                self.bound_method,
+                self.data,
+                self.orig_pointer,
+                self.assembler.current_pointer,
+            )
+        return result
+
+
 class Assembler:
     def __init__(self):
         self.segment_words = [None] * (SEGMENT_LENGTH // 2)
@@ -95,17 +117,25 @@ class Assembler:
             # TODO: Do something more clever?
         return False
 
+    def advance(self, by_words):
+        self.current_pointer += by_words
+        unwrapped_pointer = self.current_pointer
+        self.current_pointer %= SEGMENT_LENGTH // 2
+        if unwrapped_pointer != self.current_pointer:
+            self.error(f"segment pointer overflow, now at 0x{self.current_pointer:04X}")
+            # Not really an error though.
+        return True
+
     def push_word(self, word):
         if DEBUG_OUTPUT:
             print(f"  pushing {word:04X}")
         assert 0 <= word <= 0xFFFF
         if self.segment_words[self.current_pointer] is not None:
             return self.error(
-                f"Would overwrite word {self.segment_words[self.current_pointer]} at {self.current_pointer:04X}."
+                f"Would overwrite word 0x{self.segment_words[self.current_pointer]:04X} at 0x{self.current_pointer:04X}."
             )
         self.segment_words[self.current_pointer] = word
-        self.current_pointer += 1
-        self.current_pointer %= SEGMENT_LENGTH // 2
+        self.advance(1)
         return True
 
     def push_words(self, *words):
@@ -113,6 +143,27 @@ class Assembler:
             if not self.push_word(word):
                 return False
         return True
+
+    def forward(self, by_words, label_name, bound_method, data):
+        assert by_words < 4096, (
+            "most definitely an error, aborting",
+            by_words,
+            label_name,
+            bound_method,
+            data,
+        )
+        fwd_ref = ForwardReference(self, by_words, bound_method, data)
+        if label_name in self.known_labels:
+            # Immediate resolution
+            return fwd_ref.apply()
+        else:
+            # Must be skipped for now, to be patched when 'label_name' is defined
+            if label_name not in self.forward_references:
+                self.forward_references[label_name] = [fwd_ref]
+            else:
+                self.forward_references[label_name].append(fwd_ref)
+            self.advance(by_words)
+            return True
 
     def parse_reg(self, reg_string, context):
         # TODO: Add register alias support?
@@ -191,16 +242,21 @@ class Assembler:
             if imm is not None:
                 return (ArgType.IMMEDIATE, imm)
             # FIXME: Shouldn't report the error message about it not being a register just yet
-        # if ArgType.LABEL in accepted_types:
-        #     label_name = self.parse_label(reg_or_imm_string, context)
-        #     if label_name is not None:
-        #         return (ArgType.LABEL, label_name)
+        if ArgType.LABEL in accepted_types:
+            label_name = self.parse_label(reg_or_imm_string, context)
+            if label_name is not None:
+                return (ArgType.LABEL, label_name)
         # FIXME: Should report all errors in a sensible combination
         return None
 
     def parse_reg_or_imm(self, reg_or_imm_string, context):
         return self.parse_some(
             (ArgType.REGISTER, ArgType.IMMEDIATE), reg_or_imm_string, context
+        )
+
+    def parse_imm_or_lab(self, imm_or_lab_string, context):
+        return self.parse_some(
+            (ArgType.IMMEDIATE, ArgType.LABEL), imm_or_lab_string, context
         )
 
     def parse_unary_regs_to_byte(self, command, args):
@@ -634,6 +690,15 @@ class Assembler:
         assert 0 <= offset_value <= 0x7F
         return self.push_word(0x9000 | (condition_reg << 8) | sign_mask | offset_value)
 
+    def emit_b_to_label(self, command, condition_reg, label_name):
+        destination_offset, destination_lineno = self.known_labels[label_name]
+        offset_value = mod_s16(destination_offset - self.current_pointer)
+        return self.emit_b_by_value(
+            f"{command} (to label {label_name}=0x{destination_offset:04X}, defined in line {destination_lineno})",
+            condition_reg,
+            offset_value,
+        )
+
     @asm_command
     def parse_command_b(self, command, args):
         arg_list = [e.strip() for e in args.split(" ", 1)]
@@ -650,11 +715,18 @@ class Assembler:
         # FIXME: Support labels and labels with offset
         # FIXME: Support long branches?
         # FIXME: Support combined branches? ("beq", "blt", etc.)
-        offset_value = self.parse_imm(arg_list[1], "second argument to b")
-        if offset_value is None:
+        imm_or_lab = self.parse_imm_or_lab(arg_list[1], "second argument to b")
+        if imm_or_lab is None:
             # Error already reported
             return False
-        return self.emit_b_by_value(command, condition_reg, offset_value)
+        if imm_or_lab[0] == ArgType.IMMEDIATE:
+            offset_value = imm_or_lab[1]
+            return self.emit_b_by_value(command, condition_reg, offset_value)
+        if imm_or_lab[0] == ArgType.LABEL:
+            label_name = imm_or_lab[1]
+            call_data = (command, condition_reg, label_name)
+            return self.forward(1, label_name, self.emit_b_to_label, call_data)
+        raise AssertionError(f"imm_or_lab returned '{imm_or_lab}'?! ")
 
     def command_j_register(self, register, offset):
         if offset >= 0xFF80:
@@ -802,9 +874,8 @@ class Assembler:
             any_reference_failed = False
             del self.forward_references[label_name]
             for fwd_ref in old_references:
-                with Recursion(self, fwd_ref.orig_lineno, fwd_ref.orig_pointer):
-                    if not fwd_ref.resolve():
-                        any_reference_failed = True
+                if not fwd_ref.resolve_afterwards():
+                    any_reference_failed = True
             if any_reference_failed:
                 return self.error(f"When label {label_name} was defined.")
         # No codegen
@@ -842,6 +913,9 @@ class Assembler:
             )
             self.error(
                 f"Found end of asm text, but some forward references are unresolved: {error_text}"
+            )
+            self.error(
+                f"Did you mean any of these defined labels? {list(self.known_labels.keys())}"
             )
             return None
         segment = bytearray(SEGMENT_LENGTH)
