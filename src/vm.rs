@@ -503,7 +503,7 @@ impl VirtualMachine {
         let register = (instruction & 0x0F00) >> 8;
         if self.registers[register as usize] != 0 {
             *increment_pc_as_usual = false;
-            let offset = (instruction & 0x007F) as i8 as i16 as u16; // sign-extend to 16 bits
+            let offset = instruction & 0x007F;
             let sign_bit = instruction & 0x0080;
             if sign_bit == 0 {
                 // - If S=0, the program counter is not incremented by 1 as usual, but rather incremented by 2 + 0b0VVVVVVV.
