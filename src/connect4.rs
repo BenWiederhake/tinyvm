@@ -898,7 +898,7 @@ mod test_game {
         instructions_one[0] = 0x3189; // lw r1, 0xFF89
         instructions_one[1] = 0x2111; // lw r1, r1
         instructions_one[2] = 0x3007; // lw r0, 7
-        instructions_one[3] = 0x6610; // mod r1 r0
+        instructions_one[3] = 0x6610; // modu r1 r0
         instructions_one[4] = 0x102A; // ret
 
         // Mark it read-only to prevent typos.
@@ -921,7 +921,7 @@ mod test_game {
                                       // j move_late // Surprise optimization: This is a noop, this time!
                                       // .label move_late // On moves 18-20, play in column n % 7.
         instructions_two[9] = 0x3007; // lw r0, 7
-        instructions_two[10] = 0x6610; // mod r1 r0
+        instructions_two[10] = 0x6610; // modu r1 r0
         instructions_two[11] = 0x102A; // ret
 
         let mut game = Game::new(instructions_one, instructions_two, 123);
