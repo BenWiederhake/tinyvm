@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
 from enum import Enum
+import hashlib
 import sys
 
 SEGMENT_LENGTH = 131072
 ASM_COMMANDS = dict()
 DEBUG_OUTPUT = False
+VALID_HEX = "0123456789ABCDEFabcdef"
 
 
 def mod_s16(value):
@@ -110,6 +112,7 @@ class Assembler:
         self.known_labels = dict()
         self.forward_references = dict()
         self.error_log = []
+        self.expect_hash = None  # Or tuple (line, SHA256 hex)
 
     def error(self, msg):
         self.error_log.append(f"line {self.current_lineno}: {msg}")
@@ -939,6 +942,22 @@ class Assembler:
         # No codegen
         return True
 
+    @asm_directive
+    def parse_directive_assert_hash(self, command, args):
+        hash_hex = args.strip()
+        if any(c not in VALID_HEX for c in hash_hex) or len(hash_hex) != 64:
+            return self.error(
+                f"Argument to {command} must be a single 64-char hexstring of the expected SHA256, found instead '{hash_hex}'."
+            )
+        assert len(bytes.fromhex(hash_hex)) == 32
+        if self.expect_hash is not None:
+            return self.error(
+                f"Expected hash already stated in line {self.expect_hash[0]}."
+            )
+        self.expect_hash = (self.current_lineno, hash_hex.upper())
+        # No codegen
+        return True
+
     def parse_line(self, line, lineno):
         self.current_lineno = lineno
         line = line.split("#")[0]
@@ -981,7 +1000,16 @@ class Assembler:
             if word is not None:
                 segment[2 * i] = word >> 8
                 segment[2 * i + 1] = word & 0xFF
-        return bytes(segment)
+        segment_bytes = bytes(segment)
+        if self.expect_hash is not None:
+            hash_line, expect_hash_hex = self.expect_hash
+            actual_hash_hex = hashlib.sha256(segment_bytes).hexdigest().upper()
+            if actual_hash_hex != expect_hash_hex:
+                self.error(
+                    f"Compilation successful, but encountered hash mismatch: line {hash_line} expects hash {expect_hash_hex}, but created hash {actual_hash_hex} instead."
+                )
+                return None
+        return segment_bytes
 
 
 def compile_to_segment(asm_text):

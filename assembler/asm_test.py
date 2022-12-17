@@ -1142,6 +1142,50 @@ ASM_TESTS = [
         "3000 102A",
         [],
     ),
+    (
+        "hash zero",
+        """
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
+        """,
+        "0000",
+        [],
+    ),
+    (
+        "hash zero lowercase",
+        """
+        .assert_hash fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471
+        """,
+        "0000",
+        [],
+    ),
+    (
+        "hash ret before",
+        """
+        .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
+        ret
+        """,
+        "102A 0000",
+        [],
+    ),
+    (
+        "hash ret after",
+        """
+        ret
+        .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
+        """,
+        "102A 0000",
+        [],
+    ),
+    (
+        "hash ret after, zero-word",
+        """
+        ret
+        .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
+        .word 0000
+        """,
+        "102A 0000",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1151,7 +1195,7 @@ NEGATIVE_TESTS = [
         garbage
         """,
         [
-            "line 1: Command 'garbage' not found. Did you mean any of ['.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
+            "line 1: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
         ],
     ),
     (
@@ -1170,7 +1214,7 @@ NEGATIVE_TESTS = [
         garbage
         """,
         [
-            "line 2: Command 'garbage' not found. Did you mean any of ['.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
+            "line 2: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
         ],
     ),
     (
@@ -2362,6 +2406,58 @@ NEGATIVE_TESTS = [
         lw r1, 1
         """,
         ["line 5: Attempted to overwrite word 0x102A at 0x0001 with 0x3101."],
+    ),
+    (
+        "hash zero invalid char",
+        """
+        .assert_hash GA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E47
+        """,
+        [
+            "line 1: Argument to .assert_hash must be a single 64-char hexstring of the expected SHA256, found instead 'GA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E47'."
+        ],
+    ),
+    (
+        "hash zero too short",
+        """
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E47
+        """,
+        [
+            "line 1: Argument to .assert_hash must be a single 64-char hexstring of the expected SHA256, found instead 'FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E47'."
+        ],
+    ),
+    (
+        "hash zero too long",
+        """
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E4711
+        """,
+        [
+            "line 1: Argument to .assert_hash must be a single 64-char hexstring of the expected SHA256, found instead 'FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E4711'."
+        ],
+    ),
+    (
+        "hash zero wrong",
+        """
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E472
+        """,
+        [
+            "line 2: Compilation successful, but encountered hash mismatch: line 1 expects hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E472, but created hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471 instead."
+        ],
+    ),
+    (
+        "hash zero multi",
+        """
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
+        """,
+        ["line 2: Expected hash already stated in line 1."],
+    ),
+    (
+        "hash zero contradict",
+        """
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
+        .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E472
+        """,
+        ["line 2: Expected hash already stated in line 1."],
     ),
 ]
 
