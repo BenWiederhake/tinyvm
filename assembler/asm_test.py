@@ -2756,6 +2756,56 @@ TESTS_INSTRUCTIONS_RS = [
     ),
 ]
 
+TESTS_CONNECT4_RS = [
+    (
+        "from test_determine_answer",
+        """
+        lw r0, 0x1337
+        lw r7, 0xABCD
+        sw r7, r7
+        ret
+        """,
+        "3037 4013 37CD 47AB 2077 102A",
+        [],
+    ),
+    (
+        "from test_board_full player one",
+        """
+        lw r1, 0xFF89 # Address of total number of moves made by this player.
+        lw r1, r1
+        lw r0, 7
+        modu r1 r0
+        ret
+        """,
+        "3189 2111 3007 6610 102A",
+        [],
+    ),
+    (
+        "from test_board_full player two",
+        """
+        lw r1, 0xFF89
+        lw r1, r1
+        b r1 _move_nonzero # (offset is +0x3)
+        .label _move_zero # On move 0, play in column 3.
+        lw r0, 3
+        ret
+        .label _move_nonzero
+        lw r0, 18
+        ge r1 r0
+        b r0 _move_late # (offset is +0x2)
+        .label _move_early # On moves 1-17, play in column (n - 1) % 7.
+        decr r1
+        # j _move_late # Surprise optimization: This is a noop, this time!
+        .label _move_late # On moves 18-20, play in column n % 7.
+        lw r0, 7
+        modu r1 r0
+        ret
+        """,
+        "3189 2111 9101 3003 102A 3012 8610 9000 5811 3007 6610 102A",
+        [],
+    ),
+]
+
 
 class AsmTests(unittest.TestCase):
     def test_empty(self):
@@ -2775,6 +2825,10 @@ class AsmTests(unittest.TestCase):
         nameCounter = Counter(name for name, _, _, _ in TESTS_INSTRUCTIONS_RS)
         for name, count in nameCounter.items():
             with self.subTest(t="TESTS_INSTRUCTIONS_RS", name=name):
+                self.assertEqual(count, 1)
+        nameCounter = Counter(name for name, _, _, _ in TESTS_CONNECT4_RS)
+        for name, count in nameCounter.items():
+            with self.subTest(t="TESTS_CONNECT4_RS", name=name):
                 self.assertEqual(count, 1)
 
     def assert_assembly(self, asm_text, expected_segment, expected_error_log):
@@ -2809,6 +2863,13 @@ class AsmTests(unittest.TestCase):
 
     def test_from_instructions_rs(self):
         for i, data_tuple in enumerate(TESTS_INSTRUCTIONS_RS):
+            name, asm_text, code_prefix_hex, expected_error_log = data_tuple
+            with self.subTest(i=i, name=name):
+                expected_segment = self.parse_and_extend_hex(code_prefix_hex)
+                self.assert_assembly(asm_text, expected_segment, expected_error_log)
+
+    def test_from_connect4_rs(self):
+        for i, data_tuple in enumerate(TESTS_CONNECT4_RS):
             name, asm_text, code_prefix_hex, expected_error_log = data_tuple
             with self.subTest(i=i, name=name):
                 expected_segment = self.parse_and_extend_hex(code_prefix_hex)

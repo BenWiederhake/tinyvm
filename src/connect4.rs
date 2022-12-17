@@ -908,18 +908,18 @@ mod test_game {
         // Force the same pattern as in test_board::test_full_board.
         instructions_two[0] = 0x3189; // lw r1, 0xFF89
         instructions_two[1] = 0x2111; // lw r1, r1
-        instructions_two[2] = 0x9101; // b r1 move_nonzero // (offset is +0x3)
-                                      // .label move_zero // On move 0, play in column 3.
+        instructions_two[2] = 0x9101; // b r1 _move_nonzero # (offset is +0x3)
+                                      // .label _move_zero # On move 0, play in column 3.
         instructions_two[3] = 0x3003; // lw r0, 3
         instructions_two[4] = 0x102A; // ret
-                                      // .label move_nonzero
+                                      // .label _move_nonzero
         instructions_two[5] = 0x3012; // lw r0, 18
         instructions_two[6] = 0x8610; // ge r1 r0
-        instructions_two[7] = 0x9000; // b r0 move_late // (offset is +0x2)
-                                      // .label move_early // On moves 1-17, play in column (n - 1) % 7.
+        instructions_two[7] = 0x9000; // b r0 _move_late # (offset is +0x2)
+                                      // .label _move_early # On moves 1-17, play in column (n - 1) % 7.
         instructions_two[8] = 0x5811; // decr r1
-                                      // j move_late // Surprise optimization: This is a noop, this time!
-                                      // .label move_late // On moves 18-20, play in column n % 7.
+                                      // # j _move_late # Surprise optimization: This is a noop, this time!
+                                      // .label _move_late # On moves 18-20, play in column n % 7.
         instructions_two[9] = 0x3007; // lw r0, 7
         instructions_two[10] = 0x6610; // modu r1 r0
         instructions_two[11] = 0x102A; // ret
