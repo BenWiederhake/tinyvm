@@ -1103,6 +1103,45 @@ ASM_TESTS = [
         "3456 102A 3210 A803",
         [],
     ),
+    (
+        "offset with label zero",
+        """
+        .label _some_label
+        .offset 3
+        ret
+        .offset _some_label
+        lw r3, 0x33
+        """,
+        "3333 0000 0000 102A",
+        [],
+    ),
+    (
+        "offset with label nonzero",
+        """
+        lw r2, 0x10
+        .label _some_label
+        .offset 3
+        ret
+        .offset _some_label
+        lw r3, 0x33
+        """,
+        "3210 3333 0000 102A",
+        [],
+    ),
+    (
+        ".offset with label multi",
+        """
+        lw r0, 0
+        .label _some_label
+        .offset _some_label
+        .offset _some_label
+        .offset _some_label
+        .offset _some_label
+        ret
+        """,
+        "3000 102A",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1844,7 +1883,9 @@ NEGATIVE_TESTS = [
         """
         .offset -1
         """,
-        ["line 1: Argument to '.offset' must be positive, found '-1' instead"],
+        [
+            "line 1: Immediate argument to '.offset' must be positive, found '-1' instead"
+        ],
     ),
     (
         "offset overwrite",
@@ -2298,6 +2339,29 @@ NEGATIVE_TESTS = [
             "line 1: Command 'j (to _some_label -1 = by +1)' cannot encode the nop-jump (offset 1). Try using 'nop' instead.",
             "line 3: When label _some_label was defined.",
         ],
+    ),
+    (
+        "offset with label unknown",
+        """
+        lw r0, 0
+        .label _some_label
+        .offset _wrong_label
+        """,
+        [
+            "line 3: Label argument to '.offset' must be an already-delared label, found unknown label '_wrong_label' instead",
+            "line 3: The already-defined labels are: ['_some_label']",
+        ],
+    ),
+    (
+        "offset with label overwrite",
+        """
+        lw r0, 0
+        .label _some_label
+        ret
+        .offset _some_label
+        lw r1, 1
+        """,
+        ["line 5: Attempted to overwrite word 0x102A at 0x0001 with 0x3101."],
     ),
 ]
 

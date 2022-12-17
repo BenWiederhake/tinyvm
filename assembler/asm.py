@@ -865,15 +865,27 @@ class Assembler:
             return self.error(
                 f"Directive '.offset' takes exactly one argument (the new absolute offset), found '{args}' instead"
             )
-        new_offset = self.parse_imm(arg_parts[0], "argument of .offset")
+        new_offset = self.parse_imm_or_lab(arg_parts[0], "argument of .offset")
         if new_offset is None:
-            # Error was already reported
-            return False
-        if new_offset < 0:
             return self.error(
-                f"Argument to '.offset' must be positive, found '{args}' instead"
+                f"Directive '.offset' takes either an immediate value or a label, found '{arg_parts[0]}' instead"
             )
-        self.current_pointer = new_offset
+        if new_offset[0] == ArgType.IMMEDIATE:
+            if new_offset[1] < 0:
+                return self.error(
+                    f"Immediate argument to '.offset' must be positive, found '{args}' instead"
+                )
+            self.current_pointer = new_offset[1]
+        elif new_offset[0] == ArgType.LABEL:
+            label_name = new_offset[1]
+            if label_name not in self.known_labels:
+                self.error(
+                    f"Label argument to '.offset' must be an already-delared label, found unknown label '{args}' instead"
+                )
+                return self.error(
+                    f"The already-defined labels are: {sorted(list(self.known_labels.keys()))}"
+                )
+            self.current_pointer = self.known_labels[label_name][0]
         # No codegen
         return True
 
