@@ -932,6 +932,177 @@ ASM_TESTS = [
         "9403 102A",
         [],
     ),
+    (
+        "jump label low negative",
+        """
+        lw r2, 0x10
+        .label _some_label
+        lw r3, 0x33
+        j _some_label
+        """,
+        "3210 3333 A800",
+        [],
+    ),
+    (
+        "jump label medium negative",
+        """
+        .label _some_label
+        lw r3, 0x33
+        lw r4, 0x44
+        lw r5, 0x55
+        j _some_label
+        """,
+        "3333 3444 3555 A802",
+        [],
+    ),
+    (
+        "jump label barely-overflow negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0xFFFF
+        j _some_label
+        """,
+        "102A 3333" + (" 0000" * (65536 - 3)) + " A000",
+        ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
+    ),
+    (
+        "jump label overflow negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0xFFFE
+        j _some_label
+        lw r5, 0x79
+        """,
+        "102A 3333" + (" 0000" * (65536 - 4)) + " A001 3579",
+        ["line 6: segment pointer overflow, now at 0x0000 (non-fatal)"],
+    ),
+    (
+        "jump label extreme negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0x0801
+        j _some_label # the label is at relative -0x800
+        """,
+        "102A 3333" + (" 0000" * (0x801 - 2)) + " AFFF",
+        [],
+    ),
+    (
+        "jump label negative to undef",
+        """
+        ret
+        .label _some_label
+        .offset 0x005
+        j _some_label # the label is at relative -4
+        """,
+        "102A 0000 0000 0000 0000 A803",
+        [],
+    ),
+    (
+        "jump label low positive",
+        """
+        j _some_label
+        lw r2, 0x22
+        .label _some_label
+        lw r3, 0x33
+        """,
+        "A000 3222 3333",
+        [],
+    ),
+    (
+        "jump label medium positive",
+        """
+        lw r3, 0x33
+        j _some_label
+        lw r4, 0x44
+        lw r5, 0x55
+        lw r6, 0x66
+        .label _some_label
+        lw r7, 0x77
+        """,
+        "3333 A002 3444 3555 3666 3777",
+        [],
+    ),
+    (
+        "jump label barely-overflow positive",
+        """
+        j _some_label
+        ret
+        .offset 0xFFFF
+        .label _some_label
+        lw r3, 0x33
+        """,
+        "A800 102A" + (" 0000" * (65536 - 3)) + " 3333",
+        ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
+    ),
+    (
+        "jump label overflow positive",
+        """
+        lw r3, 0x33
+        lw r4, 0x56
+        j _some_label # offset is -4
+        ret
+        .offset 0xFFFE
+        .label _some_label
+        lw r6, 0x66
+        lw r2, 0x10
+        """,
+        "3333 3456 A803 102A" + (" 0000" * (65536 - 6)) + " 3666 3210",
+        ["line 8: segment pointer overflow, now at 0x0000 (non-fatal)"],
+    ),
+    (
+        "jump label extreme positive",
+        """
+        lw r3, 0x33
+        j _some_label # the label is at relative +0x801
+        lw r4, 0x56
+        .offset 0x0802
+        .label _some_label
+        nop
+        """,
+        "3333 A7FF 3456" + (" 0000" * (0x802 - 3)) + " 5F00",
+        [],
+    ),
+    (
+        "jump label positive to undef",
+        """
+        j _some_label
+        ret
+        .offset 5
+        .label _some_label
+        """,
+        "A003 102A",
+        [],
+    ),
+    (
+        "jump label offset, negative",
+        """
+        lw r4, 0x56
+        j _some_label +0x3  # Effective offset is +6
+        ret
+        lw r2, 0x10
+        .label _some_label
+        """,
+        "3456 A004 102A 3210",
+        [],
+    ),
+    (
+        "jump label offset, positive",
+        """
+        lw r4, 0x56
+        .label _some_label
+        ret
+        lw r2, 0x10
+        j _some_label -2  # Effective offset is -4
+        """,
+        "3456 102A 3210 A803",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1604,7 +1775,9 @@ NEGATIVE_TESTS = [
         j 0x12, 0x34
         """,
         [
-            "line 1: Cannot parse register for first argument to two-arg-j: Expected register (beginning with 'r'), instead got '0x12,'. Try something like 'r0' instead."
+            "line 1: Cannot parse register for first argument to two-arg-j: Expected register (beginning with 'r'), instead got '0x12,'. Try something like 'r0' instead.",
+            "line 1: Label name for first argument to two-arg-j must start with a '_' and contain at least two characters, found name '0x12,' instead",
+            "line 1: Command 'j' with two arguments expects either register or label for first argument, got '0x12,' instead. Note that offsets have to use a space, like 'r4 +5'.",
         ],
     ),
     (
@@ -1613,7 +1786,9 @@ NEGATIVE_TESTS = [
         j 0x12 0x34
         """,
         [
-            "line 1: Cannot parse register for first argument to two-arg-j: Expected register (beginning with 'r'), instead got '0x12'. Try something like 'r0' instead."
+            "line 1: Cannot parse register for first argument to two-arg-j: Expected register (beginning with 'r'), instead got '0x12'. Try something like 'r0' instead.",
+            "line 1: Label name for first argument to two-arg-j must start with a '_' and contain at least two characters, found name '0x12' instead",
+            "line 1: Command 'j' with two arguments expects either register or label for first argument, got '0x12' instead. Note that offsets have to use a space, like 'r4 +5'.",
         ],
     ),
     (
@@ -1642,7 +1817,8 @@ NEGATIVE_TESTS = [
         [
             "line 1: Cannot parse register for first argument of one-arg-j: Expected register with index in 0,1,…,15, instead got 'r16'. Try something like 'r0' instead.",
             "line 1: Cannot parse immediate for first argument of one-arg-j: Expected integer number, instead got 'r16'. Try something like '42', '0xABCD', or '-0x123' instead.",
-            "line 1: Command 'j' with a single argument expects either immediate or register, got 'r16' instead. Note that offsets have to use a space, like 'r4 +5'.",
+            "line 1: Label name for first argument of one-arg-j must start with a '_' and contain at least two characters, found name 'r16' instead",
+            "line 1: Command 'j' with a single argument expects either immediate, register, or label, got 'r16' instead. Note that offsets have to use a space, like 'r4 +5'.",
         ],
     ),
     (
@@ -2004,6 +2180,123 @@ NEGATIVE_TESTS = [
         """,
         [
             "line 5: Command 'b (to label _some_label=0x0002, defined in line 2)' cannot encode the nop-branch (offset 1). Try using 'nop' instead.",
+        ],
+    ),
+    (
+        "jump label nonexistent",
+        """
+        lw r2, 0x10
+        .label _some_label
+        lw r3, 0x33
+        j _wrong_label
+        """,
+        [
+            "line 5: Found end of asm text, but some forward references are unresolved: line 4 at offset 2 references label _wrong_label",
+            "line 5: Did you mean any of these defined labels? ['_some_label']",
+        ],
+    ),
+    (
+        "jump label extreme negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0x0802
+        j _some_label # the label is at relative -0x801
+        """,
+        [
+            "line 5: Command 'j (to _some_label +0 = by -2049)' can only branch by offsets in [-2048, 2049], but not by -2049. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+        ],
+    ),
+    (
+        "jump label extreme positive",
+        """
+        lw r3, 0x33
+        j _some_label # the label is at relative +0x801
+        lw r4, 0x56
+        .offset 0x0803
+        .label _some_label
+        nop
+        """,
+        [
+            "line 2: Command 'j (to _some_label +0 = by +2050)' can only branch by offsets in [-2048, 2049], but not by 2050. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first.",
+            "line 5: When label _some_label was defined.",
+        ],
+    ),
+    (
+        "jump label zero",
+        """
+        .label _some_label
+        j _some_label
+        """,
+        [
+            "line 2: Command 'j (to _some_label +0 = by +0)' cannot encode an infinite loop (offset 0). Try jumping to a register instead."
+        ],
+    ),
+    (
+        "jump label one",
+        """
+        j _some_label
+        .label _some_label
+        ret
+        """,
+        [
+            "line 1: Command 'j (to _some_label +0 = by +1)' cannot encode the nop-jump (offset 1). Try using 'nop' instead.",
+            "line 2: When label _some_label was defined.",
+        ],
+    ),
+    (
+        "jump label offset extreme negative",
+        """
+        ret
+        .label _some_label
+        lw r3, 0x33
+        .offset 0x0801
+        j _some_label -1 # the label is at relative -0x801
+        """,
+        [
+            "line 5: Command 'j (to _some_label -1 = by -2049)' can only branch by offsets in [-2048, 2049], but not by -2049. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+        ],
+    ),
+    (
+        "jump label offset extreme positive",
+        """
+        lw r3, 0x33
+        j _some_label +1 # the label is at relative +0x801
+        lw r4, 0x56
+        .offset 0x0802
+        .label _some_label
+        nop
+        """,
+        [
+            "line 2: Command 'j (to _some_label +1 = by +2050)' can only branch by offsets in [-2048, 2049], but not by 2050. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first.",
+            "line 5: When label _some_label was defined.",
+        ],
+    ),
+    (
+        "jump label offset zero",
+        """
+        j _some_label -2
+        ret
+        .label _some_label
+        lw r3, 0x33
+        """,
+        [
+            "line 1: Command 'j (to _some_label -2 = by +0)' cannot encode an infinite loop (offset 0). Try jumping to a register instead.",
+            "line 3: When label _some_label was defined.",
+        ],
+    ),
+    (
+        "jump label offset one",
+        """
+        j _some_label -1
+        ret
+        .label _some_label
+        lw r3, 0x33
+        """,
+        [
+            "line 1: Command 'j (to _some_label -1 = by +1)' cannot encode the nop-jump (offset 1). Try using 'nop' instead.",
+            "line 3: When label _some_label was defined.",
         ],
     ),
 ]
