@@ -417,14 +417,14 @@ fn test_time_very_long() {
     run_test(
         &[
             0x3705, 0x47B5, // lw r7, 0xB505 # executed 1 time
-            0x5F71, // mv r1, r7 # executed 1 time
-                    // .label outer_loop
-            0x5F72, // mv r2, r7 # executed 0xB505 times
-                    // .label inner_loop
+            0x5F71, // mov r1, r7 # executed 1 time
+                    // .label _outer_loop
+            0x5F72, // mov r2, r7 # executed 0xB505 times
+                    // .label _inner_loop
             0x5822, // decr r2 # executed 0xB505 * 0xB505 times
-            0x9280, // b r2 inner_loop # (offset is -0x1) # executed 0xB505 * 0xB505 times
+            0x9280, // b r2 _inner_loop # (offset is -0x1) # executed 0xB505 * 0xB505 times
             0x5811, // decr r1 # executed 0xB505 times
-            0x9183, // b r1 outer_loop # (offset is -0x4) # executed 0xB505 times
+            0x9183, // b r1 _outer_loop # (offset is -0x4) # executed 0xB505 times
             0x102D, // time # executed 0 times or 1 time, depending on how you look at it
             0x102A, // ret # executed 0 times
             // Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
@@ -1716,14 +1716,14 @@ fn test_fibonacci() {
         &[
             0x3018, // lw r0, 24
             0x3101, // lw r1, 1
-                    // .label start:
+                    // .label _start:
             0x6012, // add r1 r2
             0x5800, // decr r0
             0x2002, // sw r0, r2
             0x6021, // add r2 r1
             0x5800, // decr r0
             0x2001, // sw r0, r1
-            0x9085, // b r0 start # (offset is -0x6)
+            0x9085, // b r0 _start # (offset is -0x6)
             0x102A, // ret
         ],
         &[],

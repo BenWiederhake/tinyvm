@@ -2034,26 +2034,25 @@ TESTS_INSTRUCTIONS_RS = [
         "37AB 5877 9780 102D 102A",
         [],
     ),
-    # FIXME: Labels not implemented yet
-    # (
-    #     "from test_time_very_long",
-    #     """
-    #     lw r7, 0xB505 # executed 1 time
-    #     mv r1, r7 # executed 1 time
-    #     .label outer_loop
-    #     mv r2, r7 # executed 0xB505 times
-    #     .label inner_loop
-    #     decr r2 # executed 0xB505 * 0xB505 times
-    #     b r2 inner_loop # (offset is -0x1) # executed 0xB505 * 0xB505 times
-    #     decr r1 # executed 0xB505 times
-    #     b r1 outer_loop # (offset is -0x4) # executed 0xB505 times
-    #     time # executed 0 times or 1 time, depending on how you look at it
-    #     ret # executed 0 times
-    #     # Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
-    #     """,
-    #     "3705 47B5 5F71 5F72 5822 9280 5811 9183 102D 102A",
-    #     [],
-    # ),
+    (
+        "from test_time_very_long",
+        """
+        lw r7, 0xB505 # executed 1 time
+        mov r1, r7 # executed 1 time
+        .label _outer_loop
+        mov r2, r7 # executed 0xB505 times
+        .label _inner_loop
+        decr r2 # executed 0xB505 * 0xB505 times
+        b r2 _inner_loop # (offset is -0x1) # executed 0xB505 * 0xB505 times
+        decr r1 # executed 0xB505 times
+        b r1 _outer_loop # (offset is -0x4) # executed 0xB505 times
+        time # executed 0 times or 1 time, depending on how you look at it
+        ret # executed 0 times
+        # Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
+        """,
+        "3705 47B5 5F71 5F72 5822 9280 5811 9183 102D 102A",
+        [],
+    ),
     (
         "from test_store_data_doc",
         """
@@ -2380,25 +2379,24 @@ TESTS_INSTRUCTIONS_RS = [
         "3505 3607 6256",
         [],
     ),
-    # FIXME: labels not yet implemented
-    # (
-    #     "from test_fibonacci",
-    #     """
-    #     lw r0, 24
-    #     lw r1, 1
-    #     .label start
-    #     add r1 r2
-    #     decr r0
-    #     sw r0, r2
-    #     add r2 r1
-    #     decr r0
-    #     sw r0, r1
-    #     b r0 start # (offset is -0x6)
-    #     ret
-    #     """,
-    #     "3018 3101 6012 5800 2002 6021 5800 2001 9085 102A",
-    #     [],
-    # ),
+    (
+        "from test_fibonacci",
+        """
+        lw r0, 24
+        lw r1, 1
+        .label _start
+        add r1 r2
+        decr r0
+        sw r0, r2
+        add r2 r1
+        decr r0
+        sw r0, r1
+        b r0 _start # (offset is -0x6)
+        ret
+        """,
+        "3018 3101 6012 5800 2002 6021 5800 2001 9085 102A",
+        [],
+    ),
 ]
 
 
@@ -2424,8 +2422,8 @@ class AsmTests(unittest.TestCase):
 
     def assert_assembly(self, asm_text, expected_segment, expected_error_log):
         actual_segment, actual_error_log = asm.compile_to_segment(asm_text)
-        self.assertEqual(expected_segment, actual_segment)
         self.assertEqual(expected_error_log, actual_error_log)
+        self.assertEqual(expected_segment, actual_segment)
 
     def parse_and_extend_hex(self, code_prefix_hex):
         segment = bytearray.fromhex(code_prefix_hex)
