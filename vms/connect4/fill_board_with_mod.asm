@@ -1,4 +1,5 @@
 # Fill the board, assuming that player one is "horizontal_mod"
+.assert_hash 176BC09E55C4A0056AD794FBD13EEF56199B7F32A5B0B8D8CD7A504CF610ECC5
 
 lw r1, 0xFF89
 lw r1, r1
