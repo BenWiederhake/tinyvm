@@ -648,6 +648,7 @@ pub struct Game {
     state: GameState,
     max_steps: u64,
     deterministic_so_far: bool,
+    move_order: Vec<u8>,
 }
 
 impl Game {
@@ -663,6 +664,7 @@ impl Game {
             state: GameState::RunningNextIs(Player::One),
             max_steps,
             deterministic_so_far: true,
+            move_order: Vec::with_capacity(DEFAULT_WIDTH * DEFAULT_HEIGHT),
         }
     }
 
@@ -723,9 +725,10 @@ impl Game {
             self.board.place_into_unsanitized_column(column_index, moving_player);
         match placement_result {
             PlacementResult::Success => {
-                // Nothing to do.
+                self.move_order.push(column_index as u8);
             }
             PlacementResult::Connect4 => {
+                self.move_order.push(column_index as u8);
                 self.state = GameState::Ended(GameResult::Won(moving_player, WinReason::Connect4));
                 return;
             }
@@ -779,6 +782,10 @@ impl Game {
     pub fn was_deterministic_so_far(&self) -> bool {
         self.deterministic_so_far
     }
+
+    pub fn get_move_order(&self) -> &[u8] {
+        &self.move_order
+    }
 }
 
 #[cfg(test)]
@@ -820,6 +827,7 @@ mod test_game {
             game.get_state(),
             GameState::Ended(GameResult::Won(Player::Two, WinReason::FullColumn(0)))
         );
+        assert_eq!(game.get_move_order(), [0, 0, 0, 0, 0, 0]);
         assert_eq!(game.was_deterministic_so_far(), true);
     }
 
@@ -850,6 +858,7 @@ mod test_game {
                 WinReason::IllegalColumn(0xFFFF)
             ))
         );
+        assert_eq!(game.get_move_order(), []);
         assert_eq!(game.was_deterministic_so_far(), true);
     }
 
@@ -865,6 +874,7 @@ mod test_game {
             game.get_state(),
             GameState::Ended(GameResult::Won(Player::Two, WinReason::Timeout))
         );
+        assert_eq!(game.get_move_order(), []);
         assert_eq!(game.was_deterministic_so_far(), true);
     }
 
@@ -885,6 +895,7 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 1);
         assert_eq!(game.player_two.total_moves, 1);
+        assert_eq!(game.get_move_order(), [0]);
         assert_eq!(game.was_deterministic_so_far(), true);
     }
 
@@ -904,6 +915,7 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 1);
         assert_eq!(game.player_two.total_moves, 0);
+        assert_eq!(game.get_move_order(), [0]);
         assert_eq!(game.was_deterministic_so_far(), true);
     }
 
@@ -924,6 +936,7 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 4);
         assert_eq!(game.player_two.total_moves, 3);
+        assert_eq!(game.get_move_order(), [0, 1, 0, 1, 0, 1, 0]);
         assert_eq!(game.was_deterministic_so_far(), true);
     }
 
@@ -967,6 +980,13 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 21);
         assert_eq!(game.player_two.total_moves, 21);
+        assert_eq!(
+            game.get_move_order(),
+            [
+                0, 3, 1, 0, 2, 1, 3, 2, 4, 3, 5, 4, 6, 5, 0, 6, 1, 0, 2, 1, 3, 2, 4, 3, 5, 4, 6, 5,
+                0, 6, 1, 0, 2, 1, 3, 2, 4, 4, 5, 5, 6, 6
+            ]
+        );
         assert_eq!(game.was_deterministic_so_far(), true);
     }
 
@@ -988,6 +1008,7 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 4);
         assert_eq!(game.player_two.total_moves, 3);
+        assert_eq!(game.get_move_order(), [0, 1, 0, 1, 0, 1, 0]);
         assert_eq!(game.was_deterministic_so_far(), false);
     }
 }
