@@ -1,7 +1,7 @@
 use std::io::{Error, ErrorKind, Result};
 use std::{env, fs, process};
 
-use tinyvm::{Game, GameResult, Player, Segment, SlotState, WinReason};
+use tinyvm::{Game, GameResult, Segment, WinReason};
 
 fn parse_segment(segment_bytes: &[u8], segment_type: &str) -> Result<Segment> {
     if segment_bytes.len() != (1 << 17) {
@@ -46,58 +46,61 @@ fn parse_args() -> Result<(Segment, Segment)> {
     ))
 }
 
+fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) -> Result<bool> {
+    let mut game = Game::new(
+        instructions_one.clone(),
+        instructions_two.clone(),
+        10_000_000,
+    );
+    let result = game.conclude();
+    print!(
+        "{{\"det\": {}, \"moves\": \"",
+        game.was_deterministic_so_far()
+    );
+    for &col in game.get_move_order() {
+        assert!(col < 10);
+        print!("{}", col);
+    }
+    print!("\", \"res\": {{");
+    match result {
+        GameResult::Draw => {
+            print!("\"type\": \"draw\"");
+        }
+        GameResult::Won(player, reason) => {
+            print!("\"type\": \"win\", \"by\": {}, ", player.numeric());
+            let reason_text = match reason {
+                WinReason::Connect4 => "connect4".into(),
+                WinReason::Timeout => "timeout of the opponent".into(),
+                WinReason::IllegalInstruction(insn) => {
+                    format!("illegal instruction (0x{:04X}) of the opponent", insn)
+                }
+                WinReason::IllegalColumn(col) => {
+                    format!("opponent's attempt to move at non-existent column {}", col)
+                }
+                WinReason::FullColumn(col) => {
+                    format!("opponent's attempt to move at full column {}", col)
+                }
+            };
+            print!("\"reason\": \"{}\"", reason_text);
+        }
+    }
+    println!("}}}}");
+    return Ok(game.was_deterministic_so_far());
+}
+
 fn main() -> Result<()> {
     let (instructions_one, instructions_two) = parse_args()?;
-    println!("Player one: {:?}", &instructions_one);
-    println!("Player two: {:?}", &instructions_two);
-    let mut game = Game::new(instructions_one, instructions_two, 10_000_000);
 
-    let result = game.conclude();
-
-    let result_text = match result {
-        GameResult::Draw => "The game was drawn".into(),
-        GameResult::Won(player, reason) => {
-            let player_name = match player {
-                Player::One => "1",
-                Player::Two => "2",
-            };
-            let reason_text = match reason {
-                WinReason::Connect4 => "by connect4".into(),
-                WinReason::Timeout => "by timeout of the opponent".into(),
-                WinReason::IllegalInstruction(insn) => {
-                    format!("by illegal instruction (0x{:04X}) of the opponent", insn)
-                }
-                WinReason::IllegalColumn(col) => format!(
-                    "by opponent's attempt to move at non-existent column {}",
-                    col
-                ),
-                WinReason::FullColumn(col) => {
-                    format!("by opponent's attempt to move at full column {}", col)
-                }
-            };
-            format!("Player {} won {}", player_name, reason_text)
+    print!("[");
+    let first_was_deterministic = run_and_print_game(&instructions_one, &instructions_two)?;
+    if !first_was_deterministic {
+        for _ in 0..100 {
+            print!(",");
+            let was_deterministic = run_and_print_game(&instructions_one, &instructions_two)?;
+            assert!(!was_deterministic);
         }
-    };
-    println!("{} after {} moves.", result_text, game.get_total_moves());
-    println!("End result (1=x, 2=O):");
-    let board = game.get_board();
-    for y in (0..board.get_height()).rev() {
-        print!("|");
-        for x in 0..board.get_width() {
-            let symbol = match board.get_slot(x, y) {
-                SlotState::Empty => "_",
-                SlotState::Token(Player::One) => "x",
-                SlotState::Token(Player::Two) => "O",
-            };
-            print!(" {}", symbol);
-        }
-        println!(" |");
     }
-    print!("+");
-    for _ in 0..board.get_width() {
-        print!("--");
-    }
-    println!("-+");
+    println!("]");
 
     Ok(())
 }

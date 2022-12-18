@@ -13,6 +13,13 @@ impl Player {
             Player::Two => Player::One,
         }
     }
+
+    pub fn numeric(&self) -> u8 {
+        match self {
+            Player::One => 1,
+            Player::Two => 2,
+        }
+    }
 }
 
 #[repr(u8)]
