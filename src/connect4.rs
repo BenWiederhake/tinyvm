@@ -452,7 +452,7 @@ pub const GAME_VERSION_MINOR: u16 = 0x0000;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum AlgorithmResult {
-    Column(u16),
+    Column(u16, bool),
     IllegalInstruction(u16),
     Timeout,
 }
@@ -518,10 +518,11 @@ impl PlayerData {
                     return AlgorithmResult::IllegalInstruction(insn);
                 }
                 StepResult::Return(column_index) => {
+                    let deterministic = vm.was_deterministic_so_far();
                     self.data = vm.release_to_data_segment();
                     self.last_move = column_index;
                     self.total_moves += 1;
-                    return AlgorithmResult::Column(column_index);
+                    return AlgorithmResult::Column(column_index, deterministic);
                 }
             }
         }
@@ -595,8 +596,25 @@ mod test_player_data {
         let data_segment = &player_data.data;
         assert_eq!(data_segment[0], 0);
         assert_eq!(data_segment[0xABCD], 0xABCD);
-        assert_eq!(result, AlgorithmResult::Column(0x1337));
+        assert_eq!(result, AlgorithmResult::Column(0x1337, true));
         assert_eq!(player_data.last_move, 0x1337);
+        assert_eq!(player_data.total_moves, 1);
+    }
+
+    #[test]
+    fn test_determine_answer_random() {
+        let mut instructions = Segment::new_zeroed();
+        instructions[0] = 0x3006; // lw r0, 6
+        instructions[1] = 0x5E01; // rnd r1, r0
+        instructions[2] = 0x102A; // ret
+        let mut player_data = PlayerData::new(instructions);
+        assert_eq!(player_data.last_move, 0xFFFF);
+        assert_eq!(player_data.total_moves, 0);
+
+        let result = player_data.determine_answer(0xFFFF);
+
+        assert_eq!(result, AlgorithmResult::Column(6, false));
+        assert_eq!(player_data.last_move, 6);
         assert_eq!(player_data.total_moves, 1);
     }
 }
@@ -629,6 +647,7 @@ pub struct Game {
     board: Board,
     state: GameState,
     max_steps: u64,
+    deterministic_so_far: bool,
 }
 
 impl Game {
@@ -643,6 +662,7 @@ impl Game {
             board: Default::default(),
             state: GameState::RunningNextIs(Player::One),
             max_steps,
+            deterministic_so_far: true,
         }
     }
 
@@ -676,7 +696,12 @@ impl Game {
         );
         let step_result = moving_player_data.determine_answer(self.max_steps);
         let column_index = match step_result {
-            AlgorithmResult::Column(column_index) => column_index,
+            AlgorithmResult::Column(column_index, deterministic_move) => {
+                if !deterministic_move {
+                    self.deterministic_so_far = false;
+                }
+                column_index
+            }
             AlgorithmResult::IllegalInstruction(insn) => {
                 // Loss by failure to produce a decision.
                 self.state = GameState::Ended(GameResult::Won(
@@ -750,6 +775,10 @@ impl Game {
     pub fn get_board(&self) -> &Board {
         &self.board
     }
+
+    pub fn was_deterministic_so_far(&self) -> bool {
+        self.deterministic_so_far
+    }
 }
 
 #[cfg(test)]
@@ -761,6 +790,7 @@ mod test_game {
         let mut instructions = Segment::new_zeroed();
         instructions[0] = 0x102A; // ret
         let mut game = Game::new(instructions.clone(), instructions, 0x12345);
+        assert_eq!(game.was_deterministic_so_far(), true);
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
         game.do_move();
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::Two));
@@ -790,6 +820,7 @@ mod test_game {
             game.get_state(),
             GameState::Ended(GameResult::Won(Player::Two, WinReason::FullColumn(0)))
         );
+        assert_eq!(game.was_deterministic_so_far(), true);
     }
 
     #[test]
@@ -819,6 +850,7 @@ mod test_game {
                 WinReason::IllegalColumn(0xFFFF)
             ))
         );
+        assert_eq!(game.was_deterministic_so_far(), true);
     }
 
     #[test]
@@ -833,6 +865,7 @@ mod test_game {
             game.get_state(),
             GameState::Ended(GameResult::Won(Player::Two, WinReason::Timeout))
         );
+        assert_eq!(game.was_deterministic_so_far(), true);
     }
 
     #[test]
@@ -852,6 +885,7 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 1);
         assert_eq!(game.player_two.total_moves, 1);
+        assert_eq!(game.was_deterministic_so_far(), true);
     }
 
     #[test]
@@ -870,6 +904,7 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 1);
         assert_eq!(game.player_two.total_moves, 0);
+        assert_eq!(game.was_deterministic_so_far(), true);
     }
 
     #[test]
@@ -889,6 +924,7 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 4);
         assert_eq!(game.player_two.total_moves, 3);
+        assert_eq!(game.was_deterministic_so_far(), true);
     }
 
     #[test]
@@ -931,5 +967,27 @@ mod test_game {
 
         assert_eq!(game.player_one.total_moves, 21);
         assert_eq!(game.player_two.total_moves, 21);
+        assert_eq!(game.was_deterministic_so_far(), true);
+    }
+
+    #[test]
+    fn test_two_random() {
+        let mut instructions_one = Segment::new_zeroed();
+        instructions_one[0] = 0x102A; // ret
+        let mut instructions_two = Segment::new_zeroed();
+        instructions_two[0] = 0x5E11; // rnd r1
+        instructions_two[1] = 0x3001; // lw r0, 1
+        instructions_two[2] = 0x102A; // ret
+        let mut game = Game::new(instructions_one, instructions_two, 123);
+
+        // Player 1 wins by connect 4.
+        assert_eq!(
+            game.conclude(),
+            GameResult::Won(Player::One, WinReason::Connect4)
+        );
+
+        assert_eq!(game.player_one.total_moves, 4);
+        assert_eq!(game.player_two.total_moves, 3);
+        assert_eq!(game.was_deterministic_so_far(), false);
     }
 }

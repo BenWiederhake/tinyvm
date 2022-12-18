@@ -2910,6 +2910,26 @@ TESTS_CONNECT4_RS = [
         "3189 2111 9101 3003 102A 3012 8610 9000 5811 3007 6610 102A",
         [],
     ),
+    (
+        "from test_determine_answer_random",
+        """
+        lw r0, 6
+        rnd r1, r0
+        ret
+        """,
+        "3006 5E01 102A",
+        [],
+    ),
+    (
+        "from test_two_random",
+        """
+        rnd r1
+        lw r0, 1
+        ret
+        """,
+        "5E11 3001 102A",
+        [],
+    ),
 ]
 
 
