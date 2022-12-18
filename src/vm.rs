@@ -114,9 +114,103 @@ fn random_upto_including(upper_bound: u16) -> u16 {
     value |= bytes[6] as u64;
     value <<= 8;
     value |= bytes[7] as u64;
-    value <<= 8;
     value %= modulus;
+    // Meta test: Uncomment the following and watch test_values_chi_square detect it:
+    // if value == 255 && bytes[0] & 1 == 1 {
+    //     value = (bytes[1] as u64 | ((bytes[2] as u64) << 8)) % modulus;
+    // }
     value as u16
+}
+
+// Meta test: Uncomment the following and watch the test detect it:
+//
+// const PSEUDO_RANDOM_BITS: [u64; 20] = [
+//     2652331456679836366,
+//     2830257451760648823,
+//     8166239061347172357,
+//     823180810618008804,
+//     13967157828992868582,
+//     13408298115134791702,
+//     15135038208698234555,
+//     16380720827072438253,
+//     16783307329201151173,
+//     10245875888923474203,
+//     8522024868849129547,
+//     394885222732156482,
+//     1341134408791626818,
+//     12692798159996355898,
+//     16075512290308795818,
+//     17658965249931248647,
+//     4917793685974134288,
+//     17890710800851596594,
+//     9581844407979580957,
+//     17377439405418053867,
+// ];
+//
+// static mut PRNG_COUNTER: usize = 0;
+//
+// fn random_upto_including(upper_bound: u16) -> u16 {
+//     let index = unsafe {
+//         let index = PRNG_COUNTER;
+//         PRNG_COUNTER = index + 1;
+//         index
+//     };
+//     let base_u64 = if index < PSEUDO_RANDOM_BITS.len() {
+//         PSEUDO_RANDOM_BITS[index]
+//     } else {
+//         index as u64
+//     };
+//     let modulus = (upper_bound as u64) + 1;
+//     return (base_u64 % modulus) as u16;
+// }
+
+#[cfg(test)]
+mod test_random {
+    use super::random_upto_including;
+
+    #[test]
+    fn test_bits_zeroable_oneable() {
+        let mut and_result = u16::MAX;
+        let mut or_result = 0u16;
+        for _ in 0..40 {
+            let value = random_upto_including(u16::MAX);
+            and_result &= value;
+            or_result |= value;
+        }
+        // Looking at a single bit, there is a 2^-40 chance that it is never zero
+        // in 40 attempts, and a 2^-40 chance that it is never one.
+        // In total, there is a 2^-35 chance that this test randomly fails,
+        // at no fault of the code. That's once in 32 billion, or "never".
+        assert_eq!(and_result, 0);
+        assert_eq!(or_result, u16::MAX);
+    }
+
+    #[test]
+    fn test_values_chi_square() {
+        let mut counts = [0usize; 415];
+        let oversample_factor: usize = 415 * 2;
+        for _ in 0..(415 * oversample_factor) {
+            let value = random_upto_including(415 - 1);
+            counts[value as usize] += 1;
+        }
+        println!("counts: {:?}", counts);
+        let mut chi_sq_numerator = 0;
+        for count in counts {
+            let diff = count.abs_diff(oversample_factor);
+            chi_sq_numerator += diff * diff;
+        }
+        let chi_sq = (chi_sq_numerator as f64) / (oversample_factor as f64);
+        // df = 415 - 1 = 414
+        // We want to do a two-tailed test, in order to detect both too-irregular and also too-regular results.
+        // (The latter may occur when random_upto_including would be implemented by incrementing some global by one in each call).
+        // We want an error probability of 0.000_001 (1 in a million), so query with 0.000_000_5 and 0.999_999_5.
+        // http://chisquaretable.net/chi-square-calculator/
+        // Critical values: 570.39975 and 288.14848.
+        // Median value (p=0.5) is 413.33352, which matches what I see playing around with it.
+        println!("chi_square = {chi_sq}");
+        assert!(chi_sq < 570.39975, "Chi-square is too high ({}), indicating results are too irregular. The RNG seems to be biased!", chi_sq);
+        assert!(chi_sq > 288.14848, "Chi-square is too low ({}), indicating results are too regular. The RNG seems to be a hardcoded list!", chi_sq);
+    }
 }
 
 #[derive(Debug)]
