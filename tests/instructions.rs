@@ -6,6 +6,7 @@ enum Expectation {
     LastStep(StepResult),
     ProgramCounter(u16),
     Register(u16, u16),
+    Deterministic(bool),
 }
 
 fn segment_from_prefix(prefix: &[u16]) -> Segment {
@@ -95,6 +96,10 @@ fn run_test(
                     vm.get_registers()[*register_index as usize]
                 );
             }
+            Expectation::Deterministic(expected_det) => {
+                println!("Expecting determinism to be {:?}", expected_det);
+                assert_eq!(*expected_det, vm.was_deterministic_so_far());
+            }
         }
     }
 }
@@ -121,6 +126,7 @@ fn test_null() {
             Expectation::Register(3, 0),
             Expectation::Register(14, 0),
             Expectation::Register(15, 0),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -135,6 +141,7 @@ fn test_illegal_zero() {
             Expectation::ActualNumSteps(0),
             Expectation::LastStep(StepResult::IllegalInstruction(0)),
             Expectation::ProgramCounter(0),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -149,6 +156,7 @@ fn test_illegal_one() {
             Expectation::ActualNumSteps(0),
             Expectation::LastStep(StepResult::IllegalInstruction(0xFFFF)),
             Expectation::ProgramCounter(0),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -163,6 +171,7 @@ fn test_illegal_reserved() {
             Expectation::ActualNumSteps(0),
             Expectation::LastStep(StepResult::IllegalInstruction(0x0123)),
             Expectation::ProgramCounter(0),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -177,6 +186,7 @@ fn test_late_illegal() {
             Expectation::ActualNumSteps(1),
             Expectation::LastStep(StepResult::IllegalInstruction(0x0123)),
             Expectation::ProgramCounter(1),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -195,6 +205,7 @@ fn test_load_imm_low_doc() {
             Expectation::ProgramCounter(1),
             Expectation::Register(0, 0),
             Expectation::Register(5, 0xFF8E),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -211,6 +222,7 @@ fn test_load_imm_low_simple() {
             Expectation::ProgramCounter(1),
             Expectation::Register(0, 0),
             Expectation::Register(1, 0x0023),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -226,6 +238,7 @@ fn test_return_simple() {
             Expectation::ProgramCounter(0),
             Expectation::Register(0, 0),
             Expectation::LastStep(StepResult::Return(0x0000)),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -243,6 +256,7 @@ fn test_return_value() {
             Expectation::ProgramCounter(1),
             Expectation::Register(0, 0x0042),
             Expectation::LastStep(StepResult::Return(0x0042)),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -263,6 +277,7 @@ fn test_cpuid_0() {
             Expectation::Register(1, 0x0000),
             Expectation::Register(2, 0x0000),
             Expectation::Register(3, 0x0000),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -283,6 +298,7 @@ fn test_cpuid_7() {
             Expectation::Register(1, 0x0000),
             Expectation::Register(2, 0x0000),
             Expectation::Register(3, 0x0000),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -330,6 +346,7 @@ fn test_debug_dump() {
             Expectation::Register(3, 0),
             Expectation::Register(14, 0),
             Expectation::Register(15, 0),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -355,6 +372,7 @@ fn test_time_doc() {
             Expectation::Register(4, 0x000E),
             Expectation::Register(5, 0x000F),
             Expectation::Register(6, 0x0009),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -462,6 +480,7 @@ fn test_store_data_doc() {
             Expectation::Register(2, 0x1234),
             Expectation::Register(5, 0x5678),
             Expectation::Data(0x1234, 0x5678),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -554,6 +573,7 @@ fn test_load_instruction_doc() {
             Expectation::Register(2, 0x1234),
             Expectation::Data(0x1234, 0),
             Expectation::Register(5, 0x5678),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -651,6 +671,7 @@ fn test_jump_register_doc1() {
             Expectation::ProgramCounter(0x1234),
             Expectation::ActualNumSteps(2),
             Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -973,6 +994,7 @@ fn test_branch_doc1() {
             Expectation::ProgramCounter(0x1233),
             Expectation::ActualNumSteps(4),
             Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -1014,6 +1036,7 @@ fn test_compare_doc() {
             Expectation::ActualNumSteps(3),
             Expectation::Register(4, 1),
             Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -1240,6 +1263,7 @@ fn test_unary_doc1() {
             Expectation::Register(5, 0x1234),
             Expectation::Register(6, 0xEDCB),
             Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -1260,6 +1284,7 @@ fn test_unary_doc2() {
             Expectation::ActualNumSteps(2),
             Expectation::Register(3, 42),
             Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -1279,6 +1304,7 @@ fn run_unary_test(function: u16, a: u16, result: u16) {
             Expectation::Register(1, a),
             Expectation::Register(2, result),
             Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(function != 0b1110),
         ],
     );
 }
@@ -1440,6 +1466,7 @@ fn run_binary_test(a: u16, b: u16, function: u16, result: u16) {
             Expectation::Register(1, a),
             Expectation::Register(2, result),
             Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
         ],
     );
 }
@@ -1759,6 +1786,47 @@ fn test_fibonacci() {
             Expectation::Register(1, 9489),
             Expectation::Register(2, 46368),
             Expectation::LastStep(StepResult::Return(0)),
+            Expectation::Deterministic(true),
+        ],
+    );
+}
+
+#[test]
+fn test_rnd_not_exec() {
+    run_test(
+        &[
+            0x3007, // lw r0, 7
+            0x5F00, // nop
+            0x5E02, // rnd r2, r0
+        ],
+        &[],
+        2,
+        &[
+            Expectation::ActualNumSteps(2),
+            Expectation::ProgramCounter(2),
+            Expectation::Register(0, 7),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
+        ],
+    );
+}
+
+#[test]
+fn test_rnd_exec() {
+    run_test(
+        &[
+            0x3007, // lw r0, 7
+            0x5F00, // nop
+            0x5E02, // rnd r2, r0
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ActualNumSteps(3),
+            Expectation::ProgramCounter(3),
+            Expectation::Register(0, 7),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(false),
         ],
     );
 }

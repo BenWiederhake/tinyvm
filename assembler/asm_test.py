@@ -2850,6 +2850,16 @@ TESTS_INSTRUCTIONS_RS = [
         "3018 3101 6012 5800 2002 6021 5800 2001 9085 102A",
         [],
     ),
+    (
+        "from test_rnd_(not_)exec",
+        """
+        lw r0, 7
+        nop
+        rnd r2, r0
+        """,
+        "3007 5F00 5E02",
+        [],
+    ),
 ]
 
 TESTS_CONNECT4_RS = [

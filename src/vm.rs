@@ -126,6 +126,7 @@ pub struct VirtualMachine {
     time: u64,
     instructions: Segment,
     data: Segment,
+    deterministic_so_far: bool,
 }
 
 impl VirtualMachine {
@@ -137,6 +138,7 @@ impl VirtualMachine {
             time: 0,
             instructions,
             data,
+            deterministic_so_far: true,
         }
     }
 
@@ -167,6 +169,11 @@ impl VirtualMachine {
     #[must_use]
     pub fn get_data(&self) -> &Segment {
         &self.data
+    }
+
+    #[must_use]
+    pub fn was_deterministic_so_far(&self) -> bool {
+        self.deterministic_so_far
     }
 
     #[must_use]
@@ -348,6 +355,7 @@ impl VirtualMachine {
             0b1110 => {
                 // * If FFFF=1110, the computed function is "rnd" (random number up to AND INCLUDING), e.g. rnd(5) = 3, rnd(5) = 5, rnd(5) = 0
                 //     * Note that rnd must never result in a value larger than the argument, so rnd(5) must never generate 6 or even 0xFFFF.
+                self.deterministic_so_far = false;
                 *destination = random_upto_including(source);
             }
             0b1111 => {
