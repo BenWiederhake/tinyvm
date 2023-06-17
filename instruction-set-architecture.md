@@ -12,7 +12,7 @@
 - There is special support for ease of use (return, cpuid, etc.)
 - Data is stored in big-endian order. E.g., if the first byte in data memory is 0x12, and the second byte is 0x34, then loading the first word into a register results in that register having value 0x1234.
 - The program counter is not explicitly readable, and usually increments by one (with overflow) after each instruction (except for illegal, reserved, return, jump, and branch instructions).
-- There is no concept such as hardware exceptions or interrupts.
+- There are no hardware exceptions or interrupts.
 
 ## General instruction pattern
 
@@ -20,7 +20,7 @@ All instructions consist of exactly 16 bits. They are arranged in a prefix-tree 
 
 There are three types of valid instructions:
 1. The first 4 bits identifies the instruction command, and the remaining 12 bits indicate data (usually 4 bits to identify a register, and 8 bits to encode an immediate value).
-2. The first 8 bits identify the instruction command, and the remaining 8 bits idicate data (4+4 bits to identify two registers).
+2. The first 8 bits identify the instruction command, and the remaining 8 bits indicate data (4+4 bits to identify two registers).
 3. All bits are part of the instruction command, and the instruction carries no data.
 
 ## Instruction set layout
@@ -76,7 +76,7 @@ Notes:
 
 This reads register 0 – or, in some sense, reads all registers and all memory.
 
-Halts the machine. There is no execution  The content of register 0 is considered to be the primary return value. Depending on the use case, other registers and/or memory may also be considered to be return value.
+Halts the machine. There is no execution beyond this point. The content of register 0 is considered to be the primary return value. Depending on the use case, other registers and/or memory may also be considered to be return value.
 
 Example: The instruction is `0b0001 0000 0010 1010`, and register 0 contains the value 0x0042. Then this instruction will halt the machine, and present the value 0x0042 as the main result.
 
@@ -115,7 +115,7 @@ This writes to registers 0, 1, 2, and 3.
 
 The new value of these registers is the amount of instructions that have been executed before this instruction, interpreted as a 64-bit number, with register 0 now carrying the most significant bits, and register 3 now carrying the least significant bits.
 
-Example: The instruction is `0b0001 0000 0010 1101`, and before this instruction, 7 instructions have already been executed. Then the registers 0, 1, 2, and 3 now contain the values 0x0000, 0x0000, 0x0000, and 0x0007, respectively. Note that this does not depend on the program counter.
+Example: The instruction is `0b0001 0000 0010 1101`, and before this instruction, 7 instructions have already been executed. Then the registers 0, 1, 2, and 3 now contain the values 0x0000, 0x0000, 0x0000, and 0x0007, respectively. Note that this does not depend on the program counter (i.e. the *address* of the current instruction).
 
 ### `0x20xx`: Store word data
 
