@@ -5,7 +5,7 @@
 - Havard architecture (separate instruction memory and data memory). The reason is to make self-modifying programs impossible.
 - Every pointer is 16 bit. This implies relatively low memory limits, which is basically the point of this VM.
 - Every instruction is 16 bit. This simplifies parsing and code generation.
-- By design, an all-zero and an all-ones value is an illegal instruction. This should make is slightly easier to detect programming errors.
+- By design, an all-zero and an all-ones value is an illegal instruction. This should make is slightly easier to detect programming errors. It is unintentional yet hilarious that the instructions `DEAD` and `C0DE` are illegal.
 - There are 64K addressable 16-bit words. (That is 128K bytes.) Alternatively, you could say that our bytes have 16 bits, but let's stick to the terms "byte = 8 bit" and "word = 16 bit".
 - There are 16 registers, all of which are general-purpose.
 - There is no build-in support for stack frames or anything. I want this to be a seriously limited VM with only basic algorithms, and if you want fancy things like recursion or local variables, then you'll have to pay for it by yourself.
