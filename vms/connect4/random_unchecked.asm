@@ -1,3 +1,5 @@
+# Format: See ../../assembler/README.md
+
 # Select a random column, possibly forfeiting the game.
 .assert_hash FE4CAFAA8ED7425B35E80C1575BF6309E65236FFC5735245700CE8CCAF2F54F9
 

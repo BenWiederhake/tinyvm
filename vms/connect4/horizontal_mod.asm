@@ -1,3 +1,5 @@
+# Format: See ../../assembler/README.md
+
 # On the nth move, place in column n % 7
 .assert_hash 6FB82CD45B48C3B1CC191D6DA054571701B6A06301BD4E33797886F8E62D27F3
 
