@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+import asyncio
 import json
 import os.path
-import subprocess
 import time
 
 VMS_DIR = "../vms/connect4/"
@@ -56,7 +56,7 @@ def analyze_matchup(matchup):
     return wins, draws, losses
 
 
-def run_matchup(vm_one, vm_two):
+async def run_matchup(vm_one, vm_two):
     assert vm_two.name not in vm_one.matchups
     command = [
         CARGO_BINARY,
@@ -66,15 +66,27 @@ def run_matchup(vm_one, vm_two):
         vm_one.filename(),
         vm_two.filename(),
     ]
-    completed_process = subprocess.run(
-        command,
-        stdin=subprocess.DEVNULL,
-        capture_output=True,
-        timeout=TIMEOUT_SECONDS,
-        check=True,
-        text=True,
+    proc = await asyncio.create_subprocess_exec(
+        *command,
+        stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        # asyncio doesn't support text=True :(
     )
-    matchup = json.loads(completed_process.stdout)
+    try:
+        stdout_bin, stderr_bin = await asyncio.wait_for(proc.communicate(), timeout=TIMEOUT_SECONDS)
+    except TimeoutError:
+        stderr_bin = b"<timeout>"
+    if proc.returncode != 0:
+        print(f"ERROR! Running on {vm_one.name} and {vm_two.name} resulted in an error.")
+        print(f"{command=} {proc.returncode=}")
+        print("<=== BEGIN STDERR DUMP ===>")
+        print(stderr_bin.decode(errors="replace"))
+        print("<=== END STDERR DUMP ===>")
+        # Abort everything.
+        # Note that if exit() doesn't work, this will cause a hang due to a queue.task_done().
+        exit(1)
+    matchup = json.loads(stdout_bin.decode())
     vm_one.matchups[vm_two.name] = matchup
 
 
@@ -136,7 +148,38 @@ def emit_total_summary(all_vms):
         json.dump(total_dict, fp, separators=",:", sort_keys=True)
 
 
-def run():
+async def run_matches_from_queue(queue):
+    while True:
+        job = await queue.get()
+        if job is None:
+            return
+        vm_one, vm_two = job
+        started_at = time.monotonic()
+        await run_matchup(vm_one, vm_two)
+        completed_at = time.monotonic()
+        print(f"Finished matchup {vm_one.name} vs. {vm_two.name} in {completed_at - started_at:.3f}s.")
+        queue.task_done()
+
+
+async def run_all_matchups(vms):
+    # Heavily inspired by https://docs.python.org/3/library/asyncio-queue.html#examples
+    queue = asyncio.Queue()
+    for vm_one in vms:
+        for vm_two in vms:
+            queue.put_nowait((vm_one, vm_two))
+    concurrency = max(1, os.cpu_count() - 1)
+    print(f"Running up to {concurrency} matches in parallel ...")
+    async with asyncio.TaskGroup() as tg:
+        for i in range(concurrency):
+            tg.create_task(run_matches_from_queue(queue))
+        await queue.join()
+        # TODO: Can probably start shutting down even earlier, but that's micro-optimization.
+        for i in range(concurrency):
+            # Send shutdown signal:
+            queue.put_nowait(None)
+
+
+async def run():
     change_to_this_files_dir()
     if not os.path.exists(OUTPUT_DIR):
         print(f"Directory {OUTPUT_DIR} doesn't exist. Creating an empty directory.")
@@ -144,10 +187,11 @@ def run():
 
     vms = collect_vms()
     print(f"Found {len(vms)} VMs: {[vm.name for vm in vms]}")
+
+    await run_all_matchups(vms)
+
     for vm_one in vms:
         for vm_two in vms:
-            # Intentionally don't deduplicate, because order *does* matter.
-            run_matchup(vm_one, vm_two)
             emit_matchup(vm_one, vm_two)
     # FIXME: Should order vms by success, but no idea how to measure that.
     # Hopefully that becomes clear later.
@@ -157,4 +201,4 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    asyncio.run(run())
