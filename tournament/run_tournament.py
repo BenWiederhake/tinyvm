@@ -131,6 +131,9 @@ def emit_total_summary(all_vms):
         template = fp.read()
     with open(OUTPUT_DIR + "index.html", "w") as fp:
         fp.write(template.format(**context))
+    total_dict = {vm.name: vm.matchups for vm in all_vms}
+    with open(OUTPUT_DIR + "results_general.json", "w") as fp:
+        json.dump(total_dict, fp, separators=",:", sort_keys=True)
 
 
 def run():
