@@ -1183,6 +1183,15 @@ fn test_compare_equalgreater_positive2() {
 }
 
 #[test]
+fn test_compare_equalgreater_signedness() {
+    run_compare_test(0x0123, 0xFDCE, 0b0110, 0);
+    run_compare_test(0x0123, 0xFDCE, 0b0111, 1);
+    run_compare_test(52, 65000, 0b0110, 0);
+    run_compare_test(0xFDCE, 0x0123, 0b0110, 1);
+    run_compare_test(0xFDCE, 0x0123, 0b0111, 0);
+}
+
+#[test]
 fn test_compare_equalgreater_negative() {
     run_compare_test(1, 2, 0b0110, 0);
     run_compare_test(1, 2, 0b0111, 0);
