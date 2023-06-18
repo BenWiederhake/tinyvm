@@ -1,0 +1,7 @@
+td { border: 1px grey solid; padding: 0px 5px; }
+.attacker { text-align: right; height: 3em; }
+.defender-th { vertical-align: bottom; }
+.defender-outer { display: flex; justify-content: center; padding: 5px 0px; }
+.defender-inner { writing-mode: sideways-lr; }
+.result { text-align: center; }
+

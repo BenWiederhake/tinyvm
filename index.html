@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Silly tournament page of terrible Connect4 algorithms">
+<meta name="keywords" content="silly, tournament, connect4, algorithms, simulation, competition">
+<title>Connect4 tournament on a tiny VM</title>
+<link rel="canonical" href="https://BenWiederhake.github.io/tinyvm/">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="shortcut icon" href="favicon.png">
+<link rel="stylesheet" href="bootstrap_4.5.1.min.css" integrity="sha384-VCmXjywReHh4PwowAiWNagnWcLhlEJLA5buUprzK8rxFgeH0kww/aWY76TfkUoSX" crossorigin="anonymous">
+<!-- Inline styles would break my ad-hoc templating thing. -->
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<main class="container my-5 pb-5" id="content">
+
+<h1>TinyVM Connect4 Tournament</h1>
+<p>A silly competition of terrible algorithms trying to play Connect4. <!-- FIXME: Link to markdown explaining how to submit your own -->Submit your own, and see how well/badly it does! :D</p>
+
+<h2>Overview</h2>
+
+<p>
+Tic-tac-toe and Connect4 are solved games, for which unbeatable strategies exist. On the other hand, games like chess and go are too hard to "play around", where a silly algorithm has no real chance to compete at all.
+</p>
+
+<p>
+Hence Connect4 on TinyVM: Connect4 is moderately difficult, where playing the perfect strategy still takes a considerable amount of resources. TinyVM, as the name suggests, limits those resources. By executing the algorithms on a virtual CPU, resources like memory and computation time can be tightly controlled. This allows simple algorithms to compete with each other, without having to rely on silly restrictions such as "it has to finish within 1.3 seconds of computation time of my computer".
+</p>
+
+<p>
+The basic idea is inspired by <a href="https://www.youtube.com/watch?v=DpXy041BIlA">Elo World by Tom7</a>. I guess the biggest differences are:
+<ul>
+  <li>Let's use Connect4 instead of chess, because it's much much simpler to make a valid move in Connect4.</li>
+  <li>Instead of writing all the algorithms myself, enable and encourage everyone else to write and easily compare them.</li>
+  <li>Because of that, and also because it's fun in and of itself, write a lot of assembly.</li>
+  <li>Try to enforce programmatically that the algorithms don't just brute-force the solution.</li>
+  <li>Have a neat website that presents the results. You're currently reading it. In particular I liked the table at the end of <a href="http://tom7.org/chess/weak.pdf">Tom7's paper</a>, so I gotta have something similar.</li>
+</ul>
+</p>
+
+<p>Do you want to add your own algorithm, or perhaps improve the project in some other way?
+I'd love to hear your feedback, or any other kind of issue:<br/>
+<a class="text-monospace" href="https://github.com/BenWiederhake/tinyvm/issues/new">https://github.com/BenWiederhake/tinyvm/issues/new</a></p>
+
+<h2 id="results">Tournament results</h2>
+
+<p>Numbers are wins/draws/losses, with color interpolation as green/blue/red. The row-player goes first, the column-player goes second.</p>
+
+<p><table><tr><th></th><th class="defender-th"><div class="defender-outer"><span class="defender-inner">fill_board_with_mod</span></div></th><th class="defender-th"><div class="defender-outer"><span class="defender-inner">horizontal_mod</span></div></th><th class="defender-th"><div class="defender-outer"><span class="defender-inner">imitate_if_legal</span></div></th><th class="defender-th"><div class="defender-outer"><span class="defender-inner">random_legal</span></div></th><th class="defender-th"><div class="defender-outer"><span class="defender-inner">random_unchecked</span></div></th><th class="defender-th"><div class="defender-outer"><span class="defender-inner">ret0</span></div></th><th class="defender-th"><div class="defender-outer"><span class="defender-inner">slowpoke</span></div></th></tr><tr><th class="attacker">fill_board_with_mod</th><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #89ef30;">84/0/16</td><td class="result" style="background-color: #8eed30;">82/0/18</td><td class="result" style="background-color: #ff3030;">0/0/1</td><td class="result" style="background-color: #30ff30;">1/0/0</td></tr><tr><th class="attacker">horizontal_mod</th><td class="result" style="background-color: #3030ff;">0/1/0</td><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #b8d430;">60/0/40</td><td class="result" style="background-color: #9ee530;">75/0/25</td><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #30ff30;">1/0/0</td></tr><tr><th class="attacker">imitate_if_legal</th><td class="result" style="background-color: #f17565;">9/5/86</td><td class="result" style="background-color: #f5695f;">6/4/90</td><td class="result" style="background-color: #30ff30;">100/0/0</td><td class="result" style="background-color: #e78475;">14/9/77</td><td class="result" style="background-color: #c2cb30;">53/0/47</td><td class="result" style="background-color: #30ff30;">100/0/0</td><td class="result" style="background-color: #30ff30;">100/0/0</td></tr><tr><th class="attacker">random_legal</th><td class="result" style="background-color: #d7b330;">37/0/63</td><td class="result" style="background-color: #cdbf30;">45/0/55</td><td class="result" style="background-color: #30ff30;">100/0/0</td><td class="result" style="background-color: #becf30;">56/0/44</td><td class="result" style="background-color: #addc30;">67/0/33</td><td class="result" style="background-color: #d8b230;">36/0/64</td><td class="result" style="background-color: #aedb30;">66/0/34</td></tr><tr><th class="attacker">random_unchecked</th><td class="result" style="background-color: #dea930;">31/0/69</td><td class="result" style="background-color: #cfbe30;">44/0/56</td><td class="result" style="background-color: #a9de30;">69/0/31</td><td class="result" style="background-color: #d0bd30;">43/0/57</td><td class="result" style="background-color: #becf30;">56/0/44</td><td class="result" style="background-color: #dea930;">31/0/69</td><td class="result" style="background-color: #b3d730;">63/0/37</td></tr><tr><th class="attacker">ret0</th><td class="result" style="background-color: #ff3030;">0/0/1</td><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #ff3030;">0/0/1</td><td class="result" style="background-color: #a0e430;">74/0/26</td><td class="result" style="background-color: #a4e230;">72/0/28</td><td class="result" style="background-color: #ff3030;">0/0/1</td><td class="result" style="background-color: #ff3030;">0/0/1</td></tr><tr><th class="attacker">slowpoke</th><td class="result" style="background-color: #ff3030;">0/0/1</td><td class="result" style="background-color: #ff3030;">0/0/1</td><td class="result" style="background-color: #ff3030;">0/0/1</td><td class="result" style="background-color: #c4c930;">52/0/48</td><td class="result" style="background-color: #c5c830;">51/0/49</td><td class="result" style="background-color: #30ff30;">1/0/0</td><td class="result" style="background-color: #ff3030;">0/0/1</td></tr></table></p>
+
+<h2>Write more Connect4 bots!</h2>
+<p>Come on, let's write even more Connect4 algorithms, the sillier the better!</p>
+
+<ul>
+  <li>A simple algorithm that first plays in the first column, then the second column, etc., is <a href="https://github.com/BenWiederhake/tinyvm/blob/master/vms/connect4/horizontal_mod.asm"><code>horizontal_mod.asm</code></a>.</li>
+  <li>A more involved algorithm that tries to imitate the previous player's move (if legal; else, a random legal column), is <a href="https://github.com/BenWiederhake/tinyvm/blob/master/vms/connect4/imitate_if_legal.asm"><code>imitate_if_legal.asm</code></a>.</li>
+  <li>There is <a href="https://github.com/BenWiederhake/tinyvm/blob/master/assembler/README.md">documentation of the assembly language</a>.</li>
+  <li>There is <a href="https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md">documentation of every single instruction</a>.</li>
+  <li>If you really want to, there's a lot of <a href="https://github.com/BenWiederhake/tinyvm/blob/master/assembler/asm_test.py#L74">tests for every single aspect of the assembler</a> and a lot of <a href="https://github.com/BenWiederhake/tinyvm/blob/master/tests/instructions.rs#L135">tests for every single aspect of the VM / virtual CPU</a>.</li>
+  <li>What are you waiting for? <a href="https://github.com/BenWiederhake/tinyvm/fork">Create your own silly bot today!</a></li>
+</ul>
+
+<h2>Epilogue</h2>
+<p>Live a good life, be kind, advance civilization; and if you somehow manage to make a lot of money from this advice, consider saying thanks by giving me 1% of the profit.</p>
+
+<p class="small text-muted">This page was last rebuilt on 2023-06-18 16:29:41 CEST.</p>
+<p class="small text-muted">The raw data on this webpage is also available as a <a href="results_general.json">JSON file</a>.</p>
+
+<!-- I really hate it if there's not even a little bit of tasteful vertical blank space to indicate "end of scrollable area", so insert it here by force: -->
+<div class="py-4"></div>
+
+</main>
+
+<nav class="fixed-bottom bg-light d-flex p-2 flex-row flex-wrap justify-content-between align-items-center">
+  <div class="mx-2">
+    <img src="logo.png">
+  </div>
+
+  <div class="mx-2">
+    <a href="https://github.com/BenWiederhake/tinyvm/">Repo</a>&nbsp;|&nbsp;<a href="https://help.github.com/articles/github-privacy-statement/">Data&nbsp;Protection</a>&nbsp;|&nbsp;<a href="https://github.com/BenWiederhake/tinyvm/blob/master/LICENSE">License</a>
+  </div>
+</nav>
+
+</body>
+</html>
