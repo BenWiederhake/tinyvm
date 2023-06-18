@@ -115,11 +115,11 @@ The main TinyVM executable automatically detects whether both players are determ
 Next up are these:
 * Implement automatic tournament execution
 * Implement tournament ranking
-* Implement tournament result website generation
 * Tell people about it
 * Encourage people to make and shat silly Connect4 algorithms :D
 * Perhaps extend this project to other games? Perhaps chess, go, or maybe [Tak](https://en.wikipedia.org/wiki/Tak_(game))?
-* Perhaps try to write al algorithm that plays more than one game?
+* Perhaps try to write an algorithm that plays more than one game?
+* Recreate logo.png and favicons using the new `#FF4B5D` / `#EDFF76` / `#000049` colors, or at least the correct hues.
 
 ## NOTDOs
 
