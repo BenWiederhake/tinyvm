@@ -53,10 +53,7 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
         1_000_000,
     );
     let result = game.conclude();
-    print!(
-        "{{\"det\": {}, \"moves\": \"",
-        game.was_deterministic_so_far()
-    );
+    print!("{{\"moves\": \"");
     for &col in game.get_move_order() {
         assert!(col < 10);
         print!("{}", col);
