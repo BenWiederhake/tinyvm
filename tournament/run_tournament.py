@@ -8,7 +8,7 @@ import time
 VMS_DIR = "../vms/connect4/"
 OUTPUT_DIR = "pages/"
 CARGO_BINARY = "cargo"
-TIMEOUT_SECONDS = 2
+TIMEOUT_SECONDS = 40
 GAMMA = 2.2
 VALUE_MIN = 48
 
@@ -61,6 +61,7 @@ def run_matchup(vm_one, vm_two):
     command = [
         CARGO_BINARY,
         "run",
+        "--release",
         "--",
         vm_one.filename(),
         vm_two.filename(),
@@ -106,7 +107,7 @@ def generate_overview_table(all_vms):
     parts.append("<tr>")
     parts.append("<th></th>")
     for vm in all_vms:
-        parts.append(f"<th><div class=\"defender-outer\"><span class=\"defender-inner\">{vm.name}</span></div></th>")
+        parts.append(f"<th class=\"defender-th\"><div class=\"defender-outer\"><span class=\"defender-inner\">{vm.name}</span></div></th>")
     parts.append("</tr>")
     # Data
     for vm_one in all_vms:
