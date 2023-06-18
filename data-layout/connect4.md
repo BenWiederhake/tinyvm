@@ -2,7 +2,7 @@
 
 ## Miscellaneous
 
-Two programs will play connect4 against each other. In particular:
+Two programs will play Connect4 against each other. In particular:
 - At the beginning of the game, both data segments are fully initialized; see below table.
 - At the beginning of each move, the current game state (board, last move, number of moves, etc.) is re-written to the data segment of the player whose move it is. Note that not all of the data segment is overwritten, thus allowing each player to retain state between moves, and potentially even do precomputation.
 - The player plays a move. This is done by running the program. Registers and program counter start with the value 0x0000.
@@ -19,7 +19,7 @@ Two programs will play connect4 against each other. In particular:
 
 The time available for each move is measured in number of instructions, and should be high enough that a simple, naive algorithm does not need to worry about it.
 
-## Data segment content and layout for connect4
+## Data segment content and layout for Connect4
 
 Shorthands:
 - W: The width of the board.
