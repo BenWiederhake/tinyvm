@@ -50,7 +50,7 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
     let mut game = Game::new(
         instructions_one.clone(),
         instructions_two.clone(),
-        10_000_000,
+        1_000_000,
     );
     let result = game.conclude();
     print!(

@@ -49,7 +49,9 @@ Instructions by prefix:
     * 1100: `clz reg_dest [, reg_src]` (unary clz)
     * 1101: `ctz reg_dest [, reg_src]` (unary ctz)
     * 1110: `rnd reg_dest [, reg_src]` (unary rnd)
-    * 1111: `mov reg_dest [, reg_src]` (unary mov)
+    * 1111: `mov reg_dest, reg_src` (unary mov)
+        * Note that single-arg movs and movs with the same source and destination register are forbidden in the assembly language, as they are noop instructions.
+          If you really insist on inserting a noop, you can still write `.data 5F00`.
 - 0110: Basic binary (+, -, \*, \*h,   \/u, \/s, %u, %s,   &, |, ^, <<,  >>u, >>s, \*\*s, root)
     * 0000: `add reg_lhs reg_rhs_dest` (+)
         * As per the ISA, the result is written into the right-hand side operand, i.e. `reg_rhs_dest`. This also holds for all other unary operations.
