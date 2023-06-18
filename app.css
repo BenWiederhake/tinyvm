@@ -4,4 +4,6 @@ td { border: 1px grey solid; padding: 0px 5px; }
 .defender-outer { display: flex; justify-content: center; padding: 5px 0px; }
 .defender-inner { writing-mode: sideways-lr; }
 .result { text-align: center; }
-
+@media (min-width: 576px) {
+    .logo { margin-top: -.5rem; margin-bottom: -.5rem; }
+}
