@@ -1,9 +1,40 @@
-td { border: 1px grey solid; padding: 0px 5px; }
+.all-matchups td { border: 1px grey solid; padding: 0px 5px; }
 .attacker { text-align: right; height: 3em; }
 .defender-th { vertical-align: bottom; }
 .defender-outer { display: flex; justify-content: center; padding: 5px 0px; }
 .defender-inner { writing-mode: sideways-lr; }
 .result { text-align: center; }
-@media (min-width: 576px) {
+.result>a { color: black; text-decoration: underline; }
+
+.matchup-big-summary { padding: 30px; text-align: center; margin: 16px 0px; }
+@media (min-width: 576px) { /* number taken from bootstrap */
     .logo { margin-top: -.5rem; margin-bottom: -.5rem; }
+}
+@media (min-width: 768px) { /* number taken from bootstrap */
+    .game {
+        display: inline-block;
+        padding: 50px;
+        background-color: #000049;
+    }
+}
+
+.game {
+    margin-bottom: 1rem; /* Same as for <p> */
+}
+.game td {
+    width: 72px;
+    height: 72px;
+    text-align: center;
+}
+.cr {
+    background-image: url("tile-red.png");
+    background-size: contain;
+}
+.cy {
+    background-image: url("tile-yellow.png");
+    background-size: contain;
+}
+.ce {
+    background-image: url("tile-empty.png");
+    background-size: contain;
 }
