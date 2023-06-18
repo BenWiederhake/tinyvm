@@ -84,7 +84,11 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
             print!("\"reason\": \"{}\"", reason_text);
         }
     }
-    println!("}}}}");
+    println!(
+        "}}, \"times\": [{}, {}]}}",
+        game.get_player_one_total_insn(),
+        game.get_player_two_total_insn(),
+    );
     return Ok(game.was_deterministic_so_far());
 }
 
@@ -94,7 +98,7 @@ fn main() -> Result<()> {
     print!("[");
     let first_was_deterministic = run_and_print_game(&instructions_one, &instructions_two)?;
     if !first_was_deterministic {
-        for _ in 0..100 {
+        for _ in 0..99 {
             print!(",");
             let was_deterministic = run_and_print_game(&instructions_one, &instructions_two)?;
             assert!(!was_deterministic);

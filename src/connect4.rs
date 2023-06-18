@@ -452,6 +452,7 @@ pub struct PlayerData {
     data: Segment,
     last_move: u16,
     total_moves: u16,
+    total_insns: u64,
 }
 
 pub const GAME_VERSION_MAJOR: u16 = 0x0001;
@@ -471,11 +472,16 @@ impl PlayerData {
             data: Segment::new_zeroed(),
             last_move: 0xFFFF,
             total_moves: 0,
+            total_insns: 0,
         }
     }
 
     pub fn get_total_moves(&self) -> u16 {
         self.total_moves
+    }
+
+    pub fn get_total_insns(&self) -> u64 {
+        self.total_insns
     }
 
     pub fn update_data(
@@ -516,12 +522,13 @@ impl PlayerData {
 
     pub fn determine_answer(&mut self, max_steps: u64) -> AlgorithmResult {
         let mut vm = VirtualMachine::new(self.instructions.clone(), self.data.clone());
-        for _ in 0..max_steps {
+        for step in 0..max_steps {
             let last_step_result = vm.step();
             match last_step_result {
                 StepResult::Continue => {}
                 StepResult::DebugDump => {}
                 StepResult::IllegalInstruction(insn) => {
+                    self.total_insns += step + 1;
                     return AlgorithmResult::IllegalInstruction(insn);
                 }
                 StepResult::Return(column_index) => {
@@ -529,10 +536,12 @@ impl PlayerData {
                     self.data = vm.release_to_data_segment();
                     self.last_move = column_index;
                     self.total_moves += 1;
+                    self.total_insns += step + 1;
                     return AlgorithmResult::Column(column_index, deterministic);
                 }
             }
         }
+        self.total_insns += max_steps;
         AlgorithmResult::Timeout
     }
 }
@@ -780,6 +789,14 @@ impl Game {
 
     pub fn get_total_moves(&self) -> u16 {
         self.player_one.get_total_moves() + self.player_two.get_total_moves()
+    }
+
+    pub fn get_player_one_total_insn(&self) -> u64 {
+        self.player_one.get_total_insns()
+    }
+
+    pub fn get_player_two_total_insn(&self) -> u64 {
+        self.player_two.get_total_insns()
     }
 
     pub fn get_board(&self) -> &Board {
