@@ -12,29 +12,32 @@
 }
 @media (min-width: 768px) { /* number taken from bootstrap */
     .game {
-        display: inline-block;
-        padding: 50px;
-        background-color: #000049;
+        border: 50px #080884 solid;
+        border-radius: 40px;
     }
 }
 
 .game {
+    display: inline-block;
     margin-bottom: 1rem; /* Same as for <p> */
+    background-color: #080884;
 }
 .game td {
     width: 72px;
     height: 72px;
     text-align: center;
 }
+.cr, .cy, .ce {
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position-y: center;
+}
 .cr {
     background-image: url("tile-red.png");
-    background-size: contain;
 }
 .cy {
     background-image: url("tile-yellow.png");
-    background-size: contain;
 }
 .ce {
     background-image: url("tile-empty.png");
-    background-size: contain;
 }
