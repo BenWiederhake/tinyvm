@@ -154,25 +154,20 @@ def generate_games_list(games_by_type):
             time_plural = "" if occurrences == 1 else "s"
             parts.append(f"<h4>Game type #{i + 1} (seen {occurrences} time{time_plural})</h4>")
         if game["res"]["type"] == "draw":
-            action_verb = "drawn"
+            action_verb = "Drawn"
         elif game["res"]["type"] == "win" and game["res"]["by"] == 1:
-            action_verb = "won"
+            action_verb = "Won"
         elif game["res"]["type"] == "win" and game["res"]["by"] == 2:
-            action_verb = "lost"
+            action_verb = "Lost"
         else:
             raise AssertionError(game)
         reason = game["res"].get("reason", "")
-        if reason:
-            reason_long = f" (due to {reason})"
-            # OH GOD THE COUPLING IT HURTS!
+        if reason and action_verb == "Lost":
             # FIXME: Find a better way to transfer this piece of info from Rust to this generator.
-            if action_verb == "lost":
-                reason_long = reason_long.replace("opponent's", "our")
-        else:
-            reason_long = ""
-        parts.append(f"<p>We {action_verb} this game{reason_long}.")
+            reason = reason.replace("opponent's", "our")
+        parts.append(f"<p>{action_verb} due to {reason}.")
         our_time, their_time = game['times']
-        parts.append(f" We executed {our_time} instructions in total, opponent executed {their_time} instructions in total.</p>")
+        parts.append(f" (Executed {our_time} instructions in total; opponent executed {their_time} instructions in total.)</p>")
         parts.append("<div class=\"game\"><table>")
         board = render_game_from_moves(game["moves"])
         # TODO: Individual move timing would be quite interesting.
