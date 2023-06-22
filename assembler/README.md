@@ -77,7 +77,7 @@ Instructions by prefix:
     * 0000: cannot be generated (same as `lw reg_rhs_dest 0`)
     * 0001: cannot be generated (same as `lw reg_rhs_dest 0`)
     * 0010: `gt reg_lhs reg_rhs_dest` (>, unsigned)
-        * As per the ISA, the result is written into the right-hand side operand, i.e. `reg_rhs_dest`. This also holds for all other unary operations.
+        * As per the ISA, the result is written into the right-hand side operand, i.e. `reg_rhs_dest`. This also holds for all other comparison operations.
     * 0011: `gts reg_lhs reg_rhs_dest` (>, signed)
     * 0100: `eq reg_lhs reg_rhs_dest` (==)
     * 0101: cannot be generated (same as `eq reg_lhs reg_rhs_dest`)
