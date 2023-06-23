@@ -154,18 +154,20 @@ def generate_games_list(games_by_type):
             time_plural = "" if occurrences == 1 else "s"
             parts.append(f"<h4>Game type #{i + 1} (seen {occurrences} time{time_plural})</h4>")
         if game["res"]["type"] == "draw":
-            action_verb = "Drawn"
+            action_verb = "Draw"
         elif game["res"]["type"] == "win" and game["res"]["by"] == 1:
-            action_verb = "Won"
+            action_verb = "Win"
         elif game["res"]["type"] == "win" and game["res"]["by"] == 2:
-            action_verb = "Lost"
+            action_verb = "Loss"
         else:
             raise AssertionError(game)
-        reason = game["res"].get("reason", "")
-        if reason and action_verb == "Lost":
-            # FIXME: Find a better way to transfer this piece of info from Rust to this generator.
-            reason = reason.replace("opponent's", "our")
-        parts.append(f"<p>{action_verb} due to {reason}.")
+        long_reason = game["res"].get("reason", "")
+        if long_reason:
+            long_reason = " due to " + long_reason
+            if action_verb == "Loss":
+                # FIXME: Find a better way to transfer this piece of info from Rust to this generator.
+                long_reason = long_reason.replace("opponent's", "our")
+        parts.append(f"<p>{action_verb}{long_reason}.")
         our_time, their_time = game['times']
         parts.append(f" (Executed {our_time} instructions in total; opponent executed {their_time} instructions in total.)</p>")
         parts.append("<div class=\"game\"><table>")
