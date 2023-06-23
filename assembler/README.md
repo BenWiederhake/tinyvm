@@ -36,6 +36,7 @@ Instructions by prefix:
 - 0011: `lw reg_dest, imm_value` (Load immediate low, sign-extended)
     * Note that for `-0x80 <= imm_value <= 0x7F` this results in only one instruction.
     * For convenience and future compatibility, the same guarantee holds for `0xFF80 <= imm_value <= 0xFFFF`.
+    * If `imm_value` is outside this range, theo two instructions `lw reg_dest, imm_low_bits; lhi reg_dest, imm_high_bits` are generated instead. See the section on [pseudo-instructions](#pseudo-instructions) for more instances of such dynamic behavior.
 - 0100: `lhi reg_dest, imm_value` (Load immediate high, only high byte)
     * Auto-detects which byte contains the desired value: `0x00 <= imm_value <= 0xFF` will use the low byte,
       `(imm_value & 0xFF == 0) && (0x0000 <= imm_value <= 0xFF00)` will use the high byte.
@@ -126,3 +127,14 @@ This is the juicy part, and main point of having an assembler: Special directive
 - `.word imm_value`: Write the literal word. Recall that the assembler generates the instruction segment, so this directive can be used to generate otherwise ungeneratable instructions, or inject read-only memory that can be recalled with `lwi`.
 - `.assert_hash hexstring`: The given hexstring must be exactly 64 characters long (no spaces etc.). When the assembler is done and the instruction segment is about to be written out, the SHA256 of the segment is computed, and compared against the given hexstring. In case of a mismatch, compilation is aborted. I use this to ensure that changes in the assembler will not silently change the generated segments.
 - And finally, comments: After the first `#`, the rest of the line is ignored. (Not technically a directive, but you get the point.)
+
+## Pseudo-instructions
+
+Finally, some instructions are so useful, so "made" to be used in a particular combination, that it just makes sense to have the assembler accept pseudo-instructions for them.
+- `lw reg_dest, imm_large_value`
+    * This instruction may generate one or two instructions, and will accept any `-0x8000 <= imm_large_value <= 0xFFFF`.
+    * If `imm_large_value` cannot be loaded in a single instruction, the assembler instead emits the two instructions:
+      ```
+      lw reg_dest, imm_low_bits
+      lhi reg_dest, imm_high_bits
+      ```
