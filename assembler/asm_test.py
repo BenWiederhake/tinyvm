@@ -37,14 +37,15 @@ ASM_TESTS = [
     ("empty", "", "", []),
     (
         "newline",
+        # No trailing backslash here!
         """
         """,
-        "0000",
+        "",
         [],
     ),
     (
         "comment",
-        """
+        """\
         # Hello, world!
         """,
         "",
@@ -52,7 +53,7 @@ ASM_TESTS = [
     ),
     (
         "return",
-        """
+        """\
         ret
         """,
         "102A",
@@ -60,7 +61,7 @@ ASM_TESTS = [
     ),
     (
         "inline comment",
-        """
+        """\
         # This is awesome.
         ret  # Return, yo!
         # Hooray!
@@ -70,7 +71,7 @@ ASM_TESTS = [
     ),
     (
         "inline comment multi",
-        """
+        """\
         ret # Return   # but you knew that already, didn't you?
         """,
         "102A",
@@ -78,7 +79,7 @@ ASM_TESTS = [
     ),
     (
         "illegal",
-        """
+        """\
         ill
         """,
         "FFFF",
@@ -86,7 +87,7 @@ ASM_TESTS = [
     ),
     (
         "more than one instruction",
-        """
+        """\
         ret
         ill
         """,
@@ -95,7 +96,7 @@ ASM_TESTS = [
     ),
     (
         "CPUID",
-        """
+        """\
         cpuid
         """,
         "102B",
@@ -103,7 +104,7 @@ ASM_TESTS = [
     ),
     (
         "Debug-dump",
-        """
+        """\
         debug
         """,
         "102C",
@@ -111,7 +112,7 @@ ASM_TESTS = [
     ),
     (
         "Time",
-        """
+        """\
         time
         """,
         "102D",
@@ -119,7 +120,7 @@ ASM_TESTS = [
     ),
     (
         "Store word",
-        """
+        """\
         sw r0, r0
         sw r1, r0
         sw r10, r15
@@ -129,7 +130,7 @@ ASM_TESTS = [
     ),
     (
         "Load word instruction",
-        """
+        """\
         lwi r0, r0
         lwi r0, r1
         lwi r15, r10
@@ -139,7 +140,7 @@ ASM_TESTS = [
     ),
     (
         "Load word data, memory-only",
-        """
+        """\
         lw r0, r0
         lw r0, r1
         lw r15, r10
@@ -149,7 +150,7 @@ ASM_TESTS = [
     ),
     (
         "Load word data immediate (single insn)",
-        """
+        """\
         lw r0, 0x0000
         lw r1, -1
         lw r5, 42
@@ -162,7 +163,7 @@ ASM_TESTS = [
     ),
     (
         "Load word data immediate (single insn, extreme)",
-        """
+        """\
         lw r7, 0xFFFF
         lw r11, -42
         lw r12, -128
@@ -172,7 +173,7 @@ ASM_TESTS = [
     ),
     (
         "Load word data immediate (double insn)",
-        """
+        """\
         lw r0, 0x0081
         lw r1, -0x81
         lw r2, 0xABCD
@@ -184,7 +185,7 @@ ASM_TESTS = [
     ),
     (
         "Load word data immediate (alternate bases)",
-        """
+        """\
         lw r0, 0b1010
         lw r1, 0o123
         """,
@@ -193,7 +194,7 @@ ASM_TESTS = [
     ),
     (
         "Load word data immediate high-only",
-        """
+        """\
         lhi r0, 0
         lhi r1, 0x12
         lhi r2, 0xFF
@@ -206,7 +207,7 @@ ASM_TESTS = [
     ),
     (
         "decr",
-        """
+        """\
         decr r0
         decr r0, r0
         decr r5
@@ -219,7 +220,7 @@ ASM_TESTS = [
     ),
     (
         "incr",
-        """
+        """\
         incr r0
         incr r0, r0
         incr r5
@@ -232,7 +233,7 @@ ASM_TESTS = [
     ),
     (
         "not",
-        """
+        """\
         not r0
         not r0, r0
         not r5
@@ -245,7 +246,7 @@ ASM_TESTS = [
     ),
     (
         "popcnt",
-        """
+        """\
         popcnt r0
         popcnt r0, r0
         popcnt r5
@@ -258,7 +259,7 @@ ASM_TESTS = [
     ),
     (
         "clz",
-        """
+        """\
         clz r0
         clz r0, r0
         clz r5
@@ -271,7 +272,7 @@ ASM_TESTS = [
     ),
     (
         "ctz",
-        """
+        """\
         ctz r0
         ctz r0, r0
         ctz r5
@@ -284,7 +285,7 @@ ASM_TESTS = [
     ),
     (
         "rnd",
-        """
+        """\
         rnd r0
         rnd r0, r0
         rnd r5
@@ -297,7 +298,7 @@ ASM_TESTS = [
     ),
     (
         "mov",
-        """
+        """\
         mov r0, r1
         mov r6, r2
         mov r7, r8
@@ -308,7 +309,7 @@ ASM_TESTS = [
     ),
     (
         "nop single",
-        """
+        """\
         nop
         """,
         "5F00",
@@ -316,7 +317,7 @@ ASM_TESTS = [
     ),
     (
         "nop multi",
-        """
+        """\
         nop
         nop
         nop
@@ -326,7 +327,7 @@ ASM_TESTS = [
     ),
     (
         "add",
-        """
+        """\
         add r0 r0
         add r3 r3
         add r7 r8
@@ -337,7 +338,7 @@ ASM_TESTS = [
     ),
     (
         "add multi-space",
-        """
+        """\
         add r1    r2
         """,
         "6012",
@@ -345,7 +346,7 @@ ASM_TESTS = [
     ),
     (
         "sub",
-        """
+        """\
         sub r0 r0
         sub r3 r3
         sub r7 r8
@@ -356,7 +357,7 @@ ASM_TESTS = [
     ),
     (
         "mul",
-        """
+        """\
         mul r0 r0
         mul r3 r3
         mul r7 r8
@@ -367,7 +368,7 @@ ASM_TESTS = [
     ),
     (
         "mulh",
-        """
+        """\
         mulh r0 r0
         mulh r3 r3
         mulh r7 r8
@@ -378,7 +379,7 @@ ASM_TESTS = [
     ),
     (
         "divu",
-        """
+        """\
         divu r0 r0
         divu r3 r3
         divu r7 r8
@@ -389,7 +390,7 @@ ASM_TESTS = [
     ),
     (
         "divs",
-        """
+        """\
         divs r0 r0
         divs r3 r3
         divs r7 r8
@@ -400,7 +401,7 @@ ASM_TESTS = [
     ),
     (
         "modu",
-        """
+        """\
         modu r0 r0
         modu r3 r3
         modu r7 r8
@@ -411,7 +412,7 @@ ASM_TESTS = [
     ),
     (
         "mods",
-        """
+        """\
         mods r0 r0
         mods r3 r3
         mods r7 r8
@@ -422,7 +423,7 @@ ASM_TESTS = [
     ),
     (
         "and",
-        """
+        """\
         and r0 r0
         and r3 r3
         and r7 r8
@@ -433,7 +434,7 @@ ASM_TESTS = [
     ),
     (
         "or",
-        """
+        """\
         or r0 r0
         or r3 r3
         or r7 r8
@@ -444,7 +445,7 @@ ASM_TESTS = [
     ),
     (
         "xor",
-        """
+        """\
         xor r0 r0
         xor r3 r3
         xor r7 r8
@@ -455,7 +456,7 @@ ASM_TESTS = [
     ),
     (
         "sl",
-        """
+        """\
         sl r0 r0
         sl r3 r3
         sl r7 r8
@@ -466,7 +467,7 @@ ASM_TESTS = [
     ),
     (
         "srl",
-        """
+        """\
         srl r0 r0
         srl r3 r3
         srl r7 r8
@@ -477,7 +478,7 @@ ASM_TESTS = [
     ),
     (
         "sra",
-        """
+        """\
         sra r0 r0
         sra r3 r3
         sra r7 r8
@@ -488,7 +489,7 @@ ASM_TESTS = [
     ),
     (
         "gt",
-        """
+        """\
         gt r0 r0
         gt r15 r15
         gt r7 r8
@@ -498,7 +499,7 @@ ASM_TESTS = [
     ),
     (
         "eq",
-        """
+        """\
         eq r0 r0
         eq r15 r15
         eq r7 r8
@@ -508,7 +509,7 @@ ASM_TESTS = [
     ),
     (
         "ge",
-        """
+        """\
         ge r0 r0
         ge r15 r15
         ge r7 r8
@@ -518,7 +519,7 @@ ASM_TESTS = [
     ),
     (
         "lt",
-        """
+        """\
         lt r0 r0
         lt r15 r15
         lt r7 r8
@@ -528,7 +529,7 @@ ASM_TESTS = [
     ),
     (
         "ne",
-        """
+        """\
         ne r0 r0
         ne r15 r15
         ne r7 r8
@@ -538,7 +539,7 @@ ASM_TESTS = [
     ),
     (
         "le",
-        """
+        """\
         le r0 r0
         le r15 r15
         le r7 r8
@@ -548,7 +549,7 @@ ASM_TESTS = [
     ),
     (
         "gts",
-        """
+        """\
         gts r0 r0
         gts r15 r15
         gts r7 r8
@@ -558,7 +559,7 @@ ASM_TESTS = [
     ),
     (
         "ges",
-        """
+        """\
         ges r0 r0
         ges r15 r15
         ges r7 r8
@@ -568,7 +569,7 @@ ASM_TESTS = [
     ),
     (
         "lts",
-        """
+        """\
         lts r0 r0
         lts r15 r15
         lts r7 r8
@@ -578,7 +579,7 @@ ASM_TESTS = [
     ),
     (
         "les",
-        """
+        """\
         les r0 r0
         les r15 r15
         les r7 r8
@@ -588,7 +589,7 @@ ASM_TESTS = [
     ),
     (
         "branch simple",
-        """
+        """\
         b r0 2
         b r1 8
         b r7 16
@@ -601,7 +602,7 @@ ASM_TESTS = [
     ),
     (
         "branch extreme positive",
-        """
+        """\
         b r3 +0x7f
         b r4 127
         b r5 128
@@ -612,7 +613,7 @@ ASM_TESTS = [
     ),
     (
         "branch extreme negative",
-        """
+        """\
         b r9 -127
         b r10 -128
         """,
@@ -621,7 +622,7 @@ ASM_TESTS = [
     ),
     (
         "jump by immediate simple",
-        """
+        """\
         j +5
         j +2
         j -1
@@ -632,7 +633,7 @@ ASM_TESTS = [
     ),
     (
         "jump by immediate extreme positive",
-        """
+        """\
         j 123
         j 0x123
         j 0x7FE
@@ -645,7 +646,7 @@ ASM_TESTS = [
     ),
     (
         "jump by immediate extreme negative",
-        """
+        """\
         j -123
         j -0x123
         j -0x7FE
@@ -657,7 +658,7 @@ ASM_TESTS = [
     ),
     (
         "jump to register onearg",
-        """
+        """\
         j r0
         j r1
         j r15
@@ -667,7 +668,7 @@ ASM_TESTS = [
     ),
     (
         "jump to register twoarg positive",
-        """
+        """\
         j r0 +0
         j r1 1
         j r2 0x12
@@ -678,7 +679,7 @@ ASM_TESTS = [
     ),
     (
         "jump to register twoarg negative",
-        """
+        """\
         j r4 -0
         j r5 -1
         j r6 -0x12
@@ -688,7 +689,7 @@ ASM_TESTS = [
     ),
     (
         "jump to register twoarg negative extreme",
-        """
+        """\
         j r7 -127
         j r8 -128
         """,
@@ -697,7 +698,7 @@ ASM_TESTS = [
     ),
     (
         "offset empty",
-        """
+        """\
         .offset 0x1234
         """,
         "0000",
@@ -705,7 +706,7 @@ ASM_TESTS = [
     ),
     (
         "offset basic",
-        """
+        """\
         .offset 0x1234
         ret
         """,
@@ -714,7 +715,7 @@ ASM_TESTS = [
     ),
     (
         "offset low",
-        """
+        """\
         lw r1, 0x23
         .offset 3
         ret
@@ -724,7 +725,7 @@ ASM_TESTS = [
     ),
     (
         "offset weird order",
-        """
+        """\
         .offset 3
         ret
         .offset 0
@@ -735,7 +736,7 @@ ASM_TESTS = [
     ),
     (
         "offset extreme",
-        """
+        """\
         .offset +0xFFFF
         lw r1, 0x23
         lw r4, 0x56
@@ -745,7 +746,7 @@ ASM_TESTS = [
     ),
     (
         "literal simple",
-        """
+        """\
         .word 0xABCD
         .word 1234
         .word 0
@@ -756,7 +757,7 @@ ASM_TESTS = [
     ),
     (
         "literal extreme",
-        """
+        """\
         .word 0xFFFF
         .word -0x8000
         .word -0x7FFF
@@ -766,7 +767,7 @@ ASM_TESTS = [
     ),
     (
         "label simple",
-        """
+        """\
         .label _hello_world
         ret
         """,
@@ -775,7 +776,7 @@ ASM_TESTS = [
     ),
     (
         "label multi",
-        """
+        """\
         .label _hello_world
         .label _hello_world_again
         ret
@@ -787,7 +788,7 @@ ASM_TESTS = [
     ),
     (
         "branch label low negative",
-        """
+        """\
         lw r2, 0x10
         .label _some_label
         lw r3, 0x33
@@ -798,7 +799,7 @@ ASM_TESTS = [
     ),
     (
         "branch label medium negative",
-        """
+        """\
         .label _some_label
         lw r3, 0x33
         lw r4, 0x44
@@ -810,7 +811,7 @@ ASM_TESTS = [
     ),
     (
         "branch label barely-overflow negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -822,7 +823,7 @@ ASM_TESTS = [
     ),
     (
         "branch label overflow negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -835,7 +836,7 @@ ASM_TESTS = [
     ),
     (
         "branch label extreme negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -847,7 +848,7 @@ ASM_TESTS = [
     ),
     (
         "branch label negative to undef",
-        """
+        """\
         ret
         .label _some_label
         .offset 0x005
@@ -858,7 +859,7 @@ ASM_TESTS = [
     ),
     (
         "branch label low positive",
-        """
+        """\
         b r6 _some_label
         lw r2, 0x22
         .label _some_label
@@ -869,7 +870,7 @@ ASM_TESTS = [
     ),
     (
         "branch label medium positive",
-        """
+        """\
         lw r3, 0x33
         b r7 _some_label
         lw r4, 0x44
@@ -883,7 +884,7 @@ ASM_TESTS = [
     ),
     (
         "branch label barely-overflow positive",
-        """
+        """\
         b r4 _some_label
         ret
         .offset 0xFFFF
@@ -895,7 +896,7 @@ ASM_TESTS = [
     ),
     (
         "branch label overflow positive",
-        """
+        """\
         lw r3, 0x33
         lw r4, 0x56
         b r4 _some_label # offset is -4
@@ -910,7 +911,7 @@ ASM_TESTS = [
     ),
     (
         "branch label extreme positive",
-        """
+        """\
         lw r3, 0x33
         b r4 _some_label # the label is at relative +0x81
         lw r4, 0x56
@@ -923,7 +924,7 @@ ASM_TESTS = [
     ),
     (
         "branch label positive to undef",
-        """
+        """\
         b r4 _some_label
         ret
         .offset 5
@@ -934,7 +935,7 @@ ASM_TESTS = [
     ),
     (
         "jump label low negative",
-        """
+        """\
         lw r2, 0x10
         .label _some_label
         lw r3, 0x33
@@ -945,7 +946,7 @@ ASM_TESTS = [
     ),
     (
         "jump label medium negative",
-        """
+        """\
         .label _some_label
         lw r3, 0x33
         lw r4, 0x44
@@ -957,7 +958,7 @@ ASM_TESTS = [
     ),
     (
         "jump label barely-overflow negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -969,7 +970,7 @@ ASM_TESTS = [
     ),
     (
         "jump label overflow negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -982,7 +983,7 @@ ASM_TESTS = [
     ),
     (
         "jump label extreme negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -994,7 +995,7 @@ ASM_TESTS = [
     ),
     (
         "jump label negative to undef",
-        """
+        """\
         ret
         .label _some_label
         .offset 0x005
@@ -1005,7 +1006,7 @@ ASM_TESTS = [
     ),
     (
         "jump label low positive",
-        """
+        """\
         j _some_label
         lw r2, 0x22
         .label _some_label
@@ -1016,7 +1017,7 @@ ASM_TESTS = [
     ),
     (
         "jump label medium positive",
-        """
+        """\
         lw r3, 0x33
         j _some_label
         lw r4, 0x44
@@ -1030,7 +1031,7 @@ ASM_TESTS = [
     ),
     (
         "jump label barely-overflow positive",
-        """
+        """\
         j _some_label
         ret
         .offset 0xFFFF
@@ -1042,7 +1043,7 @@ ASM_TESTS = [
     ),
     (
         "jump label overflow positive",
-        """
+        """\
         lw r3, 0x33
         lw r4, 0x56
         j _some_label # offset is -4
@@ -1057,7 +1058,7 @@ ASM_TESTS = [
     ),
     (
         "jump label extreme positive",
-        """
+        """\
         lw r3, 0x33
         j _some_label # the label is at relative +0x801
         lw r4, 0x56
@@ -1070,7 +1071,7 @@ ASM_TESTS = [
     ),
     (
         "jump label positive to undef",
-        """
+        """\
         j _some_label
         ret
         .offset 5
@@ -1081,7 +1082,7 @@ ASM_TESTS = [
     ),
     (
         "jump label offset, negative",
-        """
+        """\
         lw r4, 0x56
         j _some_label +0x3  # Effective offset is +6
         ret
@@ -1093,7 +1094,7 @@ ASM_TESTS = [
     ),
     (
         "jump label offset, positive",
-        """
+        """\
         lw r4, 0x56
         .label _some_label
         ret
@@ -1105,7 +1106,7 @@ ASM_TESTS = [
     ),
     (
         "offset with label zero",
-        """
+        """\
         .label _some_label
         .offset 3
         ret
@@ -1117,7 +1118,7 @@ ASM_TESTS = [
     ),
     (
         "offset with label nonzero",
-        """
+        """\
         lw r2, 0x10
         .label _some_label
         .offset 3
@@ -1130,7 +1131,7 @@ ASM_TESTS = [
     ),
     (
         ".offset with label multi",
-        """
+        """\
         lw r0, 0
         .label _some_label
         .offset _some_label
@@ -1144,7 +1145,7 @@ ASM_TESTS = [
     ),
     (
         "hash zero",
-        """
+        """\
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
         """,
         "0000",
@@ -1152,7 +1153,7 @@ ASM_TESTS = [
     ),
     (
         "hash zero lowercase",
-        """
+        """\
         .assert_hash fa43239bcee7b97ca62f007cc68487560a39e19f74f3dde7486db3f98df8e471
         """,
         "0000",
@@ -1160,7 +1161,7 @@ ASM_TESTS = [
     ),
     (
         "hash ret before",
-        """
+        """\
         .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
         ret
         """,
@@ -1169,7 +1170,7 @@ ASM_TESTS = [
     ),
     (
         "hash ret after",
-        """
+        """\
         ret
         .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
         """,
@@ -1178,7 +1179,7 @@ ASM_TESTS = [
     ),
     (
         "hash ret after, zero-word",
-        """
+        """\
         ret
         .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
         .word 0000
@@ -1191,7 +1192,7 @@ ASM_TESTS = [
 NEGATIVE_TESTS = [
     (
         "garbage",
-        """
+        """\
         garbage
         """,
         [
@@ -1200,7 +1201,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "return with arg",
-        """
+        """\
         ret 42
         """,
         [
@@ -1209,7 +1210,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "late garbage",
-        """
+        """\
         ret
         garbage
         """,
@@ -1219,7 +1220,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "late return with arg",
-        """
+        """\
         ret
         ret 42
         """,
@@ -1229,7 +1230,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "CPUID with arg",
-        """
+        """\
         cpuid 42
         """,
         [
@@ -1238,7 +1239,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Debug-dump with arg",
-        """
+        """\
         debug 1337
         """,
         [
@@ -1247,7 +1248,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Time with arg",
-        """
+        """\
         time 0x42
         """,
         [
@@ -1256,7 +1257,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "nop with arg imm",
-        """
+        """\
         nop 0x42
         """,
         [
@@ -1265,7 +1266,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "nop with arg reg",
-        """
+        """\
         nop r5
         """,
         [
@@ -1274,7 +1275,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word no arg",
-        """
+        """\
         sw
         """,
         [
@@ -1283,7 +1284,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word one arg",
-        """
+        """\
         sw r4
         """,
         [
@@ -1292,7 +1293,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word no comma",
-        """
+        """\
         sw r4 r4
         """,
         [
@@ -1301,7 +1302,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word too many",
-        """
+        """\
         sw r4, r4, r4
         """,
         [
@@ -1310,7 +1311,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word illegal register",
-        """
+        """\
         sw r16, r1
         """,
         [
@@ -1319,7 +1320,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word other illegal register",
-        """
+        """\
         sw r4, r16
         """,
         [
@@ -1328,7 +1329,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word underscore register",
-        """
+        """\
         sw r1_3, r1
         """,
         [
@@ -1338,7 +1339,7 @@ NEGATIVE_TESTS = [
     (
         "Store word immediate address",
         # FIXME: This would be a nifty feature though!
-        """
+        """\
         sw 0x1234, r1
         """,
         [
@@ -1347,7 +1348,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Store word immediate value",
-        """
+        """\
         sw r4, 0x1234
         """,
         [
@@ -1356,7 +1357,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word instruction immediate value",
-        """
+        """\
         lwi 0x1234, r4
         """,
         [
@@ -1366,7 +1367,7 @@ NEGATIVE_TESTS = [
     (
         "Load word instruction immediate address",
         # FIXME: This should be a feature!
-        """
+        """\
         lwi r5, 0x1234
         """,
         [
@@ -1375,7 +1376,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word instruction three-arg",
-        """
+        """\
         lwi r1, r2, r3
         """,
         [
@@ -1384,7 +1385,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data three-arg",
-        """
+        """\
         lw r1, r2, r3
         """,
         [
@@ -1393,7 +1394,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data immediate value",
-        """
+        """\
         lw 0x1234, r5
         """,
         [
@@ -1402,7 +1403,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data immediate (too low)",
-        """
+        """\
         lw r1, -0x8001
         """,
         [
@@ -1412,7 +1413,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data immediate (too high)",
-        """
+        """\
         lw r0, 65536
         """,
         [
@@ -1422,7 +1423,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data immediate (garbage)",
-        """
+        """\
         lw r0, garbage
         """,
         [
@@ -1432,7 +1433,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data immediate three-arg",
-        """
+        """\
         lhi r1, r2, r3
         """,
         [
@@ -1441,7 +1442,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data immediate high-only from register",
-        """
+        """\
         lhi r0, r1
         """,
         [
@@ -1450,7 +1451,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "Load word data immediate high-only invalid",
-        """
+        """\
         lhi r0, 0x1234
         """,
         [
@@ -1459,7 +1460,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "decr no args",
-        """
+        """\
         decr
         """,
         [
@@ -1468,7 +1469,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "decr too many args",
-        """
+        """\
         decr r1, r2, r3
         """,
         [
@@ -1477,7 +1478,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "decr 1-arg, imm",
-        """
+        """\
         decr 0x123
         """,
         [
@@ -1486,7 +1487,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "decr 2-arg, imm reg",
-        """
+        """\
         decr 123, r0
         """,
         [
@@ -1495,7 +1496,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "decr 2-arg, reg imm",
-        """
+        """\
         decr r0, 123
         """,
         [
@@ -1504,7 +1505,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "incr no args",
-        """
+        """\
         incr
         """,
         [
@@ -1513,7 +1514,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "not no args",
-        """
+        """\
         not
         """,
         [
@@ -1522,7 +1523,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "clz no args",
-        """
+        """\
         clz
         """,
         [
@@ -1531,7 +1532,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "ctz no args",
-        """
+        """\
         ctz
         """,
         [
@@ -1540,7 +1541,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "rnd no args",
-        """
+        """\
         rnd
         """,
         [
@@ -1549,7 +1550,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "mov no args",
-        """
+        """\
         mov
         """,
         [
@@ -1558,7 +1559,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "popcnt no args",
-        """
+        """\
         popcnt
         """,
         [
@@ -1567,7 +1568,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "add comma space",
-        """
+        """\
         add r4, r5
         """,
         [
@@ -1576,7 +1577,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "add comma nospace",
-        """
+        """\
         add r4,r5
         """,
         [
@@ -1585,7 +1586,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "add three args",
-        """
+        """\
         add r4 r5 r6
         """,
         [
@@ -1594,7 +1595,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "add noargs",
-        """
+        """\
         add
         """,
         [
@@ -1603,7 +1604,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "add space comma space",
-        """
+        """\
         add r4 , r5
         """,
         [
@@ -1612,7 +1613,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "sub noargs",
-        """
+        """\
         sub
         """,
         [
@@ -1621,7 +1622,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "mul noargs",
-        """
+        """\
         mul
         """,
         [
@@ -1630,7 +1631,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "mulh noargs",
-        """
+        """\
         mulh
         """,
         [
@@ -1639,7 +1640,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "divu noargs",
-        """
+        """\
         divu
         """,
         [
@@ -1648,7 +1649,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "divs noargs",
-        """
+        """\
         divs
         """,
         [
@@ -1657,7 +1658,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "modu noargs",
-        """
+        """\
         modu
         """,
         [
@@ -1666,7 +1667,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "mods noargs",
-        """
+        """\
         mods
         """,
         [
@@ -1675,7 +1676,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "and noargs",
-        """
+        """\
         and
         """,
         [
@@ -1684,7 +1685,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "or noargs",
-        """
+        """\
         or
         """,
         [
@@ -1693,7 +1694,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "xor noargs",
-        """
+        """\
         xor
         """,
         [
@@ -1702,7 +1703,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "sl noargs",
-        """
+        """\
         sl
         """,
         [
@@ -1711,7 +1712,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "srl noargs",
-        """
+        """\
         srl
         """,
         [
@@ -1720,7 +1721,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "sra noargs",
-        """
+        """\
         sra
         """,
         [
@@ -1729,7 +1730,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "lt noargs",
-        """
+        """\
         lt
         """,
         [
@@ -1738,7 +1739,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "le one-arg",
-        """
+        """\
         le r3
         """,
         [
@@ -1747,7 +1748,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "gt reg imm",
-        """
+        """\
         gt r4 1234
         """,
         [
@@ -1756,7 +1757,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "ge imm reg",
-        """
+        """\
         ge 1234 r5
         """,
         [
@@ -1765,7 +1766,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "eq comma-arg",
-        """
+        """\
         eq r3, r5
         """,
         [
@@ -1774,7 +1775,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "ne three-arg",
-        """
+        """\
         ne r3 r4 r5
         """,
         [
@@ -1783,7 +1784,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch comma",
-        """
+        """\
         b r5, 5
         """,
         [
@@ -1792,7 +1793,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch too large",
-        """
+        """\
         b r5 130
         """,
         [
@@ -1801,7 +1802,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch too negative",
-        """
+        """\
         b r10 -129
         """,
         [
@@ -1810,7 +1811,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch single arg",
-        """
+        """\
         b r10
         """,
         [
@@ -1819,7 +1820,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch to reg",
-        """
+        """\
         b r10 r5
         """,
         [
@@ -1829,7 +1830,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch by 0",
-        """
+        """\
         b r10 0
         """,
         [
@@ -1838,7 +1839,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch by 1",
-        """
+        """\
         b r10 1
         """,
         [
@@ -1847,14 +1848,14 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump noarg",
-        """
+        """\
         j
         """,
         ["line 1: Command 'j' expects either one or two arguments, got none instead."],
     ),
     (
         "jump two arg immediate, comma",
-        """
+        """\
         j 0x12, 0x34
         """,
         [
@@ -1865,7 +1866,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump two arg immediate, space",
-        """
+        """\
         j 0x12 0x34
         """,
         [
@@ -1876,7 +1877,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump by immediate extreme positive",
-        """
+        """\
         j 0x802
         """,
         [
@@ -1885,7 +1886,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump by immediate extreme negative",
-        """
+        """\
         j -0x801
         """,
         [
@@ -1894,7 +1895,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump to register onearg",
-        """
+        """\
         j r16
         """,
         [
@@ -1906,7 +1907,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump to register twoarg extreme positive",
-        """
+        """\
         j r3 +128
         """,
         [
@@ -1915,7 +1916,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump to register twoarg extreme negative",
-        """
+        """\
         j r8 -129
         """,
         [
@@ -1924,7 +1925,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "offset negative",
-        """
+        """\
         .offset -1
         """,
         [
@@ -1933,7 +1934,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "offset overwrite",
-        """
+        """\
         ret
         .offset 0
         ret
@@ -1942,7 +1943,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "offset overwrite indirect",
-        """
+        """\
         .offset 2
         lw r4, 0x56
         .offset 0
@@ -1954,7 +1955,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "literal too positive",
-        """
+        """\
         .word 65536
         """,
         [
@@ -1963,7 +1964,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "literal too negative decimal",
-        """
+        """\
         .word -32769
         """,
         [
@@ -1972,7 +1973,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "literal too negative hex",
-        """
+        """\
         .word -0x8001
         """,
         [
@@ -1981,7 +1982,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "mov single-arg",
-        """
+        """\
         mov r0
         """,
         [
@@ -1990,7 +1991,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "mov noop",
-        """
+        """\
         mov r1, r1
         """,
         [
@@ -1999,7 +2000,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "overwrite zeros",
-        """
+        """\
         .word 0x0000
         .offset 0
         .word 0x0000
@@ -2008,7 +2009,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label no name",
-        """
+        """\
         .label
         """,
         [
@@ -2017,7 +2018,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label two-arg",
-        """
+        """\
         .label _foo _bar
         """,
         [
@@ -2026,7 +2027,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label bad name",
-        """
+        """\
         .label 1234
         """,
         [
@@ -2035,7 +2036,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label no underscore",
-        """
+        """\
         .label foobar
         """,
         [
@@ -2044,7 +2045,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label too short",
-        """
+        """\
         .label _
         """,
         [
@@ -2053,7 +2054,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label multidef",
-        """
+        """\
         .label _hello_world
         ret
         .label _hello_world
@@ -2064,7 +2065,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label multidef same offset",
-        """
+        """\
         .label _hello_world
         .label _hello_world
         """,
@@ -2074,7 +2075,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special $",
-        """
+        """\
         .label _$hello_world
         """,
         [
@@ -2083,7 +2084,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special %",
-        """
+        """\
         .label _%hello_world
         """,
         [
@@ -2092,7 +2093,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special &",
-        """
+        """\
         .label _&hello_world
         """,
         [
@@ -2101,7 +2102,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special (",
-        """
+        """\
         .label _(hello_world
         """,
         [
@@ -2110,7 +2111,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special )",
-        """
+        """\
         .label _)hello_world
         """,
         [
@@ -2119,7 +2120,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special =",
-        """
+        """\
         .label _=hello_world
         """,
         [
@@ -2128,7 +2129,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special single quote",
-        """
+        """\
         .label _'hello_world
         """,
         [
@@ -2138,7 +2139,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special double quote",
-        """
+        """\
         .label _"hello_world
         """,
         [
@@ -2147,7 +2148,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special [",
-        """
+        """\
         .label _[hello_world
         """,
         [
@@ -2156,7 +2157,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "label special ]",
-        """
+        """\
         .label _]hello_world
         """,
         [
@@ -2165,7 +2166,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch unknown label",
-        """
+        """\
         lw r2, 0x10
         .label _some_label
         lw r3, 0x33
@@ -2178,7 +2179,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch label zero",
-        """
+        """\
         lw r2, 0x10
         .label _some_label
         b r4 _some_label
@@ -2189,7 +2190,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch label one",
-        """
+        """\
         lw r2, 0x10
         b r4 _some_label
         .label _some_label
@@ -2202,7 +2203,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch label one overflow",
-        """
+        """\
         .label _some_label
         lw r2, 0x10
         .offset 0xFFFF
@@ -2214,7 +2215,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch label too extreme negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -2227,7 +2228,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch label too extreme positive",
-        """
+        """\
         lw r3, 0x33
         b r4 _some_label # the label is at relative +0x82
         lw r4, 0x56
@@ -2242,7 +2243,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch label zero after the fact",
-        """
+        """\
         lw r2, 0x10
         b r4 _some_label
         .offset 1
@@ -2255,7 +2256,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "branch label one already defined",
-        """
+        """\
         .offset 2
         .label _some_label
         .offset 0
@@ -2269,7 +2270,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label nonexistent",
-        """
+        """\
         lw r2, 0x10
         .label _some_label
         lw r3, 0x33
@@ -2282,7 +2283,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label extreme negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -2295,7 +2296,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label extreme positive",
-        """
+        """\
         lw r3, 0x33
         j _some_label # the label is at relative +0x801
         lw r4, 0x56
@@ -2310,7 +2311,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label zero",
-        """
+        """\
         .label _some_label
         j _some_label
         """,
@@ -2320,7 +2321,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label one",
-        """
+        """\
         j _some_label
         .label _some_label
         ret
@@ -2332,7 +2333,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label offset extreme negative",
-        """
+        """\
         ret
         .label _some_label
         lw r3, 0x33
@@ -2345,7 +2346,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label offset extreme positive",
-        """
+        """\
         lw r3, 0x33
         j _some_label +1 # the label is at relative +0x801
         lw r4, 0x56
@@ -2360,7 +2361,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label offset zero",
-        """
+        """\
         j _some_label -2
         ret
         .label _some_label
@@ -2373,7 +2374,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "jump label offset one",
-        """
+        """\
         j _some_label -1
         ret
         .label _some_label
@@ -2386,7 +2387,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "offset with label unknown",
-        """
+        """\
         lw r0, 0
         .label _some_label
         .offset _wrong_label
@@ -2398,7 +2399,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "offset with label overwrite",
-        """
+        """\
         lw r0, 0
         .label _some_label
         ret
@@ -2409,7 +2410,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "hash zero invalid char",
-        """
+        """\
         .assert_hash GA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E47
         """,
         [
@@ -2418,7 +2419,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "hash zero too short",
-        """
+        """\
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E47
         """,
         [
@@ -2427,7 +2428,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "hash zero too long",
-        """
+        """\
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E4711
         """,
         [
@@ -2436,7 +2437,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "hash zero wrong",
-        """
+        """\
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E472
         """,
         [
@@ -2445,7 +2446,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "hash zero multi",
-        """
+        """\
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
         """,
@@ -2453,7 +2454,7 @@ NEGATIVE_TESTS = [
     ),
     (
         "hash zero contradict",
-        """
+        """\
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E471
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E472
         """,
@@ -2464,7 +2465,7 @@ NEGATIVE_TESTS = [
 TESTS_INSTRUCTIONS_RS = [
     (
         "from test_time_jump",
-        """
+        """\
         j r0 +0x0005
         nop
         nop
@@ -2477,7 +2478,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_time_long",
-        """
+        """\
         lw r7, 0xFFAB
         decr r7
         b r7 -0x1
@@ -2489,7 +2490,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_time_very_long",
-        """
+        """\
         lw r7, 0xB505 # executed 1 time
         mov r1, r7 # executed 1 time
         .label _outer_loop
@@ -2508,7 +2509,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_store_data_doc",
-        """
+        """\
         lw r2, 0x1234
         lw r5, 0x5678
         sw r2, r5
@@ -2518,7 +2519,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_store_data_simple",
-        """
+        """\
         lw r2, 0x0045
         lw r5, 0x0067
         sw r2, r5
@@ -2528,7 +2529,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_load_data_doc",
-        """
+        """\
         lw r2, 0x1234
         lw r5, r2
         """,
@@ -2537,7 +2538,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_load_data_simple",
-        """
+        """\
         lw r2, 0x0005
         lw r5, r2
         """,
@@ -2546,7 +2547,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_load_instruction_doc",
-        """
+        """\
         lw r2, 0x1234
         lwi r5, r2
         """,
@@ -2555,7 +2556,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_load_instruction_simple",
-        """
+        """\
         lw r2, 0x0005
         lwi r5, r2
         """,
@@ -2564,7 +2565,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_load_imm_high_doc_setup",
-        """
+        """\
         lw r10, 0x1234
         """,
         "3A34 4A12",
@@ -2572,7 +2573,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_load_imm_high_doc",
-        """
+        """\
         lw r10, 0x1234
         lhi r10, 0x5600
         """,
@@ -2581,7 +2582,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_load_imm_high_simple",
-        """
+        """\
         lhi r5, 0xAB00
         """,
         "45AB",
@@ -2589,7 +2590,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_doc1",
-        """
+        """\
         lhi r7, 0x1200
         j r7 +0x0034
         """,
@@ -2598,7 +2599,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_doc2",
-        """
+        """\
         lw r7, 0x1234
         j r7 -0x0001
         """,
@@ -2607,7 +2608,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_simple",
-        """
+        """\
         j r0 +0x0042
         """,
         "B042",
@@ -2615,7 +2616,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_overflow",
-        """
+        """\
         lw r7, 0xFFFF
         j r7 +0x0010
         """,
@@ -2624,7 +2625,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_underflow",
-        """
+        """\
         j r0 -0x0080
         """,
         "B080",
@@ -2632,7 +2633,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_extreme_positive_imm",
-        """
+        """\
         j r0 +0x7F
         """,
         "B07F",
@@ -2640,7 +2641,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_extreme_negative_imm",
-        """
+        """\
         j r0 -0x80
         """,
         "B080",
@@ -2648,7 +2649,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_extreme_positive",
-        """
+        """\
         lw r7, 0xFFFF
         j r7 +0x7F
         """,
@@ -2657,7 +2658,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_extreme_positive_nowrap",
-        """
+        """\
         lw r7, 0x7FFF
         j r7 +0x7F
         """,
@@ -2666,7 +2667,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_extreme_negative",
-        """
+        """\
         lw r7, 0xFFFF
         j r7 -0x80
         """,
@@ -2675,7 +2676,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_register_extreme_negative_signedish",
-        """
+        """\
         lw r7, 0x8000
         j r7 -0x80
         """,
@@ -2685,7 +2686,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_program_counter_wraps",
-        """
+        """\
         lw r7, 0xFFFF
         j r7 +0x0000
         .offset 0xFFFF
@@ -2696,7 +2697,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_imm_doc1",
-        """
+        """\
         lhi r3, 0x5000
         j r3 +0x0000
         .offset 0x5000
@@ -2707,7 +2708,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_imm_doc2",
-        """
+        """\
         lhi r3, 0x1200
         j r3 +0x0034
         .offset 0x1234
@@ -2718,7 +2719,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_immediate_overflow",
-        """
+        """\
         lw r3, 0xFF00
         j r3 +0x0000
         .offset 0xFF00
@@ -2730,7 +2731,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_immediate_underflow",
-        """
+        """\
         j -0x031
         """,
         "A830",
@@ -2738,7 +2739,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_immediate_extreme_positive",
-        """
+        """\
         j +0x801
         """,
         "A7FF",
@@ -2746,7 +2747,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_jump_immediate_extreme_negative",
-        """
+        """\
         j -0x800
         """,
         "AFFF",
@@ -2754,7 +2755,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_branch_doc1",
-        """
+        """\
         lw r3, 0x0001
         lhi r7, 0x1200
         j r7 +0x0034
@@ -2766,7 +2767,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_branch_doc2",
-        """
+        """\
         b r5 -0x1
         """,
         "9580",
@@ -2774,7 +2775,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_compare_doc",
-        """
+        """\
         lw r3, 0x0005
         lw r4, 0x0007
         ne r3 r4
@@ -2784,7 +2785,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_unary_doc1",
-        """
+        """\
         lw r5, 0x1234
         not r6, r5
         """,
@@ -2793,7 +2794,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_unary_doc2",
-        """
+        """\
         lw r3, 41
         incr r3
         """,
@@ -2802,7 +2803,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_unary_rnd_inclusive",
-        """
+        """\
         lw r1, 5
         rnd r2, r1
         le r2 r1
@@ -2813,7 +2814,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_unary_rnd_extreme",
-        """
+        """\
         lw r1, 0xFFFF
         rnd r2, r1
         eq r2 r1
@@ -2824,7 +2825,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_binary_doc",
-        """
+        """\
         lw r5, 5
         lw r6, 7
         mul r5 r6
@@ -2834,7 +2835,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_fibonacci",
-        """
+        """\
         lw r0, 24
         lw r1, 1
         .label _start
@@ -2852,7 +2853,7 @@ TESTS_INSTRUCTIONS_RS = [
     ),
     (
         "from test_rnd_(not_)exec",
-        """
+        """\
         lw r0, 7
         nop
         rnd r2, r0
@@ -2865,7 +2866,7 @@ TESTS_INSTRUCTIONS_RS = [
 TESTS_CONNECT4_RS = [
     (
         "from test_determine_answer",
-        """
+        """\
         lw r0, 0x1337
         lw r7, 0xABCD
         sw r7, r7
@@ -2876,7 +2877,7 @@ TESTS_CONNECT4_RS = [
     ),
     (
         "from test_board_full player one",
-        """
+        """\
         lw r1, 0xFF89 # Address of total number of moves made by this player.
         lw r1, r1
         lw r0, 7
@@ -2888,7 +2889,7 @@ TESTS_CONNECT4_RS = [
     ),
     (
         "from test_board_full player two",
-        """
+        """\
         lw r1, 0xFF89
         lw r1, r1
         b r1 _move_nonzero # (offset is +0x3)
@@ -2912,7 +2913,7 @@ TESTS_CONNECT4_RS = [
     ),
     (
         "from test_determine_answer_random",
-        """
+        """\
         lw r0, 6
         rnd r1, r0
         ret
@@ -2922,7 +2923,7 @@ TESTS_CONNECT4_RS = [
     ),
     (
         "from test_two_random",
-        """
+        """\
         rnd r1
         lw r0, 1
         ret

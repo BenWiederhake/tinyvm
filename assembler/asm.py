@@ -1020,7 +1020,7 @@ def compile_to_segment(asm_text):
     """
     asm = Assembler()
     for i, line in enumerate(asm_text.split("\n")):
-        if not asm.parse_line(line, i):
+        if not asm.parse_line(line, i + 1):
             return None, asm.error_log
     return asm.segment_bytes(), asm.error_log
 
