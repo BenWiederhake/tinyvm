@@ -770,6 +770,8 @@ ASM_TESTS = [
         """\
         .label _hello_world
         ret
+        # Cannot have an unreferenced label, sadly :(
+        .offset _hello_world
         """,
         "102A",
         [],
@@ -782,6 +784,10 @@ ASM_TESTS = [
         ret
         .label _hello_more_world
         lw r4, 0x56
+        # Cannot have an unreferenced label, sadly :(
+        .offset _hello_world
+        .offset _hello_world_again
+        .offset _hello_more_world
         """,
         "102A 3456",
         [],
@@ -2175,6 +2181,7 @@ NEGATIVE_TESTS = [
         [
             "line 5: Found end of asm text, but some forward references are unresolved: line 4 at offset 2 references label _wrong_label",
             "line 5: Did you mean any of these defined labels? ['_some_label']",
+            "line 5: Unused label(s), try using them in dead code, or commenting them out: '_some_label' (line 2, offset 1)",
         ],
     ),
     (
@@ -2279,6 +2286,7 @@ NEGATIVE_TESTS = [
         [
             "line 5: Found end of asm text, but some forward references are unresolved: line 4 at offset 2 references label _wrong_label",
             "line 5: Did you mean any of these defined labels? ['_some_label']",
+            "line 5: Unused label(s), try using them in dead code, or commenting them out: '_some_label' (line 2, offset 1)",
         ],
     ),
     (
@@ -2893,14 +2901,14 @@ TESTS_CONNECT4_RS = [
         lw r1, 0xFF89
         lw r1, r1
         b r1 _move_nonzero # (offset is +0x3)
-        .label _move_zero # On move 0, play in column 3.
+        # .label _move_zero # On move 0, play in column 3.
         lw r0, 3
         ret
         .label _move_nonzero
         lw r0, 18
         ge r1 r0
         b r0 _move_late # (offset is +0x2)
-        .label _move_early # On moves 1-17, play in column (n - 1) % 7.
+        # .label _move_early # On moves 1-17, play in column (n - 1) % 7.
         decr r1
         # j _move_late # Surprise optimization: This is a noop, this time!
         .label _move_late # On moves 18-20, play in column n % 7.

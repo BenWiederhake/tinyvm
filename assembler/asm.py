@@ -109,8 +109,9 @@ class Assembler:
         self.segment_words = [None] * (SEGMENT_LENGTH // 2)
         self.current_lineno = None
         self.current_pointer = 0x0000
-        self.known_labels = dict()
-        self.forward_references = dict()
+        self.unused_labels = set()
+        self.known_labels = dict()  # Values are (destination_offset, destination_lineno)
+        self.forward_references = dict()  # Values are lists of ForwardReference instances
         self.error_log = []
         self.expect_hash = None  # Or tuple (line, SHA256 hex)
 
@@ -158,6 +159,7 @@ class Assembler:
         fwd_ref = ForwardReference(self, by_words, bound_method, data)
         if label_name in self.known_labels:
             # Immediate resolution
+            self.unused_labels.discard(label_name)
             return fwd_ref.apply()
         else:
             # Must be skipped for now, to be patched when 'label_name' is defined
@@ -720,6 +722,7 @@ class Assembler:
 
     def emit_b_to_label(self, command, condition_reg, label_name):
         destination_offset, destination_lineno = self.known_labels[label_name]
+        self.unused_labels.discard(label_name)
         offset_value = mod_s16(destination_offset - self.current_pointer)
         return self.emit_b_by_value(
             f"{command} (to label {label_name}=0x{destination_offset:04X}, defined in line {destination_lineno})",
@@ -801,6 +804,7 @@ class Assembler:
 
     def emit_j_to_label(self, label_name, extra_offset):
         destination = self.known_labels[label_name][0] + extra_offset
+        self.unused_labels.discard(label_name)
         delta = mod_s16(destination - self.current_pointer)
         pseudo_command = f"j (to {label_name} {extra_offset:+} = by {delta:+})"
         return self.command_j_immediate(pseudo_command, delta)
@@ -889,6 +893,7 @@ class Assembler:
                     f"The already-defined labels are: {sorted(list(self.known_labels.keys()))}"
                 )
             self.current_pointer = self.known_labels[label_name][0]
+            self.unused_labels.discard(label_name)
         # No codegen
         return True
 
@@ -929,6 +934,7 @@ class Assembler:
             return self.error(
                 f"Label '{label_name}' previously defined in line {old_line} (old offset 0x{old_offset:04X}, new offset 0x{self.current_pointer:04X})"
             )
+        assert label_name not in self.unused_labels
         self.known_labels[label_name] = (self.current_pointer, self.current_lineno)
         old_references = self.forward_references.get(label_name)
         if old_references is not None:
@@ -939,6 +945,8 @@ class Assembler:
                     any_reference_failed = True
             if any_reference_failed:
                 return self.error(f"When label {label_name} was defined.")
+        else:
+            self.unused_labels.add(label_name)
         # No codegen
         return True
 
@@ -982,6 +990,7 @@ class Assembler:
 
     def segment_bytes(self):
         assert len(self.segment_words) == 65536
+        has_problem = False
         if self.forward_references:
             error_text = ", ".join(
                 f"line {fwd_ref.orig_lineno} at offset {fwd_ref.orig_pointer} references label {label_name}"
@@ -994,6 +1003,18 @@ class Assembler:
             self.error(
                 f"Did you mean any of these defined labels? {list(self.known_labels.keys())}"
             )
+            has_problem = True
+        if self.unused_labels:
+            error_text = ", ".join(
+                f"'{label_name}' (line {label_lineno}, offset {label_offset})"
+                for label_name in sorted(self.unused_labels)
+                for label_offset, label_lineno in [self.known_labels[label_name]]
+            )
+            # FIXME write test
+            self.error(
+                f"Unused label(s), try using them in dead code, or commenting them out: {error_text}"
+            )
+        if has_problem:
             return None
         segment = bytearray(SEGMENT_LENGTH)
         for i, word in enumerate(self.segment_words):
