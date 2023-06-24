@@ -1373,6 +1373,66 @@ ASM_TESTS = [
         "8DEF 9F12",
         [],
     ),
+    (
+        "pseudo-instruction eqz",
+        """\
+        eqz r0
+        eqz r6
+        eqz r15
+        """,
+        "8400 8466 84FF",
+        [],
+    ),
+    (
+        "pseudo-instruction nez",
+        """\
+        nez r0
+        nez r6
+        nez r15
+        """,
+        "8A00 8A66 8AFF",
+        [],
+    ),
+    (
+        "pseudo-instruction ltsz",
+        """\
+        ltsz r0
+        ltsz r6
+        ltsz r15
+        """,
+        "8900 8966 89FF",
+        [],
+    ),
+    (
+        "pseudo-instruction lesz",
+        """\
+        lesz r0
+        lesz r6
+        lesz r15
+        """,
+        "8D00 8D66 8DFF",
+        [],
+    ),
+    (
+        "pseudo-instruction gtsz",
+        """\
+        gtsz r0
+        gtsz r6
+        gtsz r15
+        """,
+        "8300 8366 83FF",
+        [],
+    ),
+    (
+        "pseudo-instruction gesz",
+        """\
+        gesz r0
+        gesz r6
+        gesz r15
+        """,
+        "8700 8766 87FF",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -2819,6 +2879,46 @@ NEGATIVE_TESTS = [
         """,
         [
             "line 1: Command 'bne' cannot encode the nop-branch (offset 1). Try using 'nop' instead."
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'gtz'",
+        """\
+        gtz r10
+        """,
+        [
+            "line 1: Refusing hypothetical 'gtz' pseudo-instruction, because there is no unsigned"
+            " integer less than zero. Consider 'gtsz' for signed comparison, or 'nez' to check for"
+            " inequality with zero.",
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'gez'",
+        """\
+        gez r10
+        """,
+        [
+            "line 1: Command 'gez' not found. Close matches: gesz, ge, nez",
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'ltz'",
+        """\
+        ltz r10
+        """,
+        [
+            "line 1: Command 'ltz' not found. Close matches: ltsz, lt, lts",
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'lez'",
+        """\
+        lez r10
+        """,
+        [
+            "line 1: Refusing hypothetical 'lez' pseudo-instruction, because there is no unsigned"
+            " integer less than zero. Consider 'lesz' for signed comparison, or 'eqz' to check for"
+            " equality with zero.",
         ],
     ),
 ]

@@ -79,17 +79,24 @@ Instructions by prefix:
     * 0001: cannot be generated (same as `lw reg_rhs_dest 0`)
     * 0010: `gt reg_lhs reg_rhs_dest` (>, unsigned)
         * As per the ISA, the result is written into the right-hand side operand, i.e. `reg_rhs_dest`. This also holds for all other comparison operations.
+        * Note that the assembler forbids comparison of a register with itself. This is to prevent bugs, and because the ISA assigns a different meaning to these instructions.
     * 0011: `gts reg_lhs reg_rhs_dest` (>, signed)
+        * For this instruction, comparison with the value zero is meaningful and interesting. This can be done by simply appending `z` for `zero` to the command: `gtsz reg_value_and_dest` compiles to `0x83RR`, which is the instruction that compares the value of `reg_value_and_dest` with zero, and if it is "greater than signed zero", writes the value 0x0001 into the register; 0x0000 else.
     * 0100: `eq reg_lhs reg_rhs_dest` (==)
+        * `eqz reg_value_and_dest` compares the value of `reg_value_and_dest` with the value zero, and writes it to `reg_value_and_dest`.
     * 0101: cannot be generated (same as `eq reg_lhs reg_rhs_dest`)
     * 0110: `ge reg_lhs reg_rhs_dest` (>=, unsigned)
     * 0111: `ges reg_lhs reg_rhs_dest` (>=, signed)
+        * `gesz reg_value_and_dest` compares the value of `reg_value_and_dest` with the value zero, and writes it to `reg_value_and_dest`.
     * 1000: `lt reg_lhs reg_rhs_dest` (<, unsigned)
     * 1001: `lts reg_lhs reg_rhs_dest` (<, signed)
+        * `ltsz reg_value_and_dest` compares the value of `reg_value_and_dest` with the value zero, and writes it to `reg_value_and_dest`.
     * 1010: `ne reg_lhs reg_rhs_dest` (!=)
+        * `nez reg_value_and_dest` compares the value of `reg_value_and_dest` with the value zero, and writes it to `reg_value_and_dest`.
     * 1011: cannot be generated (same as `ne reg_lhs reg_rhs_dest`)
     * 1100: `le reg_lhs reg_rhs_dest` (<=, unsigned)
     * 1101: `les reg_lhs reg_rhs_dest` (<=, signed)
+        * `lesz reg_value_and_dest` compares the value of `reg_value_and_dest` with the value zero, and writes it to `reg_value_and_dest`.
     * 1110: cannot be generated (same as `lw reg_rhs_dest 1`)
     * 1111: cannot be generated (same as `lw reg_rhs_dest 1`)
 - 1001: Branch

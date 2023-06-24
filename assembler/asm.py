@@ -696,6 +696,69 @@ class Assembler:
     def parse_command_les(self, command, args):
         return self.binary_command(command, args, 0x8D00, False)
 
+    def compare_zero_command(self, command, args, high_byte):
+        assert 0xFF00 & high_byte != 0 and 0x00FF & high_byte == 0
+        if not args or " " in args:
+            return self.error(
+                f"Command '{command}' expects exactly one register arguments, got {args} instead."
+            )
+        test_reg = self.parse_reg(args, f"first argument to {command}")
+        if test_reg is None:
+            # Error already reported
+            return False
+        return self.push_word(high_byte | (test_reg << 4) | test_reg)
+
+    # FIXME: Should not be advertised during misspellings.
+    @asm_command
+    def parse_command_gtz(self, command, args):
+        # Intentionally don't implement "gtz rX", as it is identical to "nez rX".
+        # Make sure that the user learns about both "gtzs" and "nez".
+        return self.error(
+            f"Refusing hypothetical '{command}' pseudo-instruction, because there is no unsigned"
+            " integer less than zero. Consider 'gtsz' for signed comparison, or 'nez' to check for"
+            " inequality with zero."
+        )
+
+    @asm_command
+    def parse_command_eqz(self, command, args):
+        return self.compare_zero_command(command, args, 0x8400)
+
+    # Intentionally don't implement "gez rX", as it is identical to "lw rX, 1".
+    # "gezs" should be automatically among the suggestions.
+    # Intentionally don't implement "ltz rX", as it is identical to "lw rX, 0".
+    # "ltzs" should be automatically among the suggestions.
+
+    @asm_command
+    def parse_command_nez(self, command, args):
+        return self.compare_zero_command(command, args, 0x8A00)
+
+    # FIXME: Should not be advertised during misspellings.
+    @asm_command
+    def parse_command_lez(self, command, args):
+        # Intentionally don't implement "lez rX", as it is identical to "eqz rX".
+        # Make sure that the user learns about both "lezs" and "eqz".
+        return self.error(
+            f"Refusing hypothetical '{command}' pseudo-instruction, because there is no unsigned"
+            " integer less than zero. Consider 'lesz' for signed comparison, or 'eqz' to check for"
+            " equality with zero."
+        )
+
+    @asm_command
+    def parse_command_gtsz(self, command, args):
+        return self.compare_zero_command(command, args, 0x8300)
+
+    @asm_command
+    def parse_command_gesz(self, command, args):
+        return self.compare_zero_command(command, args, 0x8700)
+
+    @asm_command
+    def parse_command_ltsz(self, command, args):
+        return self.compare_zero_command(command, args, 0x8900)
+
+    @asm_command
+    def parse_command_lesz(self, command, args):
+        return self.compare_zero_command(command, args, 0x8D00)
+
     def branch_pseudo_command(self, branch_mask, command, args):
         arg_list = [e.strip() for e in args.split(" ", 2)]
         if len(arg_list) != 3:
