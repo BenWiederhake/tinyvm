@@ -20,7 +20,6 @@ def asm_command(fn):
     prefix = "parse_command_"
     assert name.startswith(prefix), name
     command_name = name[len(prefix) :]
-    global ASM_COMMANDS
     assert command_name not in ASM_COMMANDS
     ASM_COMMANDS[command_name] = fn
     return fn
@@ -31,7 +30,6 @@ def asm_directive(fn):
     prefix = "parse_directive_"
     assert name.startswith(prefix), name
     command_name = "." + name[len(prefix) :]
-    global ASM_COMMANDS
     assert command_name not in ASM_COMMANDS
     ASM_COMMANDS[command_name] = fn
     return fn
@@ -360,7 +358,7 @@ class Assembler:
     def parse_command_ret(self, command, args):
         if args != "":
             return self.error(
-                f"Command 'ret' does not take any arguments (expected end of line, found '{args}' instead)"
+                f"Command '{command}' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0x102A)
 
@@ -368,7 +366,7 @@ class Assembler:
     def parse_command_ill(self, command, args):
         if args != "":
             return self.error(
-                f"Command 'ill' does not take any arguments (expected end of line, found '{args}' instead)"
+                f"Command '{command}' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0xFFFF)
 
@@ -376,7 +374,7 @@ class Assembler:
     def parse_command_cpuid(self, command, args):
         if args != "":
             return self.error(
-                f"Command 'cpuid' does not take any arguments (expected end of line, found '{args}' instead)"
+                f"Command '{command}' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0x102B)
 
@@ -384,7 +382,7 @@ class Assembler:
     def parse_command_debug(self, command, args):
         if args != "":
             return self.error(
-                f"Command 'debug' does not take any arguments (expected end of line, found '{args}' instead)"
+                f"Command '{command}' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0x102C)
 
@@ -392,7 +390,7 @@ class Assembler:
     def parse_command_time(self, command, args):
         if args != "":
             return self.error(
-                f"Command 'time' does not take any arguments (expected end of line, found '{args}' instead)"
+                f"Command '{command}' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0x102D)
 
@@ -401,14 +399,14 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'sw' expects exactly two comma-separated arguments, got {arg_list} instead."
+                f"Command '{command}' expects exactly two comma-separated arguments, got {arg_list} instead."
             )
         # TODO: Support immediates?
-        addr_register = self.parse_reg(arg_list[0], "first argument to sw")
+        addr_register = self.parse_reg(arg_list[0], f"first argument to {command}")
         if addr_register is None:
             # Error already reported
             return False
-        value_register = self.parse_reg(arg_list[1], "second argument to sw")
+        value_register = self.parse_reg(arg_list[1], f"second argument to {command}")
         if value_register is None:
             # Error already reported
             return False
@@ -421,7 +419,7 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'lw' expects exactly two arguments, got {arg_list} instead."
+                f"Command '{command}' expects exactly two arguments, got {arg_list} instead."
             )
         # TODO: Support immediate address
         # TODO: Support labels
@@ -439,7 +437,7 @@ class Assembler:
             assert 0 <= value_register < 16
             assert 0 <= addr_register < 16
             return self.push_word(0x2100 | (addr_register << 4) | value_register)
-        elif addr[0] == ArgType.IMMEDIATE:
+        if addr[0] == ArgType.IMMEDIATE:
             imm_value = addr[1]
             assert 0 <= value_register < 16
             assert -0x8000 <= imm_value <= 0xFFFF
@@ -447,29 +445,27 @@ class Assembler:
                 return self.push_word(
                     0x3000 | (value_register << 8) | (imm_value & 0xFF)
                 )
-            else:
-                low_byte = imm_value & 0xFF
-                high_byte = (imm_value & 0xFF00) >> 8
-                return self.push_words(
-                    0x3000 | (value_register << 8) | low_byte,
-                    0x4000 | (value_register << 8) | high_byte,
-                )
-        else:
-            raise AssertionError(f"Unexpected argtype {addr[0]} in {addr}")
+            low_byte = imm_value & 0xFF
+            high_byte = (imm_value & 0xFF00) >> 8
+            return self.push_words(
+                0x3000 | (value_register << 8) | low_byte,
+                0x4000 | (value_register << 8) | high_byte,
+            )
+        raise AssertionError(f"Unexpected argtype {addr[0]} in {addr}")
 
     @asm_command
     def parse_command_lwi(self, command, args):
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'lwi' expects exactly two arguments, got {arg_list} instead."
+                f"Command '{command}' expects exactly two arguments, got {arg_list} instead."
             )
         # TODO: Support immediate address
-        value_register = self.parse_reg(arg_list[0], "first argument to lwi")
+        value_register = self.parse_reg(arg_list[0], f"first argument to {command}")
         if value_register is None:
             # Error already reported
             return False
-        addr_register = self.parse_reg(arg_list[1], "second argument to lwi")
+        addr_register = self.parse_reg(arg_list[1], f"second argument to {command}")
         if addr_register is None:
             # Error already reported
             return False
@@ -482,13 +478,13 @@ class Assembler:
         arg_list = [e.strip() for e in args.split(",")]
         if len(arg_list) != 2:
             return self.error(
-                f"Command 'lhi' expects exactly two arguments, got {arg_list} instead."
+                f"Command '{command}' expects exactly two arguments, got {arg_list} instead."
             )
-        register = self.parse_reg(arg_list[0], "first argument to lhi")
+        register = self.parse_reg(arg_list[0], f"first argument to {command}")
         if register is None:
             # Error already reported
             return False
-        immediate = self.parse_imm(arg_list[1], "second argument to lhi")
+        immediate = self.parse_imm(arg_list[1], f"second argument to {command}")
         if immediate is None:
             # Error already reported
             return False
@@ -583,7 +579,7 @@ class Assembler:
     def parse_command_nop(self, command, args):
         if args != "":
             return self.error(
-                f"Command 'nop' does not take any arguments (expected end of line, found '{args}' instead)"
+                f"Command '{command}' does not take any arguments (expected end of line, found '{args}' instead)"
             )
         return self.push_word(0x5F00)
 
@@ -902,10 +898,10 @@ class Assembler:
         if parsed_arg[0] == ArgType.REGISTER:
             reg = parsed_arg[1]
             return self.command_j_register(reg, 0)
-        elif parsed_arg[0] == ArgType.IMMEDIATE:
+        if parsed_arg[0] == ArgType.IMMEDIATE:
             imm = parsed_arg[1]
             return self.command_j_immediate("j", imm)
-        elif parsed_arg[0] == ArgType.LABEL:
+        if parsed_arg[0] == ArgType.LABEL:
             label_name = parsed_arg[1]
             call_data = (label_name, 0)
             return self.forward(1, label_name, self.emit_j_to_label, call_data)
@@ -927,7 +923,7 @@ class Assembler:
         if reg_or_lab[0] == ArgType.REGISTER:
             reg = reg_or_lab[1]
             return self.command_j_register(reg, imm)
-        elif reg_or_lab[0] == ArgType.LABEL:
+        if reg_or_lab[0] == ArgType.LABEL:
             label_name = reg_or_lab[1]
             call_data = (label_name, imm)
             return self.forward(1, label_name, self.emit_j_to_label, call_data)
@@ -935,6 +931,7 @@ class Assembler:
 
     @asm_command
     def parse_command_j(self, command, args):
+        # FIXME: Pass 'command' to helper functions
         args = args.strip()
         arg_parts = args.split(" ", 1)
         if len(arg_parts) == 1:
@@ -949,24 +946,24 @@ class Assembler:
         arg_parts = args.split(" ", 1)
         if len(arg_parts) > 1 or not arg_parts[0]:
             return self.error(
-                f"Directive '.offset' takes exactly one argument (the new absolute offset), found '{args}' instead"
+                f"Directive '{command}' takes exactly one argument (the new absolute offset), found '{args}' instead"
             )
         new_offset = self.parse_imm_or_lab(arg_parts[0], "argument of .offset")
         if new_offset is None:
             return self.error(
-                f"Directive '.offset' takes either an immediate value or a label, found '{arg_parts[0]}' instead"
+                f"Directive '{command}' takes either an immediate value or a label, found '{arg_parts[0]}' instead"
             )
         if new_offset[0] == ArgType.IMMEDIATE:
             if new_offset[1] < 0:
                 return self.error(
-                    f"Immediate argument to '.offset' must be positive, found '{args}' instead"
+                    f"Immediate argument to '{command}' must be positive, found '{args}' instead"
                 )
             self.current_pointer = new_offset[1]
         elif new_offset[0] == ArgType.LABEL:
             label_name = new_offset[1]
             if label_name not in self.known_labels:
                 self.error(
-                    f"Label argument to '.offset' must be an already-delared label, found unknown label '{args}' instead"
+                    f"Label argument to '{command}' must be an already-delared label, found unknown label '{args}' instead"
                 )
                 return self.error(
                     f"The already-defined labels are: {sorted(list(self.known_labels.keys()))}"
@@ -982,9 +979,9 @@ class Assembler:
         arg_parts = args.split(" ", 1)
         if len(arg_parts) > 1 or not arg_parts[0]:
             return self.error(
-                f"Directive '.word' takes exactly one argument (the literal word), found '{args}' instead"
+                f"Directive '{command}' takes exactly one argument (the literal word), found '{args}' instead"
             )
-        value = self.parse_imm(arg_parts[0], "argument of .word")
+        value = self.parse_imm(arg_parts[0], f"argument of {command}")
         if value is None:
             # Error was already reported
             return False
@@ -998,11 +995,11 @@ class Assembler:
         arg_parts = args.split(" ", 1)
         if not arg_parts[0]:
             return self.error(
-                "Directive '.label' takes exactly one argument (the literal label name), found nothing instead"
+                f"Directive '{command}' takes exactly one argument (the literal label name), found nothing instead"
             )
         if len(arg_parts) > 1 or not arg_parts[0]:
             return self.error(
-                f"Directive '.label' takes exactly one argument (the literal label name), found {arg_parts} instead"
+                f"Directive '{command}' takes exactly one argument (the literal label name), found {arg_parts} instead"
             )
         label_name = self.parse_label(arg_parts[0], "argument of .label")
         if label_name is None:
@@ -1069,8 +1066,7 @@ class Assembler:
                 return self.error(
                     f"Command '{command}' not found. Close match{plural}: {', '.join(suggestions)}"
                 )
-            else:
-                return self.error(f"Command '{command}' not found.")
+            return self.error(f"Command '{command}' not found.")
 
         return command_fn(self, command, args)
 
@@ -1096,7 +1092,6 @@ class Assembler:
                 for label_name in sorted(self.unused_labels)
                 for label_offset, label_lineno in [self.known_labels[label_name]]
             )
-            # FIXME write test
             self.error(
                 f"Unused label(s), try using them in dead code, or commenting them out: {error_text}"
             )

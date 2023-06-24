@@ -3302,20 +3302,20 @@ class AsmTests(unittest.TestCase):
         self.assertEqual(empty_result, asm.compile_to_segment("\n"))
 
     def test_testsuite_names(self):
-        nameCounter = Counter(name for name, _, _, _ in ASM_TESTS)
-        for name, count in nameCounter.items():
+        name_counter = Counter(name for name, _, _, _ in ASM_TESTS)
+        for name, count in name_counter.items():
             with self.subTest(t="ASM_TESTS", name=name):
                 self.assertEqual(count, 1)
-        nameCounter = Counter(name for name, _, _ in NEGATIVE_TESTS)
-        for name, count in nameCounter.items():
+        name_counter = Counter(name for name, _, _ in NEGATIVE_TESTS)
+        for name, count in name_counter.items():
             with self.subTest(t="NEGATIVE_TESTS", name=name):
                 self.assertEqual(count, 1)
-        nameCounter = Counter(name for name, _, _, _ in TESTS_INSTRUCTIONS_RS)
-        for name, count in nameCounter.items():
+        name_counter = Counter(name for name, _, _, _ in TESTS_INSTRUCTIONS_RS)
+        for name, count in name_counter.items():
             with self.subTest(t="TESTS_INSTRUCTIONS_RS", name=name):
                 self.assertEqual(count, 1)
-        nameCounter = Counter(name for name, _, _, _ in TESTS_CONNECT4_RS)
-        for name, count in nameCounter.items():
+        name_counter = Counter(name for name, _, _, _ in TESTS_CONNECT4_RS)
+        for name, count in name_counter.items():
             with self.subTest(t="TESTS_CONNECT4_RS", name=name):
                 self.assertEqual(count, 1)
 

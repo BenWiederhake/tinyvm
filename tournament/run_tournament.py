@@ -325,11 +325,11 @@ async def run_all_matchups(vms):
     concurrency = max(1, os.cpu_count() - 1)
     print(f"Running up to {concurrency} matches in parallel ...")
     async with asyncio.TaskGroup() as tg:
-        for i in range(concurrency):
+        for _ in range(concurrency):
             tg.create_task(run_matches_from_queue(queue))
         await queue.join()
         # TODO: Can probably start shutting down even earlier, but that's micro-optimization.
-        for i in range(concurrency):
+        for _ in range(concurrency):
             # Send shutdown signal:
             queue.put_nowait(None)
 
