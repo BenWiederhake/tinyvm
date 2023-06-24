@@ -111,8 +111,10 @@ class Assembler:
         self.current_lineno = None
         self.current_pointer = 0x0000
         self.unused_labels = set()
-        self.known_labels = dict()  # Values are (destination_offset, destination_lineno)
-        self.forward_references = dict()  # Values are lists of ForwardReference instances
+        # Values are (destination_offset, destination_lineno):
+        self.known_labels = dict()
+        # Values are lists of ForwardReference instances:
+        self.forward_references = dict()
         self.error_log = []
         self.expect_hash = None  # Or tuple (line, SHA256 hex)
 
@@ -710,7 +712,9 @@ class Assembler:
         arg_list[1] = arg_list[1].strip()
         reg_lhs = self.parse_reg(arg_list[0], f"first argument to {command}")
         reg_rhs_dest = self.parse_reg(arg_list[1], f"second argument to {command}")
-        offset_imm_or_lab = self.parse_imm_or_lab(arg_list[2], f"third argument to {command}")
+        offset_imm_or_lab = self.parse_imm_or_lab(
+            arg_list[2], f"third argument to {command}"
+        )
         if reg_lhs is None or reg_rhs_dest is None or offset_imm_or_lab is None:
             # Error already reported
             return False
@@ -1057,16 +1061,16 @@ class Assembler:
             print(f"{lineno}: {line}  # {command=} {args=}")
         command_fn = ASM_COMMANDS.get(command)
         if command_fn is None:
-            suggestions = difflib.get_close_matches(command, sorted(list(ASM_COMMANDS.keys())))
+            suggestions = difflib.get_close_matches(
+                command, sorted(list(ASM_COMMANDS.keys()))
+            )
             if suggestions:
                 plural = "es" if len(suggestions) > 1 else ""
                 return self.error(
                     f"Command '{command}' not found. Close match{plural}: {', '.join(suggestions)}"
                 )
             else:
-                return self.error(
-                    f"Command '{command}' not found."
-                )
+                return self.error(f"Command '{command}' not found.")
 
         return command_fn(self, command, args)
 

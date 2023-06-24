@@ -41,11 +41,13 @@ def collect_vms():
     vms = []
     for filename in os.listdir(VMS_DIR):
         if filename.endswith(".segment"):
-            vms.append(VM(filename[:-len(".segment")]))
+            vms.append(VM(filename[: -len(".segment")]))
     vms.sort(key=lambda vm: vm.name)
     for i in range(len(vms) - 1):
         if vms[i + 1].name.startswith(vms[i].name):
-            print(f"VM names must not be prefixes of each other! Problem with >>{vms[i].name}<< and >>{vms[i + 1].name}<<.")
+            print(
+                f"VM names must not be prefixes of each other! Problem with >>{vms[i].name}<< and >>{vms[i + 1].name}<<."
+            )
             exit(1)
     return vms
 
@@ -85,11 +87,15 @@ async def run_matchup(vm_one, vm_two):
         # asyncio doesn't support text=True :(
     )
     try:
-        stdout_bin, stderr_bin = await asyncio.wait_for(proc.communicate(), timeout=TIMEOUT_SECONDS)
+        stdout_bin, stderr_bin = await asyncio.wait_for(
+            proc.communicate(), timeout=TIMEOUT_SECONDS
+        )
     except TimeoutError:
         stderr_bin = b"<timeout>"
     if proc.returncode != 0:
-        print(f"ERROR! Running on {vm_one.name} and {vm_two.name} resulted in an error.")
+        print(
+            f"ERROR! Running on {vm_one.name} and {vm_two.name} resulted in an error."
+        )
         print(f"{command=} {proc.returncode=}")
         print("<=== BEGIN STDERR DUMP ===>")
         print(stderr_bin.decode(errors="replace"))
@@ -127,7 +133,9 @@ def render_game_from_moves(moves):
 
 def generate_games_list(games_by_type):
     # TODO: The type of 'games_by_type' is awkward and should be refactored.
-    games_list = [(len(games_list), games_list[0]) for games_list in games_by_type.values()]
+    games_list = [
+        (len(games_list), games_list[0]) for games_list in games_by_type.values()
+    ]
     limit = len(games_list)
     # We want to cut off at 20 games per page, but it's silly to cut off just a few games.
     # However, we need to draw the line (heh) somewhere, so we draw it at 25:
@@ -152,7 +160,9 @@ def generate_games_list(games_by_type):
     for i, (occurrences, game) in enumerate(games_list[:limit]):
         if len(games_list) > 1:
             time_plural = "" if occurrences == 1 else "s"
-            parts.append(f"<h4>Game type #{i + 1} (seen {occurrences} time{time_plural})</h4>")
+            parts.append(
+                f"<h4>Game type #{i + 1} (seen {occurrences} time{time_plural})</h4>"
+            )
         if game["res"]["type"] == "draw":
             action_verb = "Draw"
         elif game["res"]["type"] == "win" and game["res"]["by"] == 1:
@@ -168,9 +178,11 @@ def generate_games_list(games_by_type):
                 # FIXME: Find a better way to transfer this piece of info from Rust to this generator.
                 long_reason = long_reason.replace("opponent's", "our")
         parts.append(f"<p>{action_verb}{long_reason}.")
-        our_time, their_time = game['times']
-        parts.append(f" (Executed {our_time} instructions in total; opponent executed {their_time} instructions in total.)</p>")
-        parts.append("<div class=\"game\"><table>")
+        our_time, their_time = game["times"]
+        parts.append(
+            f" (Executed {our_time} instructions in total; opponent executed {their_time} instructions in total.)</p>"
+        )
+        parts.append('<div class="game"><table>')
         board = render_game_from_moves(game["moves"])
         # TODO: Individual move timing would be quite interesting.
         # TODO: Some kind of slider that lets you see the gamestate at any point in time?
@@ -178,15 +190,17 @@ def generate_games_list(games_by_type):
             parts.append("<tr>")
             for cell in row:
                 state, num_move = cell
-                parts.append(f"<td class=\"c{state}\">{num_move}</td>")
+                parts.append(f'<td class="c{state}">{num_move}</td>')
             parts.append("</tr>")
         parts.append("</table></div>")
     if limit != len(games_list):
         parts.append(f"<h4>Game types #{limit + 1} through #{len(games_list)}</h4>")
-        num_elided = sum(occurrences for occurrences, _ in games_list[limit :])
-        parts.append(f"<p>Sorry, the other game types (spanning {num_elided} games) aren't listed to keep this HTML file reasonably small. ")
-        parts.append("If you're interested, the other game types in this matchup can be easily extracted ")
-        parts.append("from the <a href=\"results_general.json\">JSON file</a>. Give it a try!</p>")
+        num_elided = sum(occurrences for occurrences, _ in games_list[limit:])
+        parts.append(f"<p>Sorry, the other game types (spanning {num_elided} games) ")
+        parts.append("aren't listed to keep this HTML file reasonably small. ")
+        parts.append("If you're interested, the other game types in this matchup ")
+        parts.append('can be easily extracted from the <a href="results_general.json">')
+        parts.append("JSON file</a>. Give it a try!</p>")
     return "".join(parts)
 
 
@@ -249,23 +263,25 @@ def compute_color(wins, draws, losses):
 
 
 def generate_overview_table(all_vms):
-    parts = ["<table class=\"all-matchups\">"]
+    parts = ['<table class="all-matchups">']
     # Header row
     parts.append("<tr>")
     parts.append("<th></th>")
     for vm in all_vms:
-        parts.append(f"<th class=\"defender-th\"><div class=\"defender-outer\"><span class=\"defender-inner\">{vm.name}</span></div></th>")
+        parts.append(
+            f'<th class="defender-th"><div class="defender-outer"><span class="defender-inner">{vm.name}</span></div></th>'
+        )
     parts.append("</tr>")
     # Data
     for vm_one in all_vms:
         parts.append("<tr>")
-        parts.append(f"<th class=\"attacker\">{vm_one.name}</th>")
+        parts.append(f'<th class="attacker">{vm_one.name}</th>')
         for vm_two in all_vms:
             matchup = vm_one.matchups[vm_two.name]
             wins, draws, losses = analyze_matchup(matchup)
             color = compute_color(wins, draws, losses)
-            parts.append(f"<td class=\"result\" style=\"background-color: {color};\">")
-            parts.append(f"<a href=\"{matchup_filename(vm_one, vm_two)}\">")
+            parts.append(f'<td class="result" style="background-color: {color};">')
+            parts.append(f'<a href="{matchup_filename(vm_one, vm_two)}">')
             parts.append(f"{wins}/{draws}/{losses}</a></td>")
         parts.append("</tr>")
     parts.append("</table>")
@@ -294,7 +310,9 @@ async def run_matches_from_queue(queue):
         started_at = time.monotonic()
         await run_matchup(vm_one, vm_two)
         completed_at = time.monotonic()
-        print(f"Finished matchup {vm_one.name} vs. {vm_two.name} in {completed_at - started_at:.3f}s.")
+        print(
+            f"Finished matchup {vm_one.name} vs. {vm_two.name} in {completed_at - started_at:.3f}s."
+        )
         queue.task_done()
 
 
