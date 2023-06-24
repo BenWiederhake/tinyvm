@@ -138,3 +138,15 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
       lw reg_dest, imm_low_bits
       lhi reg_dest, imm_high_bits
       ```
+- `bgt reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
+    * Also with other comparisons: `bgts`, `beq`, `bge`, `bges`, `blt`, `blts`, `bne`, `ble`, `bles`
+    * The assembler instead emits the two instructions:
+      ```
+      gt reg_lhs reg_rhs_dest
+      b reg_rhs_dest ( imm_offset | _lab_destination )
+      ```
+    * The same restrictions as to `b` apply:
+        * This pseudo-instruction only support branch-offsets in the range \[-128, +129\], and the 129 is not a typo.
+        * Support for longer jumps is currently missing, but should ideally be a separate instruction (to preserve predictability).
+        * Offsets 0 (infinite loop) and 1 (noop) cannot be encoded in the ISA, and therefore not supported by the assembler.
+        * The label does not need to be defined yet; forward-references are fine. For more info, see [directives](#directives).

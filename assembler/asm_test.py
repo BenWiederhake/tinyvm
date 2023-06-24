@@ -1193,6 +1193,186 @@ ASM_TESTS = [
         "102A 0000",
         [],
     ),
+    (
+        "pseudo-instruction bgt immediate",
+        """\
+        bgt r1 r2 +45
+        """,
+        "8212 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction bgt label",
+        """\
+        bgt r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "82EF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction bgts immediate",
+        """\
+        bgts r1 r2 +45
+        """,
+        "8312 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction bgts label",
+        """\
+        bgts r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "83EF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction beq immediate",
+        """\
+        beq r1 r2 +45
+        """,
+        "8412 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction beq label",
+        """\
+        beq r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "84EF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction bge immediate",
+        """\
+        bge r1 r2 +45
+        """,
+        "8612 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction bge label",
+        """\
+        bge r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "86EF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction bges immediate",
+        """\
+        bges r1 r2 +45
+        """,
+        "8712 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction bges label",
+        """\
+        bges r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "87EF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction blt immediate",
+        """\
+        blt r1 r2 +45
+        """,
+        "8812 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction blt label",
+        """\
+        blt r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "88EF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction blts immediate",
+        """\
+        blts r1 r2 +45
+        """,
+        "8912 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction blts label",
+        """\
+        blts r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "89EF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction bne immediate",
+        """\
+        bne r1 r2 +45
+        """,
+        "8A12 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction bne label",
+        """\
+        bne r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "8AEF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction ble immediate",
+        """\
+        ble r1 r2 +45
+        """,
+        "8C12 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction ble label",
+        """\
+        ble r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "8CEF 9F12",
+        [],
+    ),
+    (
+        "pseudo-instruction bles immediate",
+        """\
+        bles r1 r2 +45
+        """,
+        "8D12 922b",
+        [],
+    ),
+    (
+        "pseudo-instruction bles label",
+        """\
+        bles r14 r15 _dest
+        .offset 0x15
+        .label _dest
+        """,
+        "8DEF 9F12",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1202,7 +1382,7 @@ NEGATIVE_TESTS = [
         garbage
         """,
         [
-            "line 1: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
+            "line 1: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'beq', 'bge', 'bges', 'bgt', 'bgts', 'ble', 'bles', 'blt', 'blts', 'bne', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?",
         ],
     ),
     (
@@ -1221,7 +1401,7 @@ NEGATIVE_TESTS = [
         garbage
         """,
         [
-            "line 2: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?"
+            "line 2: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'beq', 'bge', 'bges', 'bgt', 'bgts', 'ble', 'bles', 'blt', 'blts', 'bne', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?",
         ],
     ),
     (
@@ -2467,6 +2647,134 @@ NEGATIVE_TESTS = [
         .assert_hash FA43239BCEE7B97CA62F007CC68487560A39E19F74F3DDE7486DB3F98DF8E472
         """,
         ["line 2: Expected hash already stated in line 1."],
+    ),
+    (
+        "blt noargs",
+        """\
+        blt
+        """,
+        [
+            "line 1: Command 'blt' expects exactly three space-separated arguments (reg reg imm_or_lab), got [''] instead."
+        ],
+    ),
+    (
+        "ble one-arg",
+        """\
+        ble r3
+        """,
+        [
+            "line 1: Command 'ble' expects exactly three space-separated arguments (reg reg imm_or_lab), got ['r3'] instead."
+        ],
+    ),
+    (
+        "bgt reg imm",
+        """\
+        bgt r4 1234
+        """,
+        [
+            "line 1: Command 'bgt' expects exactly three space-separated arguments (reg reg imm_or_lab), got ['r4', '1234'] instead."
+        ],
+    ),
+    (
+        "bgt reg imm imm",
+        """\
+        bgt r4 1234 42
+        """,
+        [
+            "line 1: Cannot parse register for second argument to bgt: Expected register (beginning with 'r'), instead got '1234'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "bge imm reg imm",
+        """\
+        bge 1234 r5 42
+        """,
+        [
+            "line 1: Cannot parse register for first argument to bge: Expected register (beginning with 'r'), instead got '1234'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "beq comma-arg",
+        """\
+        beq r3, r5 42
+        """,
+        [
+            "line 1: Cannot parse register for first argument to beq: Expected register with numeric index, instead got 'r3,'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "bne four-arg",
+        """\
+        bne r3 r4 r5 r6
+        """,
+        [
+            "line 1: Cannot parse immediate for third argument to bne: Expected integer number, instead got 'r5 r6'. Try something like '42', '0xABCD', or '-0x123' instead.",
+            "line 1: Label name for third argument to bne must start with a '_' and contain at least two characters, found name 'r5 r6' instead",
+        ],
+    ),
+    (
+        "branch lts comma",
+        """\
+        blts r5 r6, 5
+        """,
+        [
+            "line 1: Cannot parse register for second argument to blts: Expected register with numeric index, instead got 'r6,'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "branch gts too large",
+        """\
+        bgts r5 r6 130
+        """,
+        [
+            "line 1: Command 'bgts' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps."
+        ],
+    ),
+    (
+        "branch les too negative",
+        """\
+        bles r10 r9 -129
+        """,
+        [
+            "line 1: Command 'bles' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps."
+        ],
+    ),
+    (
+        "branch ges single arg",
+        """\
+        bges r10
+        """,
+        [
+            "line 1: Command 'bges' expects exactly three space-separated arguments (reg reg imm_or_lab), got ['r10'] instead."
+        ],
+    ),
+    (
+        "branch ges to reg",
+        """\
+        bges r10 r5 r1
+        """,
+        [
+            "line 1: Cannot parse immediate for third argument to bges: Expected integer number, instead got 'r1'. Try something like '42', '0xABCD', or '-0x123' instead.",
+            "line 1: Label name for third argument to bges must start with a '_' and contain at least two characters, found name 'r1' instead",
+        ],
+    ),
+    (
+        "branch bne by 0",
+        """\
+        bne r10 r11 0
+        """,
+        [
+            "line 1: Command 'bne' cannot encode an infinite loop (offset 0). Try using 'j reg' instead."
+        ],
+    ),
+    (
+        "branch bne by 1",
+        """\
+        bne r10 r11 1
+        """,
+        [
+            "line 1: Command 'bne' cannot encode the nop-branch (offset 1). Try using 'nop' instead."
+        ],
     ),
 ]
 

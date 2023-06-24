@@ -692,6 +692,75 @@ class Assembler:
     def parse_command_les(self, command, args):
         return self.binary_command(command, args, 0x8D00)
 
+    def branch_pseudo_command(self, branch_mask, command, args):
+        arg_list = [e.strip() for e in args.split(" ", 2)]
+        if len(arg_list) != 3:
+            self.error(
+                f"Command '{command}' expects exactly three space-separated arguments (reg reg imm_or_lab), got {arg_list} instead."
+            )
+            return False
+        # In case some maniac writes more than one space, like "bne  r4  r5  r6":
+        # FIXME: Doesn't quite work for three args!
+        arg_list[1] = arg_list[1].strip()
+        reg_lhs = self.parse_reg(arg_list[0], f"first argument to {command}")
+        reg_rhs_dest = self.parse_reg(arg_list[1], f"second argument to {command}")
+        offset_imm_or_lab = self.parse_imm_or_lab(arg_list[2], f"third argument to {command}")
+        if reg_lhs is None or reg_rhs_dest is None or offset_imm_or_lab is None:
+            # Error already reported
+            return False
+        assert (branch_mask & 0xF0FF) == 0 and (branch_mask & 0x0F00) != 0, branch_mask
+        if not self.push_word(0x8000 | branch_mask | (reg_lhs << 4) | reg_rhs_dest):
+            # Error already reported
+            return False
+        if offset_imm_or_lab[0] == ArgType.IMMEDIATE:
+            offset_value = offset_imm_or_lab[1]
+            return self.emit_b_by_value(command, reg_rhs_dest, offset_value)
+        if offset_imm_or_lab[0] == ArgType.LABEL:
+            label_name = offset_imm_or_lab[1]
+            call_data = (command, reg_rhs_dest, label_name)
+            return self.forward(1, label_name, self.emit_b_to_label, call_data)
+        raise AssertionError(f"imm_or_lab returned '{offset_imm_or_lab}'?! ")
+
+    @asm_command
+    def parse_command_bgt(self, command, args):
+        return self.branch_pseudo_command(0x200, command, args)
+
+    @asm_command
+    def parse_command_beq(self, command, args):
+        return self.branch_pseudo_command(0x400, command, args)
+
+    @asm_command
+    def parse_command_bge(self, command, args):
+        return self.branch_pseudo_command(0x600, command, args)
+
+    @asm_command
+    def parse_command_blt(self, command, args):
+        return self.branch_pseudo_command(0x800, command, args)
+
+    @asm_command
+    def parse_command_bne(self, command, args):
+        return self.branch_pseudo_command(0xA00, command, args)
+
+    @asm_command
+    def parse_command_ble(self, command, args):
+        return self.branch_pseudo_command(0xC00, command, args)
+
+    @asm_command
+    def parse_command_bgts(self, command, args):
+        return self.branch_pseudo_command(0x300, command, args)
+
+    @asm_command
+    def parse_command_bges(self, command, args):
+        return self.branch_pseudo_command(0x700, command, args)
+
+    @asm_command
+    def parse_command_blts(self, command, args):
+        return self.branch_pseudo_command(0x900, command, args)
+
+    @asm_command
+    def parse_command_bles(self, command, args):
+        return self.branch_pseudo_command(0xD00, command, args)
+
     def emit_b_by_value(self, command, condition_reg, offset_value):
         if offset_value >= 0xFF80:
             return self.error(
