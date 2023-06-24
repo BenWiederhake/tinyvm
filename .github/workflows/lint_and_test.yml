@@ -1,0 +1,61 @@
+---
+name: Lint and run tests
+
+on: [push, pull_request]
+
+env:
+  # Don't mix these up!
+  # runner.workspace = /home/runner/work/tinyvm
+  # github.workspace = /home/runner/work/tinyvm/tinyvm
+  SOURCE_DIR: ${{ github.workspace }}
+
+# Consider implementing a concurrency-limiter / auto-cancel, like serenity does.
+
+jobs:
+  lint_and_test:
+    runs-on: "ubuntu-22.04"
+
+    steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v3
+
+      # Set default Python to python 3.x, and set Python path such that pip install works properly
+      - name: Install python3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      # Intentionally don't do system updates – let's try to keep this small and fast, if at all possible.
+      - name: Install latest stable rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          override: true
+      - name: Install black
+        # The setup-python action set default python to python3.x. Note that we are not using system python here.
+        run: |
+          python -m pip install --upgrade pip
+          pip install black flake8
+      - name: Check versions
+        run: set +e; echo "== PYTHON =="; python --version; echo "== PYTHON3 =="; python3 --version; echo "== BLACK =="; black --version; echo "== FLAKE8 =="; flake8 --version; echo "== CARGO =="; cargo --version; echo "== RUSTC =="; rustc --version
+
+      - name: Lint Rust code using cargo fmt
+        run: cargo fmt --check
+      - name: Lint Python code using flake8
+        # "E203 whitespace before ':'" → Prefer black's way to format ranges
+        # "E501 line too long" → 79 characters is ridiculous; black already does that more reasonably.
+        run: git ls-files '*.py' | xargs flake8 --ignore=E203,E501
+
+      - name: Self-test Rust VM
+        run: cargo test --all
+      - name: Self-test Assembler
+        run: ./assembler/asm_test.py
+
+      - name: Build Rust VM
+        run: cargo build --all --release
+      - name: Build all Connect4 programs
+        run: ./vms/convert_all.sh
+      - name: Build the website
+        run: ./tournament/run_tournament.py
+
+      # TODO: Automatically upload to gh-pages?
