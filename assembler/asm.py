@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from enum import Enum
+import difflib
 import hashlib
 import sys
 
@@ -1051,9 +1052,16 @@ class Assembler:
             print(f"{lineno}: {line}  # {command=} {args=}")
         command_fn = ASM_COMMANDS.get(command)
         if command_fn is None:
-            return self.error(
-                f"Command '{command}' not found. Did you mean any of {sorted(list(ASM_COMMANDS.keys()))}' instead?"
-            )
+            suggestions = difflib.get_close_matches(command, sorted(list(ASM_COMMANDS.keys())))
+            if suggestions:
+                plural = "es" if len(suggestions) > 1 else ""
+                return self.error(
+                    f"Command '{command}' not found. Close match{plural}: {', '.join(suggestions)}"
+                )
+            else:
+                return self.error(
+                    f"Command '{command}' not found."
+                )
 
         return command_fn(self, command, args)
 

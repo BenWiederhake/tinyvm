@@ -1382,7 +1382,7 @@ NEGATIVE_TESTS = [
         garbage
         """,
         [
-            "line 1: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'beq', 'bge', 'bges', 'bgt', 'bgts', 'ble', 'bles', 'blt', 'blts', 'bne', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?",
+            "line 1: Command 'garbage' not found. Close match: bge",
         ],
     ),
     (
@@ -1401,7 +1401,34 @@ NEGATIVE_TESTS = [
         garbage
         """,
         [
-            "line 2: Command 'garbage' not found. Did you mean any of ['.assert_hash', '.label', '.offset', '.word', 'add', 'and', 'b', 'beq', 'bge', 'bges', 'bgt', 'bgts', 'ble', 'bles', 'blt', 'blts', 'bne', 'clz', 'cpuid', 'ctz', 'debug', 'decr', 'divs', 'divu', 'eq', 'ge', 'ges', 'gt', 'gts', 'ill', 'incr', 'j', 'le', 'les', 'lhi', 'lt', 'lts', 'lw', 'lwi', 'mods', 'modu', 'mov', 'mul', 'mulh', 'ne', 'nop', 'not', 'or', 'popcnt', 'ret', 'rnd', 'sl', 'sra', 'srl', 'sub', 'sw', 'time', 'xor']' instead?",
+            "line 2: Command 'garbage' not found. Close match: bge",
+        ],
+    ),
+    (
+        "bless",
+        """\
+        bless
+        """,
+        [
+            "line 1: Command 'bless' not found. Close matches: bles, les, ble",
+        ],
+    ),
+    (
+        "unrecognizable",
+        """\
+        unrecognizable r3 r4
+        """,
+        [
+            "line 1: Command 'unrecognizable' not found.",
+        ],
+    ),
+    (
+        "cxz",
+        """\
+        cxz r9
+        """,
+        [
+            "line 1: Command 'cxz' not found. Close matches: ctz, clz",
         ],
     ),
     (
