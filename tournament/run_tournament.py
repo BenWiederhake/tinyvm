@@ -65,7 +65,7 @@ def analyze_matchup(matchup):
         elif result["type"] == "win" and result["by"] == 2:
             losses += 1
         else:
-            assert False, (vm_one.name, vm_two.name, game)
+            assert False, game
     return wins, draws, losses
 
 
