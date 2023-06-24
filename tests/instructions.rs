@@ -352,7 +352,7 @@ fn test_debug_dump() {
 }
 
 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102d-time
-// The instruction is `0b0001 0000 0010 1101`, and before this instruction, 7 instructions have already been executed. Then the registers 0, 1, 2, and 3 now contain the values 0x0000, 0x0000, 0x0000, and 0x0007, respectively.
+// The instruction is `0b0001 0000 0010 1101`, and before this instruction, 7 instructions have already been executed. Then the registers 0, 1, 2, and 3 now contain the values 0x0000, 0x0000, 0x0000, and 0x0007, respectively. Note that this does not depend on the program counter (i.e. the *address* of the current instruction).
 #[test]
 fn test_time_doc() {
     run_test(
