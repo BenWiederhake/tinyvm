@@ -245,7 +245,7 @@ Example: The instruction is `0b0110 0010 0101 0110`, register 5 contains the val
 
 This reads from registers 0bAAAA and 0bBBBB, and writes to register 0bBBBB.
 
-This compares the values in registers 0bAAAA and 0bBBBB, and writes 0x0000 (false) or 0x0001 (true) into register 0bBBBB. The bits L, E, G, and S are flags.
+This compares the values in registers 0bAAAA and the right-hand-side, and writes 0x0000 (false) or 0x0001 (true) into register 0bBBBB. The bits L, E, G, and S are flags. If 0bAAAA == 0bBBBB, then the right-hand-side is the value zero; otherwise, it is the value in register 0bBBBB.
 
 - By default, the result of the comparison is false, and the contents of the registers are interpreted as unsigned.
 - If L=1 and the content of register 0bAAAA is *smaller* than the content of register 0bBBBB.
@@ -259,6 +259,8 @@ Note that this implies a few interesting combinations:
 - If all flags are set or no flags are set, this is effectively a "load immediate" instruction. This is a bit silly, but the ease of use and the relatively sparsely populated instruction space seems worth the trade-off.
 
 Example: The instruction is `0b1000 1010 0011 0100`, register 3 contains the value 0x0005, and register 4 contains the value 0x0007. Then this instruction will write the value 0x0001 into register 4, because 5 is not equal 7.
+
+Example: The instruction is `0b1000 1101 0100 0100`, register 4 contains the value 0xFEDC. Then this instruction will write the value 0x0001 into register 4. This is because the signed bit is set, so 0xFEDC is interpreted as -292, and the value -292 is less-or-equal to zero.
 
 ### `0x9xxx`: Branch
 

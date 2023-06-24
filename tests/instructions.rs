@@ -1255,6 +1255,140 @@ fn test_compare_greater_signed_negative() {
     run_compare_test(0xABCD, 0x1234, 0b0011, 0);
 }
 
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x8xxx-compare
+// The instruction is `0b1000 1101 0100 0100`, register 4 contains the value 0xFEDC. Then this instruction will write the value 0x0001 into register 4. This is because the signed bit is set, so 0xFEDC is interpreted as -292, and the value -292 is less-or-equal to zero.
+#[test]
+fn test_compare_zero_doc() {
+    run_test(
+        &[
+            0x34DC, // ↓
+            0x44FE, // lw r4, 0xFEDC
+            0x8D44, // lesz r4 # In some sense: "cmp.les r4, r4", but note that the RHS comparison is zero.
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ProgramCounter(3),
+            Expectation::ActualNumSteps(3),
+            Expectation::Register(4, 1),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
+        ],
+    );
+}
+
+fn run_compare_zero_test(a: u16, flags: u16, result: u16) {
+    run_test(
+        &[
+            0x3100 | (a & 0xFF),        // ↓
+            0x4100 | ((a >> 8) & 0xFF), // lw r1, a
+            0x8011 | (flags << 8),      // cmp.flags r1, r1
+        ],
+        &[],
+        3,
+        &[
+            Expectation::ProgramCounter(3),
+            Expectation::ActualNumSteps(3),
+            Expectation::Register(1, result),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_compare_zero_greater() {
+    // What a silly instruction. The assembler should forbid it.
+    run_compare_zero_test(0x0000, 0b0010, 0);
+    run_compare_zero_test(0x0001, 0b0010, 1);
+    run_compare_zero_test(0x1234, 0b0010, 1);
+    run_compare_zero_test(0xABCD, 0b0010, 1);
+    run_compare_zero_test(0xFFFF, 0b0010, 1);
+}
+
+#[test]
+fn test_compare_zero_greater_signed() {
+    run_compare_zero_test(0x0000, 0b0011, 0);
+    run_compare_zero_test(0x0001, 0b0011, 1);
+    run_compare_zero_test(0x1234, 0b0011, 1);
+    run_compare_zero_test(0xABCD, 0b0011, 0);
+    run_compare_zero_test(0xFFFF, 0b0011, 0);
+}
+
+#[test]
+fn test_compare_zero_equal() {
+    run_compare_zero_test(0x0000, 0b0100, 1);
+    run_compare_zero_test(0x0001, 0b0100, 0);
+    run_compare_zero_test(0x1234, 0b0100, 0);
+    run_compare_zero_test(0xABCD, 0b0100, 0);
+    run_compare_zero_test(0xFFFF, 0b0100, 0);
+}
+
+#[test]
+fn test_compare_zero_equal_greater() {
+    // What a silly instruction. The assembler should forbid it.
+    run_compare_zero_test(0x0000, 0b0110, 1);
+    run_compare_zero_test(0x0001, 0b0110, 1);
+    run_compare_zero_test(0x1234, 0b0110, 1);
+    run_compare_zero_test(0xABCD, 0b0110, 1);
+    run_compare_zero_test(0xFFFF, 0b0110, 1);
+}
+
+#[test]
+fn test_compare_zero_equal_greater_signed() {
+    run_compare_zero_test(0x0000, 0b0111, 1);
+    run_compare_zero_test(0x0001, 0b0111, 1);
+    run_compare_zero_test(0x1234, 0b0111, 1);
+    run_compare_zero_test(0xABCD, 0b0111, 0);
+    run_compare_zero_test(0xFFFF, 0b0111, 0);
+}
+
+#[test]
+fn test_compare_zero_less() {
+    // What a silly instruction. The assembler should forbid it.
+    run_compare_zero_test(0x0000, 0b1000, 0);
+    run_compare_zero_test(0x0001, 0b1000, 0);
+    run_compare_zero_test(0x1234, 0b1000, 0);
+    run_compare_zero_test(0xABCD, 0b1000, 0);
+    run_compare_zero_test(0xFFFF, 0b1000, 0);
+}
+
+#[test]
+fn test_compare_zero_less_signed() {
+    run_compare_zero_test(0x0000, 0b1001, 0);
+    run_compare_zero_test(0x0001, 0b1001, 0);
+    run_compare_zero_test(0x1234, 0b1001, 0);
+    run_compare_zero_test(0xABCD, 0b1001, 1);
+    run_compare_zero_test(0xFFFF, 0b1001, 1);
+}
+
+#[test]
+fn test_compare_zero_less_greater() {
+    run_compare_zero_test(0x0000, 0b1010, 0);
+    run_compare_zero_test(0x0001, 0b1010, 1);
+    run_compare_zero_test(0x1234, 0b1010, 1);
+    run_compare_zero_test(0xABCD, 0b1010, 1);
+    run_compare_zero_test(0xFFFF, 0b1010, 1);
+}
+
+#[test]
+fn test_compare_zero_less_equal() {
+    // What a silly instruction. The assembler should forbid it.
+    run_compare_zero_test(0x0000, 0b1100, 1);
+    run_compare_zero_test(0x0001, 0b1100, 0);
+    run_compare_zero_test(0x1234, 0b1100, 0);
+    run_compare_zero_test(0xABCD, 0b1100, 0);
+    run_compare_zero_test(0xFFFF, 0b1100, 0);
+}
+
+#[test]
+fn test_compare_zero_less_equal_signed() {
+    run_compare_zero_test(0x0000, 0b1101, 1);
+    run_compare_zero_test(0x0001, 0b1101, 0);
+    run_compare_zero_test(0x1234, 0b1101, 0);
+    run_compare_zero_test(0xABCD, 0b1101, 1);
+    run_compare_zero_test(0xFFFF, 0b1101, 1);
+}
+
 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x5xxx-unary-functions
 // The instruction is `0b0101 1010 0101 0110`, and register 5 contains the value 0x1234. Then this instruction will write the value 0xEDCB into register 6, because not(0x1234) = 0xEDCB.
 #[test]

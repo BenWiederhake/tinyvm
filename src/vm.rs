@@ -617,7 +617,7 @@ impl VirtualMachine {
         let register_lhs = ((instruction & 0x00F0) >> 4) as usize;
         let register_rhs = (instruction & 0x000F) as usize;
 
-        let (lhs, rhs) = if flag_s {
+        let (lhs, raw_rhs) = if flag_s {
             // Sign-extend
             (
                 self.registers[register_lhs] as i16 as i32,
@@ -630,7 +630,11 @@ impl VirtualMachine {
                 self.registers[register_rhs] as u32 as i32,
             )
         };
-
+        let rhs = if register_lhs == register_rhs {
+            0
+        } else {
+            raw_rhs
+        };
         self.registers[register_rhs] =
             ((flag_l && lhs < rhs) || (flag_e && lhs == rhs) || (flag_g && lhs > rhs)) as u16;
         StepResult::Continue
