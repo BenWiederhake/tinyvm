@@ -1095,6 +1095,7 @@ class Assembler:
             self.error(
                 f"Unused label(s), try using them in dead code, or commenting them out: {error_text}"
             )
+            has_problem = True
         if has_problem:
             return None
         segment = bytearray(SEGMENT_LENGTH)
