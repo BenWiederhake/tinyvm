@@ -162,14 +162,13 @@ class Assembler:
             # Immediate resolution
             self.unused_labels.discard(label_name)
             return fwd_ref.apply()
+        # Must be skipped for now, to be patched when 'label_name' is defined
+        if label_name not in self.forward_references:
+            self.forward_references[label_name] = [fwd_ref]
         else:
-            # Must be skipped for now, to be patched when 'label_name' is defined
-            if label_name not in self.forward_references:
-                self.forward_references[label_name] = [fwd_ref]
-            else:
-                self.forward_references[label_name].append(fwd_ref)
-            self.advance(by_words)
-            return True
+            self.forward_references[label_name].append(fwd_ref)
+        self.advance(by_words)
+        return True
 
     def parse_reg(self, reg_string, context):
         # TODO: Add register alias support?
@@ -710,7 +709,7 @@ class Assembler:
 
     # FIXME: Should not be advertised during misspellings.
     @asm_command
-    def parse_command_gtz(self, command, args):
+    def parse_command_gtz(self, command, _args):
         # Intentionally don't implement "gtz rX", as it is identical to "nez rX".
         # Make sure that the user learns about both "gtzs" and "nez".
         return self.error(
@@ -734,7 +733,7 @@ class Assembler:
 
     # FIXME: Should not be advertised during misspellings.
     @asm_command
-    def parse_command_lez(self, command, args):
+    def parse_command_lez(self, command, _args):
         # Intentionally don't implement "lez rX", as it is identical to "eqz rX".
         # Make sure that the user learns about both "lezs" and "eqz".
         return self.error(
