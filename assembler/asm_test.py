@@ -490,101 +490,101 @@ ASM_TESTS = [
     (
         "gt",
         """\
-        gt r0 r0
-        gt r15 r15
+        gt r0 r1
+        gt r14 r15
         gt r7 r8
         """,
-        "8200 82FF 8278",
+        "8201 82EF 8278",
         [],
     ),
     (
         "eq",
         """\
-        eq r0 r0
-        eq r15 r15
+        eq r0 r1
+        eq r14 r15
         eq r7 r8
         """,
-        "8400 84FF 8478",
+        "8401 84EF 8478",
         [],
     ),
     (
         "ge",
         """\
-        ge r0 r0
-        ge r15 r15
+        ge r0 r1
+        ge r14 r15
         ge r7 r8
         """,
-        "8600 86FF 8678",
+        "8601 86EF 8678",
         [],
     ),
     (
         "lt",
         """\
-        lt r0 r0
-        lt r15 r15
+        lt r0 r1
+        lt r14 r15
         lt r7 r8
         """,
-        "8800 88FF 8878",
+        "8801 88EF 8878",
         [],
     ),
     (
         "ne",
         """\
-        ne r0 r0
-        ne r15 r15
+        ne r0 r1
+        ne r14 r15
         ne r7 r8
         """,
-        "8A00 8AFF 8A78",
+        "8A01 8AEF 8A78",
         [],
     ),
     (
         "le",
         """\
-        le r0 r0
-        le r15 r15
+        le r0 r1
+        le r14 r15
         le r7 r8
         """,
-        "8C00 8CFF 8C78",
+        "8C01 8CEF 8C78",
         [],
     ),
     (
         "gts",
         """\
-        gts r0 r0
-        gts r15 r15
+        gts r0 r1
+        gts r14 r15
         gts r7 r8
         """,
-        "8300 83FF 8378",
+        "8301 83EF 8378",
         [],
     ),
     (
         "ges",
         """\
-        ges r0 r0
-        ges r15 r15
+        ges r0 r1
+        ges r14 r15
         ges r7 r8
         """,
-        "8700 87FF 8778",
+        "8701 87EF 8778",
         [],
     ),
     (
         "lts",
         """\
-        lts r0 r0
-        lts r15 r15
+        lts r0 r1
+        lts r14 r15
         lts r7 r8
         """,
-        "8900 89FF 8978",
+        "8901 89EF 8978",
         [],
     ),
     (
         "les",
         """\
-        les r0 r0
-        les r15 r15
+        les r0 r1
+        les r14 r15
         les r7 r8
         """,
-        "8D00 8DFF 8D78",
+        "8D01 8DEF 8D78",
         [],
     ),
     (
