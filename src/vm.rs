@@ -1,6 +1,11 @@
 use getrandom::getrandom;
+use std::env;
 use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Index, IndexMut};
+
+lazy_static! {
+    static ref DUMP_ON_DEBUG: bool = env::var("TINYVM_DUMP_ON_DEBUG").is_ok();
+}
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Segment {
@@ -351,6 +356,37 @@ impl VirtualMachine {
             0x2C => {
                 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102c-debug-dump
                 // Debug-dump
+                if *DUMP_ON_DEBUG {
+                    println!("=== BEGIN DEBUG DUMP ===  Time: {:08X}", self.time);
+                    println!(
+                        "PC: {:04X} (byte offset {:05X})",
+                        self.program_counter,
+                        2 * self.program_counter
+                    );
+                    print!("  Insns after debug:");
+                    for i in 1..9u16 {
+                        print!(" {:04X}", self.instructions[self.program_counter + i]);
+                    }
+                    println!();
+                    print!("Regs:");
+                    for (i, value) in self.registers.iter().enumerate() {
+                        print!(" {:04X}", value);
+                        if i == 7 {
+                            print!("    ");
+                        }
+                    }
+                    println!();
+                    println!(
+                        "Initial memory, suspiciously arranged like a board (top left is x=0,y=5):"
+                    );
+                    for y in 0..6 {
+                        for x in 0..7 {
+                            print!(" {:04X}", self.data[x * 6 + (6 - 1 - y)]);
+                        }
+                        println!();
+                    }
+                    println!("=== END DEBUG DUMP ===");
+                }
                 StepResult::DebugDump
             }
             0x2D => {
