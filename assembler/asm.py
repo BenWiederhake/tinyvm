@@ -814,14 +814,14 @@ class Assembler:
             )
         # In case some maniac writes more than one space, like "add r4  r5":
         arg_list[1] = arg_list[1].strip()
-        condition_reg = self.parse_reg(arg_list[0], "first argument to b")
+        condition_reg = self.parse_reg(arg_list[0], f"first argument to {command}")
         if condition_reg is None:
             # Error already reported
             return False
         # FIXME: Support labels and labels with offset
         # FIXME: Support long branches?
         # FIXME: Support combined branches? ("beq", "blt", etc.)
-        imm_or_lab = self.parse_imm_or_lab(arg_list[1], "second argument to b")
+        imm_or_lab = self.parse_imm_or_lab(arg_list[1], f"second argument to {command}")
         if imm_or_lab is None:
             # Error already reported
             return False
