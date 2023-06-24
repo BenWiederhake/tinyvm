@@ -316,7 +316,7 @@ class Assembler:
         # I probably fucked up the definitions there, but I'm too lazy to change it now.
         return (reg_list[1] << 4) | reg_list[0]
 
-    def parse_binary_regs_to_byte(self, command, args):
+    def parse_binary_regs_to_byte(self, command, args, allow_duplicate):
         # In case of sub, div, mod, etc. the usual argument order is just stupid.
         # So we change it for *all* binary commands, and also use a different separator
         # to ensure that the user notices the "unusual" order, specifically the space character.
@@ -338,12 +338,17 @@ class Assembler:
                 return None
             reg_list.append(register)
         assert len(reg_list) == 2
+        if not allow_duplicate and reg_list[0] == reg_list[1]:
+            self.error(
+                f"Command '{command}' requires two different registers to be used, got {arg_list} instead."
+            )
+            return None
         return (reg_list[0] << 4) | reg_list[1]
 
-    def binary_command(self, command, args, high_byte):
+    def binary_command(self, command, args, high_byte, allow_duplicate=True):
         assert high_byte & 0x00FF == 0
         assert high_byte & 0xFF00 != 0
-        registers_byte = self.parse_binary_regs_to_byte(command, args)
+        registers_byte = self.parse_binary_regs_to_byte(command, args, allow_duplicate)
         if registers_byte is None:
             # Error already reported
             return False
@@ -655,43 +660,43 @@ class Assembler:
 
     @asm_command
     def parse_command_gt(self, command, args):
-        return self.binary_command(command, args, 0x8200)
+        return self.binary_command(command, args, 0x8200, False)
 
     @asm_command
     def parse_command_eq(self, command, args):
-        return self.binary_command(command, args, 0x8400)
+        return self.binary_command(command, args, 0x8400, False)
 
     @asm_command
     def parse_command_ge(self, command, args):
-        return self.binary_command(command, args, 0x8600)
+        return self.binary_command(command, args, 0x8600, False)
 
     @asm_command
     def parse_command_lt(self, command, args):
-        return self.binary_command(command, args, 0x8800)
+        return self.binary_command(command, args, 0x8800, False)
 
     @asm_command
     def parse_command_ne(self, command, args):
-        return self.binary_command(command, args, 0x8A00)
+        return self.binary_command(command, args, 0x8A00, False)
 
     @asm_command
     def parse_command_le(self, command, args):
-        return self.binary_command(command, args, 0x8C00)
+        return self.binary_command(command, args, 0x8C00, False)
 
     @asm_command
     def parse_command_gts(self, command, args):
-        return self.binary_command(command, args, 0x8300)
+        return self.binary_command(command, args, 0x8300, False)
 
     @asm_command
     def parse_command_ges(self, command, args):
-        return self.binary_command(command, args, 0x8700)
+        return self.binary_command(command, args, 0x8700, False)
 
     @asm_command
     def parse_command_lts(self, command, args):
-        return self.binary_command(command, args, 0x8900)
+        return self.binary_command(command, args, 0x8900, False)
 
     @asm_command
     def parse_command_les(self, command, args):
-        return self.binary_command(command, args, 0x8D00)
+        return self.binary_command(command, args, 0x8D00, False)
 
     def branch_pseudo_command(self, branch_mask, command, args):
         arg_list = [e.strip() for e in args.split(" ", 2)]

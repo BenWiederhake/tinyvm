@@ -1996,6 +1996,24 @@ NEGATIVE_TESTS = [
         ],
     ),
     (
+        "eq same-arg",
+        """\
+        eq r0 r0
+        """,
+        [
+            "line 1: Command 'eq' requires two different registers to be used, got ['r0', 'r0'] instead."
+        ],
+    ),
+    (
+        "gts same-arg",
+        """\
+        gts r5 r5
+        """,
+        [
+            "line 1: Command 'gts' requires two different registers to be used, got ['r5', 'r5'] instead."
+        ],
+    ),
+    (
         "branch comma",
         """\
         b r5, 5
