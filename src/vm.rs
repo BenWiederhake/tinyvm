@@ -14,8 +14,8 @@ pub struct Segment {
 
 impl Segment {
     #[must_use]
-    pub fn new_zeroed() -> Segment {
-        Segment {
+    pub fn new_zeroed() -> Self {
+        Self {
             backing: Box::new([0; 1 << 16]),
         }
     }
@@ -23,15 +23,8 @@ impl Segment {
 
 impl Debug for Segment {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write_str("Segment { backing: [")?;
-        f.write_fmt(format_args!("{:04X}", self.backing[0]))?;
-        // Invariant: Formatter is "always" dirently after a value or value-ish part.
-
-        let mut last_word = self.backing[0];
-        let mut repetitions = 0;
-
         fn append_value(f: &mut Formatter, word: u16) -> Result {
-            f.write_fmt(format_args!(", {:04X}", word))
+            f.write_fmt(format_args!(", {word:04X}"))
         }
         fn close_repetitions(f: &mut Formatter, last_word: u16, repetitions: usize) -> Result {
             if repetitions < 2 {
@@ -40,9 +33,15 @@ impl Debug for Segment {
                 }
                 Ok(())
             } else {
-                f.write_fmt(format_args!(", <elided {} repetitions>", repetitions))
+                f.write_fmt(format_args!(", <elided {repetitions} repetitions>"))
             }
         }
+
+        f.write_str("Segment { backing: [")?;
+        f.write_fmt(format_args!("{:04X}", self.backing[0]))?;
+        // Invariant: Formatter is "always" dirently after a value or value-ish part.
+        let mut last_word = self.backing[0];
+        let mut repetitions = 0;
 
         for word in self.backing.iter().skip(1) {
             if *word == last_word {
@@ -85,18 +84,18 @@ pub enum StepResult {
 impl Debug for StepResult {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            StepResult::Continue => f.write_str("Continue"),
-            StepResult::DebugDump => f.write_str("DebugDump"),
-            StepResult::IllegalInstruction(insn) => {
+            Self::Continue => f.write_str("Continue"),
+            Self::DebugDump => f.write_str("DebugDump"),
+            Self::IllegalInstruction(insn) => {
                 f.write_fmt(format_args!("IllegalInstruction(0x{:04x})", *insn))
             }
-            StepResult::Return(value) => f.write_fmt(format_args!("Return(0x{:04x})", *value)),
+            Self::Return(value) => f.write_fmt(format_args!("Return(0x{:04x})", *value)),
         }
     }
 }
 
 fn random_upto_including(upper_bound: u16) -> u16 {
-    let modulus = (upper_bound as u64) + 1;
+    let modulus = u64::from(upper_bound) + 1;
     // Make a random u64, and do the modulo trick.
     // This *does* create a disparity in probabilities, but it's at most (2**16) / (2**64) = 3.55e-13,
     // so pretty darn unlikely to be noticed by anyone.
@@ -104,21 +103,21 @@ fn random_upto_including(upper_bound: u16) -> u16 {
     // If getrandom fails, tinyvm probably doesn't matter anymore. Crash and burn.
     getrandom(&mut bytes).expect("Cannot satisfy rnd instruction");
     let mut value: u64 = 0;
-    value |= bytes[0] as u64;
+    value |= u64::from(bytes[0]);
     value <<= 8;
-    value |= bytes[1] as u64;
+    value |= u64::from(bytes[1]);
     value <<= 8;
-    value |= bytes[2] as u64;
+    value |= u64::from(bytes[2]);
     value <<= 8;
-    value |= bytes[3] as u64;
+    value |= u64::from(bytes[3]);
     value <<= 8;
-    value |= bytes[4] as u64;
+    value |= u64::from(bytes[4]);
     value <<= 8;
-    value |= bytes[5] as u64;
+    value |= u64::from(bytes[5]);
     value <<= 8;
-    value |= bytes[6] as u64;
+    value |= u64::from(bytes[6]);
     value <<= 8;
-    value |= bytes[7] as u64;
+    value |= u64::from(bytes[7]);
     value %= modulus;
     // Meta test: Uncomment the following and watch test_values_chi_square detect it:
     // if value == 255 && bytes[0] & 1 == 1 {
@@ -198,7 +197,7 @@ mod test_random {
             let value = random_upto_including(415 - 1);
             counts[value as usize] += 1;
         }
-        println!("counts: {:?}", counts);
+        println!("counts: {counts:?}");
         let mut chi_sq_numerator = 0;
         for count in counts {
             let diff = count.abs_diff(oversample_factor);
@@ -213,8 +212,8 @@ mod test_random {
         // Critical values: 570.39975 and 288.14848.
         // Median value (p=0.5) is 413.33352, which matches what I see playing around with it.
         println!("chi_square = {chi_sq}");
-        assert!(chi_sq < 570.39975, "Chi-square is too high ({}), indicating results are too irregular. The RNG seems to be biased!", chi_sq);
-        assert!(chi_sq > 288.14848, "Chi-square is too low ({}), indicating results are too regular. The RNG seems to be a hardcoded list!", chi_sq);
+        assert!(chi_sq < 570.39975, "Chi-square is too high ({chi_sq}), indicating results are too irregular. The RNG seems to be biased!");
+        assert!(chi_sq > 288.14848, "Chi-square is too low ({chi_sq}), indicating results are too regular. The RNG seems to be a hardcoded list!");
     }
 }
 
@@ -230,8 +229,8 @@ pub struct VirtualMachine {
 
 impl VirtualMachine {
     #[must_use]
-    pub fn new(instructions: Segment, data: Segment) -> VirtualMachine {
-        VirtualMachine {
+    pub fn new(instructions: Segment, data: Segment) -> Self {
+        Self {
             registers: [0; 16],
             program_counter: 0,
             time: 0,
@@ -370,7 +369,7 @@ impl VirtualMachine {
                     println!();
                     print!("Regs:");
                     for (i, value) in self.registers.iter().enumerate() {
-                        print!(" {:04X}", value);
+                        print!(" {value:04X}");
                         if i == 7 {
                             print!("    ");
                         }
@@ -435,7 +434,7 @@ impl VirtualMachine {
     // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x3xxx-load-immediate-low-sign-extended
     fn step_load_imm_low(&mut self, instruction: u16) -> StepResult {
         let register = (instruction & 0x0F00) >> 8;
-        let data = (instruction & 0x00FF) as i8 as i16 as u16; // sign-extend to 16 bits
+        let data = i16::from((instruction & 0x00FF) as i8) as u16; // sign-extend to 16 bits
         self.registers[register as usize] = data;
         StepResult::Continue
     }
@@ -525,7 +524,7 @@ impl VirtualMachine {
             0b0011 => {
                 // * If FFFF=0011, the computed function is "mulh" (truncated multiplication, high word), e.g. fn(0x0005, 0x0007) = 0x0000, fn(0x1234, 0xABCD) = 0x0C37
                 //     * Note that there is no signed equivalent.
-                let result = (source as u32) * (*destination as u32);
+                let result = u32::from(source) * u32::from(*destination);
                 *destination = (result >> 16) as u16;
             }
             0b0100 => {
@@ -578,7 +577,7 @@ impl VirtualMachine {
                 if *destination >= 16 {
                     *destination = 0;
                 } else {
-                    *destination = source.wrapping_shl(*destination as u32);
+                    *destination = source.wrapping_shl(u32::from(*destination));
                 }
             }
             0b1100 => {
@@ -588,7 +587,7 @@ impl VirtualMachine {
                 if *destination >= 16 {
                     *destination = 0;
                 } else {
-                    *destination = source.wrapping_shr(*destination as u32);
+                    *destination = source.wrapping_shr(u32::from(*destination));
                 }
             }
             0b1101 => {
@@ -598,7 +597,7 @@ impl VirtualMachine {
                 if *destination >= 16 {
                     *destination = if source & 0x8000 != 0 { 0xFFFF } else { 0 };
                 } else {
-                    *destination = (source as i16).wrapping_shr(*destination as u32) as u16;
+                    *destination = (source as i16).wrapping_shr(u32::from(*destination)) as u16;
                 }
             }
             _ => {
@@ -620,14 +619,14 @@ impl VirtualMachine {
         let (lhs, raw_rhs) = if flag_s {
             // Sign-extend
             (
-                self.registers[register_lhs] as i16 as i32,
-                self.registers[register_rhs] as i16 as i32,
+                i32::from(self.registers[register_lhs] as i16),
+                i32::from(self.registers[register_rhs] as i16),
             )
         } else {
             // Zero-extend
             (
-                self.registers[register_lhs] as u32 as i32,
-                self.registers[register_rhs] as u32 as i32,
+                u32::from(self.registers[register_lhs]) as i32,
+                u32::from(self.registers[register_rhs]) as i32,
             )
         };
         let rhs = if register_lhs == register_rhs {
@@ -636,7 +635,7 @@ impl VirtualMachine {
             raw_rhs
         };
         self.registers[register_rhs] =
-            ((flag_l && lhs < rhs) || (flag_e && lhs == rhs) || (flag_g && lhs > rhs)) as u16;
+            u16::from((flag_l && lhs < rhs) || (flag_e && lhs == rhs) || (flag_g && lhs > rhs));
         StepResult::Continue
     }
 
@@ -675,7 +674,7 @@ impl VirtualMachine {
     // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xbxxx-jump-to-register
     fn step_jump_reg(&mut self, instruction: u16) -> StepResult {
         let register = (instruction & 0x0F00) >> 8;
-        let offset = (instruction & 0x00FF) as i8 as i16 as u16; // sign-extend to 16 bits
+        let offset = i16::from((instruction & 0x00FF) as i8) as u16; // sign-extend to 16 bits
         self.program_counter = self.registers[register as usize].wrapping_add(offset);
         StepResult::Continue
     }

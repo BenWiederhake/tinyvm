@@ -7,17 +7,19 @@ pub enum Player {
 }
 
 impl Player {
-    pub fn other(&self) -> Player {
+    #[must_use]
+    pub fn other(&self) -> Self {
         match self {
-            Player::One => Player::Two,
-            Player::Two => Player::One,
+            Self::One => Self::Two,
+            Self::Two => Self::One,
         }
     }
 
+    #[must_use]
     pub fn numeric(&self) -> u8 {
         match self {
-            Player::One => 1,
-            Player::Two => 2,
+            Self::One => 1,
+            Self::Two => 2,
         }
     }
 }
@@ -45,14 +47,13 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new_custom(width: usize, height: usize) -> Board {
+    #[must_use]
+    pub fn new_custom(width: usize, height: usize) -> Self {
         assert!(
             3 < width && width < 0x400 && 3 < height && height < 0x400,
-            "{}x{} are silly dimensions!",
-            width,
-            height
+            "{width}x{height} are silly dimensions!"
         );
-        Board {
+        Self {
             slots: vec![SlotState::Empty; width * height],
             width,
             height,
@@ -62,22 +63,23 @@ impl Board {
     fn index(&self, x: usize, y: usize) -> usize {
         assert!(
             x < self.width && y < self.height,
-            "({}, {}) out of bounds",
-            x,
-            y
+            "({x}, {y}) out of bounds"
         );
         // Same "weird" order as in the data segment layout.
         x * self.height + y
     }
 
+    #[must_use]
     pub fn get_width(&self) -> usize {
         self.width
     }
 
+    #[must_use]
     pub fn get_height(&self) -> usize {
         self.height
     }
 
+    #[must_use]
     pub fn get_slot(&self, x: usize, y: usize) -> SlotState {
         self.slots[self.index(x, y)]
     }
@@ -86,11 +88,7 @@ impl Board {
         let expect_slot = self.get_slot(x, y);
         assert!(
             expect_slot != SlotState::Empty,
-            "Counting from empty slot at ({}, {}) towards ({}, {})?!",
-            x,
-            y,
-            dx,
-            dy
+            "Counting from empty slot at ({x}, {y}) towards ({dx}, {dy})?!"
         );
         let mut streak = 0;
         for i in 1.. {
@@ -116,9 +114,7 @@ impl Board {
     fn have_connect4(&self, x: usize, y: usize) -> bool {
         assert!(
             x < self.width && y < self.height,
-            "Checking connect4 at OOB ({}, {})?!",
-            x,
-            y
+            "Checking connect4 at OOB ({x}, {y})?!"
         );
         for (dx, dy) in [(1, -1), (1, 0), (1, 1), (0, 1)] {
             let to_left = self.count_towards(x, y, -dx, -dy);
@@ -165,6 +161,7 @@ impl Board {
         }
     }
 
+    #[must_use]
     pub fn is_full(&self) -> bool {
         // It's enough to check only the top row, since the rows below it have already been "filled up" before.
         for x in 0..self.width {
@@ -180,8 +177,8 @@ pub const DEFAULT_WIDTH: usize = 7;
 pub const DEFAULT_HEIGHT: usize = 6;
 
 impl Default for Board {
-    fn default() -> Board {
-        Board::new_custom(DEFAULT_WIDTH, DEFAULT_HEIGHT)
+    fn default() -> Self {
+        Self::new_custom(DEFAULT_WIDTH, DEFAULT_HEIGHT)
     }
 }
 
@@ -305,9 +302,9 @@ mod test_board {
         fn fill_column(col: u16, board: &mut Board, starting_with: Player) {
             assert_eq!(board.get_height(), 6);
             for _ in 0..3 {
-                assert_eq!(board.is_full(), false);
+                assert!(!board.is_full());
                 assert_place_success(board, col, starting_with);
-                assert_eq!(board.is_full(), false);
+                assert!(!board.is_full());
                 assert_place_success(board, col, starting_with.other());
             }
         }
@@ -321,7 +318,7 @@ mod test_board {
         fill_column(5, &mut b, Player::One);
         fill_column(6, &mut b, Player::One);
 
-        assert_eq!(b.is_full(), true);
+        assert!(b.is_full());
     }
 
     #[test]
@@ -329,19 +326,19 @@ mod test_board {
         let mut board = Board::default();
 
         assert_place_success(&mut board, 0, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 2, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 6, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 5, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 4, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 3, Player::One);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
     }
 
     #[test]
@@ -349,11 +346,11 @@ mod test_board {
         let mut board = Board::default();
 
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 2, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 4, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_eq!(
             board.place_into_unsanitized_column(3, Player::Two),
             PlacementResult::Connect4
@@ -365,13 +362,13 @@ mod test_board {
         let mut board = Board::default();
 
         assert_place_success(&mut board, 1, Player::One);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_eq!(
             board.place_into_unsanitized_column(1, Player::Two),
             PlacementResult::Connect4
@@ -383,15 +380,15 @@ mod test_board {
         let mut board = Board::default();
 
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::One);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
-        assert_eq!(board.is_full(), false);
+        assert!(!board.is_full());
         assert_place_success(&mut board, 1, Player::Two);
         assert_eq!(
             board.place_into_unsanitized_column(1, Player::Two),
@@ -466,8 +463,8 @@ pub enum AlgorithmResult {
 }
 
 impl PlayerData {
-    pub fn new(instructions: Segment) -> PlayerData {
-        PlayerData {
+    pub fn new(instructions: Segment) -> Self {
+        Self {
             instructions,
             data: Segment::new_zeroed(),
             last_move: 0xFFFF,
@@ -489,7 +486,7 @@ impl PlayerData {
         own_identity: Player,
         max_steps: u64,
         board: &Board,
-        other: &PlayerData,
+        other: &Self,
     ) {
         // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/connect4.md#data-segment-content-and-layout-for-connect4
         // - starting at 0x0000, size N words:
@@ -525,8 +522,7 @@ impl PlayerData {
         for step in 0..max_steps {
             let last_step_result = vm.step();
             match last_step_result {
-                StepResult::Continue => {}
-                StepResult::DebugDump => {}
+                StepResult::Continue | StepResult::DebugDump => {}
                 StepResult::IllegalInstruction(insn) => {
                     self.total_insns += step + 1;
                     return AlgorithmResult::IllegalInstruction(insn);
@@ -562,7 +558,7 @@ mod test_player_data {
         let mut other_player_data = PlayerData::new(Segment::new_zeroed());
         other_player_data.total_moves = 0x34;
 
-        player_data.update_data(Player::Two, 0x123456789ABCDEF0, &b, &other_player_data);
+        player_data.update_data(Player::Two, 0x1234_5678_9ABC_DEF0, &b, &other_player_data);
 
         let data_segment = &player_data.data;
         assert_eq!(data_segment[0], 0);
@@ -668,15 +664,16 @@ pub struct Game {
 }
 
 impl Game {
+    #[must_use]
     pub fn new(
         instructions_player_one: Segment,
         instructions_player_two: Segment,
         max_steps: u64,
-    ) -> Game {
-        Game {
+    ) -> Self {
+        Self {
             player_one: PlayerData::new(instructions_player_one),
             player_two: PlayerData::new(instructions_player_two),
-            board: Default::default(),
+            board: Board::default(),
             state: GameState::RunningNextIs(Player::One),
             max_steps,
             deterministic_so_far: true,
@@ -783,30 +780,37 @@ impl Game {
         }
     }
 
+    #[must_use]
     pub fn get_state(&self) -> GameState {
         self.state
     }
 
+    #[must_use]
     pub fn get_total_moves(&self) -> u16 {
         self.player_one.get_total_moves() + self.player_two.get_total_moves()
     }
 
+    #[must_use]
     pub fn get_player_one_total_insn(&self) -> u64 {
         self.player_one.get_total_insns()
     }
 
+    #[must_use]
     pub fn get_player_two_total_insn(&self) -> u64 {
         self.player_two.get_total_insns()
     }
 
+    #[must_use]
     pub fn get_board(&self) -> &Board {
         &self.board
     }
 
+    #[must_use]
     pub fn was_deterministic_so_far(&self) -> bool {
         self.deterministic_so_far
     }
 
+    #[must_use]
     pub fn get_move_order(&self) -> &[u8] {
         &self.move_order
     }
@@ -821,7 +825,7 @@ mod test_game {
         let mut instructions = Segment::new_zeroed();
         instructions[0] = 0x102A; // ret
         let mut game = Game::new(instructions.clone(), instructions, 0x12345);
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
         game.do_move();
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::Two));
@@ -852,7 +856,7 @@ mod test_game {
             GameState::Ended(GameResult::Won(Player::Two, WinReason::FullColumn(0)))
         );
         assert_eq!(game.get_move_order(), [0, 0, 0, 0, 0, 0]);
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
     }
 
     #[test]
@@ -883,7 +887,7 @@ mod test_game {
             ))
         );
         assert_eq!(game.get_move_order(), []);
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
     }
 
     #[test]
@@ -899,7 +903,7 @@ mod test_game {
             GameState::Ended(GameResult::Won(Player::Two, WinReason::Timeout))
         );
         assert_eq!(game.get_move_order(), []);
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
     }
 
     #[test]
@@ -920,7 +924,7 @@ mod test_game {
         assert_eq!(game.player_one.total_moves, 1);
         assert_eq!(game.player_two.total_moves, 1);
         assert_eq!(game.get_move_order(), [0]);
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
     }
 
     #[test]
@@ -940,7 +944,7 @@ mod test_game {
         assert_eq!(game.player_one.total_moves, 1);
         assert_eq!(game.player_two.total_moves, 0);
         assert_eq!(game.get_move_order(), [0]);
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
     }
 
     #[test]
@@ -961,7 +965,7 @@ mod test_game {
         assert_eq!(game.player_one.total_moves, 4);
         assert_eq!(game.player_two.total_moves, 3);
         assert_eq!(game.get_move_order(), [0, 1, 0, 1, 0, 1, 0]);
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
     }
 
     #[test]
@@ -1011,7 +1015,7 @@ mod test_game {
                 0, 6, 1, 0, 2, 1, 3, 2, 4, 4, 5, 5, 6, 6
             ]
         );
-        assert_eq!(game.was_deterministic_so_far(), true);
+        assert!(game.was_deterministic_so_far());
     }
 
     #[test]
@@ -1033,6 +1037,6 @@ mod test_game {
         assert_eq!(game.player_one.total_moves, 4);
         assert_eq!(game.player_two.total_moves, 3);
         assert_eq!(game.get_move_order(), [0, 1, 0, 1, 0, 1, 0]);
-        assert_eq!(game.was_deterministic_so_far(), false);
+        assert!(!game.was_deterministic_so_far());
     }
 }

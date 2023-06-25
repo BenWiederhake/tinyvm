@@ -61,43 +61,37 @@ fn run_test(
         vm.get_program_counter(),
         actual_steps
     );
-    println!("last_step_result is StepResult::{:?}", last_step_result);
+    println!("last_step_result is StepResult::{last_step_result:?}");
 
     assert_eq!(actual_steps, vm.get_time());
 
     for expectation in expectations {
         match expectation {
             Expectation::ActualNumSteps(expected_steps) => {
-                println!("Expecting {} actual steps", expected_steps);
+                println!("Expecting {expected_steps} actual steps");
                 assert_eq!(*expected_steps, actual_steps);
             }
             Expectation::Data(address, expected_data) => {
-                println!(
-                    "Expecting word {:04X} at address {:04X}",
-                    expected_data, address
-                );
+                println!("Expecting word {expected_data:04X} at address {address:04X}");
                 assert_eq!(*expected_data, vm.get_data()[*address]);
             }
             Expectation::LastStep(expected_step_result) => {
-                println!("Expecting last step to be {:?}", expected_step_result);
+                println!("Expecting last step to be {expected_step_result:?}");
                 assert_eq!(*expected_step_result, last_step_result);
             }
             Expectation::ProgramCounter(expected_pc) => {
-                println!("Expecting pc to be {:?}", expected_pc);
+                println!("Expecting pc to be {expected_pc:?}");
                 assert_eq!(*expected_pc, vm.get_program_counter());
             }
             Expectation::Register(register_index, expected_value) => {
-                println!(
-                    "Expecting register {} to contain {:04X}",
-                    register_index, expected_value
-                );
+                println!("Expecting register {register_index} to contain {expected_value:04X}");
                 assert_eq!(
                     *expected_value,
                     vm.get_registers()[*register_index as usize]
                 );
             }
             Expectation::Deterministic(expected_det) => {
-                println!("Expecting determinism to be {:?}", expected_det);
+                println!("Expecting determinism to be {expected_det:?}");
                 assert_eq!(*expected_det, vm.was_deterministic_so_far());
             }
         }
@@ -450,7 +444,7 @@ fn test_time_very_long() {
         &[],
         0x1_FFFF_FFFF, // More than enough; definitely not tight
         &[
-            Expectation::ActualNumSteps(0x100024345),
+            Expectation::ActualNumSteps(0x1_0002_4345),
             Expectation::ProgramCounter(9),
             Expectation::LastStep(StepResult::Return(0)),
             Expectation::Register(0, 0x0000),

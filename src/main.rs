@@ -1,3 +1,6 @@
+// This lint could have been useful, but it generates too many false positives, so deactivate it:
+#![allow(clippy::cast_possible_truncation)]
+
 use std::io::{Error, ErrorKind, Result};
 use std::{env, fs, process};
 
@@ -19,8 +22,8 @@ fn parse_segment(segment_bytes: &[u8], segment_type: &str) -> Result<Segment> {
 
     for i in 0..(1 << 16) {
         let byte_index = i * 2;
-        let high_byte = (segment_bytes[byte_index] as u16) << 8;
-        let low_byte = segment_bytes[byte_index + 1] as u16;
+        let high_byte = u16::from(segment_bytes[byte_index]) << 8;
+        let low_byte = u16::from(segment_bytes[byte_index + 1]);
         segment[i as u16] = high_byte | low_byte;
     }
 
@@ -46,7 +49,7 @@ fn parse_args() -> Result<(Segment, Segment)> {
     ))
 }
 
-fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) -> Result<bool> {
+fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) -> bool {
     let mut game = Game::new(
         instructions_one.clone(),
         instructions_two.clone(),
@@ -56,7 +59,7 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
     print!("{{\"moves\": \"");
     for &col in game.get_move_order() {
         assert!(col < 10);
-        print!("{}", col);
+        print!("{col}");
     }
     print!("\", \"res\": {{");
     match result {
@@ -69,16 +72,16 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
                 WinReason::Connect4 => "connect4".into(),
                 WinReason::Timeout => "timeout of the opponent".into(),
                 WinReason::IllegalInstruction(insn) => {
-                    format!("illegal instruction (0x{:04X}) of the opponent", insn)
+                    format!("illegal instruction (0x{insn:04X}) of the opponent")
                 }
                 WinReason::IllegalColumn(col) => {
-                    format!("opponent's attempt to move at non-existent column {}", col)
+                    format!("opponent's attempt to move at non-existent column {col}")
                 }
                 WinReason::FullColumn(col) => {
-                    format!("opponent's attempt to move at full column {}", col)
+                    format!("opponent's attempt to move at full column {col}")
                 }
             };
-            print!("\"reason\": \"{}\"", reason_text);
+            print!("\"reason\": \"{reason_text}\"");
         }
     }
     println!(
@@ -86,18 +89,18 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
         game.get_player_one_total_insn(),
         game.get_player_two_total_insn(),
     );
-    return Ok(game.was_deterministic_so_far());
+    game.was_deterministic_so_far()
 }
 
 fn main() -> Result<()> {
     let (instructions_one, instructions_two) = parse_args()?;
 
     print!("[");
-    let first_was_deterministic = run_and_print_game(&instructions_one, &instructions_two)?;
+    let first_was_deterministic = run_and_print_game(&instructions_one, &instructions_two);
     if !first_was_deterministic {
         for _ in 0..99 {
             print!(",");
-            let was_deterministic = run_and_print_game(&instructions_one, &instructions_two)?;
+            let was_deterministic = run_and_print_game(&instructions_one, &instructions_two);
             assert!(!was_deterministic);
         }
     }
