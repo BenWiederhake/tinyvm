@@ -882,7 +882,6 @@ class Assembler:
             return False
         # FIXME: Support labels and labels with offset
         # FIXME: Support long branches?
-        # FIXME: Support combined branches? ("beq", "blt", etc.)
         imm_or_lab = self.parse_imm_or_lab(arg_list[1], f"second argument to {command}")
         if imm_or_lab is None:
             # Error already reported
