@@ -147,6 +147,7 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
       ```
 - `bgt reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
     * Also with other comparisons: `bgts`, `beq`, `bge`, `bges`, `blt`, `blts`, `bne`, `ble`, `bles`
+    * Also with the zero comparisons: `bgtsz`, `beqz`, `bgesz`, `bltsz`, `bnez`, `blesz`
     * The assembler instead emits the two instructions:
       ```
       gt reg_lhs reg_rhs_dest

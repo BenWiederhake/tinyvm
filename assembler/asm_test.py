@@ -1433,6 +1433,78 @@ ASM_TESTS = [
         "8700 8766 87FF",
         [],
     ),
+    (
+        "pseudo-instruction beqz",
+        """\
+        beqz r0 +42
+        beqz r6 +42
+        beqz r15 +42
+        """,
+        "8400 9028 8466 9628 84FF 9F28",
+        [],
+    ),
+    (
+        "pseudo-instruction bnez",
+        """\
+        bnez r0 +42
+        bnez r6 +42
+        bnez r15 +42
+        """,
+        "8A00 9028 8A66 9628 8AFF 9F28",
+        [],
+    ),
+    (
+        "pseudo-instruction bltsz",
+        """\
+        bltsz r0 +42
+        bltsz r6 +42
+        bltsz r15 +42
+        """,
+        "8900 9028 8966 9628 89FF 9F28",
+        [],
+    ),
+    (
+        "pseudo-instruction blesz",
+        """\
+        blesz r0 +42
+        blesz r6 +42
+        blesz r15 +42
+        """,
+        "8D00 9028 8D66 9628 8DFF 9F28",
+        [],
+    ),
+    (
+        "pseudo-instruction bgtsz",
+        """\
+        bgtsz r0 +42
+        bgtsz r6 +42
+        bgtsz r15 +42
+        """,
+        "8300 9028 8366 9628 83FF 9F28",
+        [],
+    ),
+    (
+        "pseudo-instruction bgesz",
+        """\
+        bgesz r0 +42
+        bgesz r6 +42
+        bgesz r15 +42
+        """,
+        "8700 9028 8766 9628 87FF 9F28",
+        [],
+    ),
+    (
+        "pseudo-instruction bgesz to label",
+        """\
+        bgesz r0 _foo
+        bgesz r6 _foo
+        bgesz r15 _foo
+        ret
+        .label _foo
+        """,
+        "8700 9004 8766 9602 87FF 9F00 102A",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1470,7 +1542,7 @@ NEGATIVE_TESTS = [
         bless
         """,
         [
-            "line 1: Command 'bless' not found. Close matches: bles, les, ble",
+            "line 1: Command 'bless' not found. Close matches: bles, blesz, les",
         ],
     ),
     (
@@ -2898,7 +2970,7 @@ NEGATIVE_TESTS = [
         gez r10
         """,
         [
-            "line 1: Command 'gez' not found. Close matches: gesz, ge, nez",
+            "line 1: Command 'gez' not found. Close matches: gesz, ge, bgesz",
         ],
     ),
     (
@@ -2907,7 +2979,7 @@ NEGATIVE_TESTS = [
         ltz r10
         """,
         [
-            "line 1: Command 'ltz' not found. Close matches: ltsz, lt, lts",
+            "line 1: Command 'ltz' not found. Close matches: ltsz, lt, bltsz",
         ],
     ),
     (
@@ -2919,6 +2991,42 @@ NEGATIVE_TESTS = [
             "line 1: Refusing hypothetical 'lez' pseudo-instruction, because there is no unsigned"
             " integer less than zero. Consider 'lesz' for signed comparison, or 'eqz' to check for"
             " equality with zero.",
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'bltz'",
+        """\
+        bltz r10, +42
+        """,
+        [
+            "line 1: Command 'bltz' not found. Close matches: bltsz, blt, ltsz",
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'blez'",
+        """\
+        blez r10, +42
+        """,
+        [
+            "line 1: Command 'blez' not found. Close matches: blesz, lez, ble",
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'bgtz'",
+        """\
+        bgtz r10, +42
+        """,
+        [
+            "line 1: Command 'bgtz' not found. Close matches: bgtsz, gtz, bgt",
+        ],
+    ),
+    (
+        "senseless pseudo-instruction 'bgez'",
+        """\
+        bgez r10, +42
+        """,
+        [
+            "line 1: Command 'bgez' not found. Close matches: bgesz, bge, gesz",
         ],
     ),
 ]

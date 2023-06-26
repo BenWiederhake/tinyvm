@@ -758,8 +758,10 @@ class Assembler:
     def parse_command_lesz(self, command, args):
         return self.compare_zero_command(command, args, 0x8D00)
 
-    def branch_pseudo_command(self, branch_mask, command, args):
-        assert (branch_mask & 0xF0FF) == 0 and (branch_mask & 0x0F00) != 0, branch_mask
+    def branch_pseudo_command(self, compare_mask, command, args):
+        assert (compare_mask & 0xF0FF) == 0 and (
+            compare_mask & 0x0F00
+        ) != 0, compare_mask
         arg_list = [e.strip() for e in args.split(" ", 2)]
         if len(arg_list) != 3:
             self.error(
@@ -774,10 +776,12 @@ class Assembler:
         if reg_lhs is None or reg_rhs_dest is None:
             # Error already reported
             return False
-        if not self.push_word(0x8000 | branch_mask | (reg_lhs << 4) | reg_rhs_dest):
+        if not self.push_word(0x8000 | compare_mask | (reg_lhs << 4) | reg_rhs_dest):
             # Error already reported
             return False
-        return self.emit_branch_to_imm_or_lab(command, reg_rhs_dest, arg_list[2], f"third argument to {command}")
+        return self.emit_branch_to_imm_or_lab(
+            command, reg_rhs_dest, arg_list[2], f"third argument to {command}"
+        )
 
     @asm_command
     def parse_command_bgt(self, command, args):
@@ -833,6 +837,53 @@ class Assembler:
             return self.forward(1, label_name, self.emit_b_to_label, call_data)
         raise AssertionError(f"imm_or_lab returned '{imm_or_lab}'?! ")
 
+    def branch_zero_pseudo_command(self, compare_mask, command, args):
+        assert (compare_mask & 0xF0FF) == 0 and (
+            compare_mask & 0x0F00
+        ) != 0, compare_mask
+        arg_list = [e.strip() for e in args.split(" ", 1)]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two space-separated register arguments, got {arg_list} instead."
+            )
+        # In case some maniac writes more than one space, like "add r4  r5":
+        arg_list[1] = arg_list[1].strip()
+        value_reg = self.parse_reg(arg_list[0], f"first argument to {command}")
+        if value_reg is None:
+            # Error already reported
+            return False
+        if not self.push_word(0x8000 | compare_mask | (value_reg << 4) | value_reg):
+            # Error already reported
+            return False
+        # FIXME: Support labels with offset
+        return self.emit_branch_to_imm_or_lab(
+            command, value_reg, arg_list[1], f"second argument to {command}"
+        )
+
+    @asm_command
+    def parse_command_beqz(self, command, args):
+        return self.branch_zero_pseudo_command(0x400, command, args)
+
+    @asm_command
+    def parse_command_bnez(self, command, args):
+        return self.branch_zero_pseudo_command(0xA00, command, args)
+
+    @asm_command
+    def parse_command_bgtsz(self, command, args):
+        return self.branch_zero_pseudo_command(0x300, command, args)
+
+    @asm_command
+    def parse_command_bgesz(self, command, args):
+        return self.branch_zero_pseudo_command(0x700, command, args)
+
+    @asm_command
+    def parse_command_bltsz(self, command, args):
+        return self.branch_zero_pseudo_command(0x900, command, args)
+
+    @asm_command
+    def parse_command_blesz(self, command, args):
+        return self.branch_zero_pseudo_command(0xD00, command, args)
+
     def emit_b_by_value(self, command, condition_reg, offset_value):
         if offset_value >= 0xFF80:
             return self.error(
@@ -886,7 +937,9 @@ class Assembler:
             return False
         # FIXME: Support labels with offset
         # FIXME: Support long branches?
-        return self.emit_branch_to_imm_or_lab(command, condition_reg, arg_list[1], f"second argument to {command}")
+        return self.emit_branch_to_imm_or_lab(
+            command, condition_reg, arg_list[1], f"second argument to {command}"
+        )
 
     def command_j_register(self, register, offset):
         if offset >= 0xFF80:
