@@ -759,6 +759,7 @@ class Assembler:
         return self.compare_zero_command(command, args, 0x8D00)
 
     def branch_pseudo_command(self, branch_mask, command, args):
+        assert (branch_mask & 0xF0FF) == 0 and (branch_mask & 0x0F00) != 0, branch_mask
         arg_list = [e.strip() for e in args.split(" ", 2)]
         if len(arg_list) != 3:
             self.error(
@@ -770,24 +771,13 @@ class Assembler:
         arg_list[1] = arg_list[1].strip()
         reg_lhs = self.parse_reg(arg_list[0], f"first argument to {command}")
         reg_rhs_dest = self.parse_reg(arg_list[1], f"second argument to {command}")
-        offset_imm_or_lab = self.parse_imm_or_lab(
-            arg_list[2], f"third argument to {command}"
-        )
-        if reg_lhs is None or reg_rhs_dest is None or offset_imm_or_lab is None:
+        if reg_lhs is None or reg_rhs_dest is None:
             # Error already reported
             return False
-        assert (branch_mask & 0xF0FF) == 0 and (branch_mask & 0x0F00) != 0, branch_mask
         if not self.push_word(0x8000 | branch_mask | (reg_lhs << 4) | reg_rhs_dest):
             # Error already reported
             return False
-        if offset_imm_or_lab[0] == ArgType.IMMEDIATE:
-            offset_value = offset_imm_or_lab[1]
-            return self.emit_b_by_value(command, reg_rhs_dest, offset_value)
-        if offset_imm_or_lab[0] == ArgType.LABEL:
-            label_name = offset_imm_or_lab[1]
-            call_data = (command, reg_rhs_dest, label_name)
-            return self.forward(1, label_name, self.emit_b_to_label, call_data)
-        raise AssertionError(f"imm_or_lab returned '{offset_imm_or_lab}'?! ")
+        return self.emit_branch_to_imm_or_lab(command, reg_rhs_dest, arg_list[2], f"third argument to {command}")
 
     @asm_command
     def parse_command_bgt(self, command, args):
@@ -828,6 +818,20 @@ class Assembler:
     @asm_command
     def parse_command_bles(self, command, args):
         return self.branch_pseudo_command(0xD00, command, args)
+
+    def emit_branch_to_imm_or_lab(self, command, condition_reg, raw_arg, arg_name):
+        imm_or_lab = self.parse_imm_or_lab(raw_arg, arg_name)
+        if imm_or_lab is None:
+            # Error already reported
+            return False
+        if imm_or_lab[0] == ArgType.IMMEDIATE:
+            offset_value = imm_or_lab[1]
+            return self.emit_b_by_value(command, condition_reg, offset_value)
+        if imm_or_lab[0] == ArgType.LABEL:
+            label_name = imm_or_lab[1]
+            call_data = (command, condition_reg, label_name)
+            return self.forward(1, label_name, self.emit_b_to_label, call_data)
+        raise AssertionError(f"imm_or_lab returned '{imm_or_lab}'?! ")
 
     def emit_b_by_value(self, command, condition_reg, offset_value):
         if offset_value >= 0xFF80:
@@ -880,20 +884,9 @@ class Assembler:
         if condition_reg is None:
             # Error already reported
             return False
-        # FIXME: Support labels and labels with offset
+        # FIXME: Support labels with offset
         # FIXME: Support long branches?
-        imm_or_lab = self.parse_imm_or_lab(arg_list[1], f"second argument to {command}")
-        if imm_or_lab is None:
-            # Error already reported
-            return False
-        if imm_or_lab[0] == ArgType.IMMEDIATE:
-            offset_value = imm_or_lab[1]
-            return self.emit_b_by_value(command, condition_reg, offset_value)
-        if imm_or_lab[0] == ArgType.LABEL:
-            label_name = imm_or_lab[1]
-            call_data = (command, condition_reg, label_name)
-            return self.forward(1, label_name, self.emit_b_to_label, call_data)
-        raise AssertionError(f"imm_or_lab returned '{imm_or_lab}'?! ")
+        return self.emit_branch_to_imm_or_lab(command, condition_reg, arg_list[1], f"second argument to {command}")
 
     def command_j_register(self, register, offset):
         if offset >= 0xFF80:
