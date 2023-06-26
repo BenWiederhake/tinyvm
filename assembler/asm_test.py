@@ -3503,6 +3503,12 @@ TESTS_CONNECT4_RS = [
 ]
 
 
+def uphex(bytes_or_none):
+    if bytes_or_none is None:
+        return None
+    return bytes_or_none.hex().upper()
+
+
 class AsmTests(unittest.TestCase):
     def test_empty(self):
         empty_result = (b"\x00" * asm.SEGMENT_LENGTH, [])
@@ -3530,7 +3536,7 @@ class AsmTests(unittest.TestCase):
     def assert_assembly(self, asm_text, expected_segment, expected_error_log):
         actual_segment, actual_error_log = asm.compile_to_segment(asm_text)
         self.assertEqual(expected_error_log, actual_error_log)
-        self.assertEqual(expected_segment, actual_segment)
+        self.assertEqual(uphex(expected_segment), uphex(actual_segment))
 
     def parse_and_extend_hex(self, code_prefix_hex):
         segment = bytearray.fromhex(code_prefix_hex)
