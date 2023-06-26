@@ -2244,7 +2244,7 @@ NEGATIVE_TESTS = [
         j 0x802
         """,
         [
-            "line 1: Command 'j' can only branch by offsets in [-2048, 2049], but not by 2050. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+            "line 1: Command 'j' can only branch by offsets in [-2048, 2049], but not by 2050. Some commands support longer jumps, try 'lj' instead. Or try manually loading the address into a register first."
         ],
     ),
     (
@@ -2253,7 +2253,7 @@ NEGATIVE_TESTS = [
         j -0x801
         """,
         [
-            "line 1: Command 'j' can only branch by offsets in [-2048, 2049], but not by -2049. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+            "line 1: Command 'j' can only branch by offsets in [-2048, 2049], but not by -2049. Some commands support longer jumps, try 'lj' instead. Or try manually loading the address into a register first."
         ],
     ),
     (
@@ -2656,7 +2656,7 @@ NEGATIVE_TESTS = [
         j _some_label # the label is at relative -0x801
         """,
         [
-            "line 5: Command 'j (to _some_label +0 = by -2049)' can only branch by offsets in [-2048, 2049], but not by -2049. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+            "line 5: Command 'j (to _some_label +0 = by -2049)' can only branch by offsets in [-2048, 2049], but not by -2049. Some commands support longer jumps, try 'lj (to _some_label +0 = by -2049)' instead. Or try manually loading the address into a register first."
         ],
     ),
     (
@@ -2670,7 +2670,7 @@ NEGATIVE_TESTS = [
         nop
         """,
         [
-            "line 2: Command 'j (to _some_label +0 = by +2050)' can only branch by offsets in [-2048, 2049], but not by 2050. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first.",
+            "line 2: Command 'j (to _some_label +0 = by +2050)' can only branch by offsets in [-2048, 2049], but not by 2050. Some commands support longer jumps, try 'lj (to _some_label +0 = by +2050)' instead. Or try manually loading the address into a register first.",
             "line 5: When label _some_label was defined.",
         ],
     ),
@@ -2706,7 +2706,7 @@ NEGATIVE_TESTS = [
         j _some_label -1 # the label is at relative -0x801
         """,
         [
-            "line 5: Command 'j (to _some_label -1 = by -2049)' can only branch by offsets in [-2048, 2049], but not by -2049. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+            "line 5: Command 'j (to _some_label -1 = by -2049)' can only branch by offsets in [-2048, 2049], but not by -2049. Some commands support longer jumps, try 'lj (to _some_label -1 = by -2049)' instead. Or try manually loading the address into a register first."
         ],
     ),
     (
@@ -2720,7 +2720,7 @@ NEGATIVE_TESTS = [
         nop
         """,
         [
-            "line 2: Command 'j (to _some_label +1 = by +2050)' can only branch by offsets in [-2048, 2049], but not by 2050. Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first.",
+            "line 2: Command 'j (to _some_label +1 = by +2050)' can only branch by offsets in [-2048, 2049], but not by 2050. Some commands support longer jumps, try 'lj (to _some_label +1 = by +2050)' instead. Or try manually loading the address into a register first.",
             "line 5: When label _some_label was defined.",
         ],
     ),

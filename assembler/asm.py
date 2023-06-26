@@ -954,8 +954,7 @@ class Assembler:
         offset_byte = offset & 0xFF
         return self.push_word(0xB000 | (register << 8) | offset_byte)
 
-    def command_j_immediate(self, command, offset):
-        # FIXME: Support long jumps
+    def emit_j_by_offset(self, command, offset):
         assert offset is not None
         if offset >= 0xFF80:
             return self.error(
@@ -964,7 +963,8 @@ class Assembler:
         if not (-(1 + 0x7FF) <= offset <= (2 + 0x7FF)):
             return self.error(
                 f"Command '{command}' can only branch by offsets in [-2048, 2049], but not by {offset}."
-                " Try using 'jl' instead, which supports larger jumps, or manually loading the address into a register first."
+                f" Some commands support longer jumps, try 'l{command}' instead."
+                " Or try manually loading the address into a register first."
             )
         if offset == 0:
             return self.error(
@@ -984,22 +984,24 @@ class Assembler:
         assert 0 <= offset <= 0x7FF
         return self.push_word(0xA000 | sign_mask | offset)
 
-    def emit_j_to_label(self, label_name, extra_offset):
+    def emit_j_to_label(self, command, label_name, extra_offset):
         destination = self.known_labels[label_name][0] + extra_offset
         self.unused_labels.discard(label_name)
         delta = mod_s16(destination - self.current_pointer)
-        pseudo_command = f"j (to {label_name} {extra_offset:+} = by {delta:+})"
-        return self.command_j_immediate(pseudo_command, delta)
+        pseudo_command = f"{command} (to {label_name} {extra_offset:+} = by {delta:+})"
+        return self.emit_j_by_offset(pseudo_command, delta)
 
-    def command_j_onearg(self, arg):
+    def command_j_onearg(self, command, arg):
         if not arg:
             return self.error(
-                "Command 'j' expects either one or two arguments, got none instead."
+                f"Command '{command}' expects either one or two arguments, got none instead."
             )
-        parsed_arg = self.parse_reg_or_imm_or_lab(arg, "first argument of one-arg-j")
+        parsed_arg = self.parse_reg_or_imm_or_lab(
+            arg, f"first argument of one-arg-{command}"
+        )
         if parsed_arg is None:
             return self.error(
-                f"Command 'j' with a single argument expects either immediate, register, or label, got '{arg}' instead."
+                f"Command '{command}' with a single argument expects either immediate, register, or label, got '{arg}' instead."
                 " Note that offsets have to use a space, like 'r4 +5'."
             )
         if parsed_arg[0] == ArgType.REGISTER:
@@ -1007,23 +1009,23 @@ class Assembler:
             return self.command_j_register(reg, 0)
         if parsed_arg[0] == ArgType.IMMEDIATE:
             imm = parsed_arg[1]
-            return self.command_j_immediate("j", imm)
+            return self.emit_j_by_offset("j", imm)
         if parsed_arg[0] == ArgType.LABEL:
             label_name = parsed_arg[1]
-            call_data = (label_name, 0)
+            call_data = (command, label_name, 0)
             return self.forward(1, label_name, self.emit_j_to_label, call_data)
         raise AssertionError(f"Unexpected type {parsed_arg}")
 
-    def command_j_twoarg(self, reg_or_lab_string, imm_string):
+    def command_j_twoarg(self, command, reg_or_lab_string, imm_string):
         reg_or_lab = self.parse_reg_or_lab(
-            reg_or_lab_string, "first argument to two-arg-j"
+            reg_or_lab_string, f"first argument to two-arg-{command}"
         )
         if reg_or_lab is None:
             return self.error(
-                f"Command 'j' with two arguments expects either register or label for first argument, got '{reg_or_lab_string}' instead."
+                f"Command '{command}' with two arguments expects either register or label for first argument, got '{reg_or_lab_string}' instead."
                 " Note that offsets have to use a space, like 'r4 +5'."
             )
-        imm = self.parse_imm(imm_string, "second argument to two-arg-j")
+        imm = self.parse_imm(imm_string, f"second argument to two-arg-{command}")
         if imm is None:
             # Error already reported
             return False
@@ -1032,19 +1034,18 @@ class Assembler:
             return self.command_j_register(reg, imm)
         if reg_or_lab[0] == ArgType.LABEL:
             label_name = reg_or_lab[1]
-            call_data = (label_name, imm)
+            call_data = (command, label_name, imm)
             return self.forward(1, label_name, self.emit_j_to_label, call_data)
         raise AssertionError(f"Unexpected type {reg_or_lab}")
 
     @asm_command
     def parse_command_j(self, command, args):
-        # FIXME: Pass 'command' to helper functions
         args = args.strip()
         arg_parts = args.split(" ", 1)
         if len(arg_parts) == 1:
-            return self.command_j_onearg(arg_parts[0])
+            return self.command_j_onearg(command, arg_parts[0])
         if len(arg_parts) == 2:
-            return self.command_j_twoarg(arg_parts[0], arg_parts[1])
+            return self.command_j_twoarg(command, arg_parts[0], arg_parts[1])
         raise AssertionError(f"Wtf .split(, 1) returned {arg_parts}?")
 
     @asm_directive
