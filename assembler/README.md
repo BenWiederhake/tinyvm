@@ -52,7 +52,7 @@ Instructions by prefix:
     * 1110: `rnd reg_dest [, reg_src]` (unary rnd)
     * 1111: `mov reg_dest, reg_src` (unary mov)
         * Note that single-arg movs and movs with the same source and destination register are forbidden in the assembly language, as they are noop instructions.
-          If you really insist on inserting a noop, you can still write `.data 5F00`.
+          If you really insist on inserting a noop, you can still write `nop` (see [pseudo-instructions](#pseudo-instructions)) or `.data 5F00`.
 - 0110: Basic binary (+, -, \*, \*h,   \/u, \/s, %u, %s,   &, |, ^, <<,  >>u, >>s, \*\*s, root)
     * 0000: `add reg_lhs reg_rhs_dest` (+)
         * As per the ISA, the result is written into the right-hand side operand, i.e. `reg_rhs_dest`. This also holds for all other unary operations.
@@ -145,6 +145,7 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
       lw reg_dest, imm_low_bits
       lhi reg_dest, imm_high_bits
       ```
+- `nop` always generates exactly one instruction. Currently, it is `0x5F00`, equivalent to the hypothetical `mov r0, r0`.
 - `bgt reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
     * Also with other comparisons: `bgts`, `beq`, `bge`, `bges`, `blt`, `blts`, `bne`, `ble`, `bles`
     * Also with the zero comparisons: `bgtsz`, `beqz`, `bgesz`, `bltsz`, `bnez`, `blesz`
