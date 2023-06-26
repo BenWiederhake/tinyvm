@@ -1505,6 +1505,35 @@ ASM_TESTS = [
         "8700 9004 8766 9602 87FF 9F00 102A",
         [],
     ),
+    (
+        "longbranch to label manual",
+        """\
+        eqz r0
+        b r0 +2
+        j _destination
+        eqz r5
+        b r5 +2
+        j _destination
+        .offset 0x300
+        .label _destination
+        """,
+        "8400 9000 A2FC 8455 9500 A2F9",
+        [],
+    ),
+    (
+        "longbranch to label",
+        """\
+        lb r0 _destination
+        lb r5 _destination
+        .offset 0x300
+        .label _destination
+        """,
+        "8400 9000 A2FC 8455 9500 A2F9",
+        [
+            "line 1: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
+            "line 2: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
+        ],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -3027,6 +3056,51 @@ NEGATIVE_TESTS = [
         """,
         [
             "line 1: Command 'bgez' not found. Close matches: bgesz, bge, gesz",
+        ],
+    ),
+    (
+        "longbranch to forward positive label, too short",
+        """\
+        lb r0 _destination
+        .offset 0x5
+        .label _destination
+        """,
+        [
+            "line 1: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
+            "line 1: Pseudo-instruction 'lb (to _destination +0 = by +3)' supports jumps in the range [-2048, 2049], but was used for just a short offset of 3. Try using the non-long version, which uses fewer instructions.",
+            "line 3: When label _destination was defined.",
+        ],
+    ),
+    (
+        "longbranch to backward negative label, too short",
+        """\
+        .label _destination
+        .offset 0x5
+        lb r0 _destination
+        """,
+        [
+            "line 3: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
+            "line 3: Pseudo-instruction 'lb (to _destination +0 = by -7)' supports jumps in the range [-2048, 2049], but was used for just a short offset of -7. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch to positive immediate, too short",
+        """\
+        lb r0 +10
+        """,
+        [
+            "line 1: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
+            "line 1: Pseudo-instruction 'lb' supports jumps in the range [-2048, 2049], but was used for just a short offset of 10. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch to negative immediate, too short",
+        """\
+        lb r0 -10
+        """,
+        [
+            "line 1: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
+            "line 1: Pseudo-instruction 'lb' supports jumps in the range [-2048, 2049], but was used for just a short offset of -10. Try using the non-long version, which uses fewer instructions.",
         ],
     ),
 ]

@@ -159,3 +159,10 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
         * Support for longer jumps is currently missing, but should ideally be a separate instruction (to preserve predictability).
         * Offsets 0 (infinite loop) and 1 (noop) cannot be encoded in the ISA, and therefore not supported by the assembler.
         * The label does not need to be defined yet; forward-references are fine. For more info, see [directives](#directives).
+- For medium-long branches, `lb reg_cond ( imm_offset | _lab_destination )` works with 12-bit relative offsets.
+    * Note that `lb` must first invert the condition (`eqz reg_cond`), the conditionally skip the next instruction (`b reg_cond +2`), then jump-immediate to the desired destination (`j ( imm_offset | _lab_destination )`).
+    * These three instructions are obviously somewhat expensive, and the assembler will prevent accidental use below some threshold, although not the entire range \[-128, +129\] is flagged, only \[-118, +119\]. This is to allow for some slack when code offsets are changing while programming.
+    * Both forms result in the same kind of instruction sequence. Therefore, both only support branch-offsets in the range \[-2048, 2049\], and the 2049 is not a typo.
+    * Support for even longer jumps is currently missing, but should ideally be a separate pseudo-instruction (to preserve predictability).
+    * Offsets 0 (infinite loop) and 1 (noop) cannot be encoded in the ISA, and therefore not supported by the assembler.
+    * The label does not need to be defined yet; forward-references are fine. For more info, see [directives](#directives).

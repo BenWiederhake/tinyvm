@@ -837,6 +837,36 @@ class Assembler:
             return self.forward(1, label_name, self.emit_b_to_label, call_data)
         raise AssertionError(f"imm_or_lab returned '{imm_or_lab}'?! ")
 
+    def emit_long_branch_inverted_to_imm_or_lab(
+        self, command, inverted_condition_reg, raw_arg, arg_name, allow_short
+    ):
+        imm_or_lab = self.parse_imm_or_lab(raw_arg, arg_name)
+        if imm_or_lab is None:
+            # Error already reported
+            return False
+        # "b reg_inverted +2" → Jump over the following instruction if the inverted condition is true.
+        # (I.e. if the original condition is false.)
+        if not self.emit_b_by_value(command, inverted_condition_reg, 2):
+            # Error already reported
+            return False
+        # "j imm_or_lab_destination" → Jump to the destination.
+        if imm_or_lab[0] == ArgType.IMMEDIATE:
+            offset_value = imm_or_lab[1]
+            return self.emit_j_by_offset(command, offset_value, allow_short)
+        if imm_or_lab[0] == ArgType.LABEL:
+            label_name = imm_or_lab[1]
+            # TODO: Support additional offset?
+            call_data = (command, label_name, 0, allow_short)
+            return self.forward(1, label_name, self.emit_j_to_label, call_data)
+        raise AssertionError(f"imm_or_lab returned '{imm_or_lab}'?! ")
+        # In other words, this entire method emits the code:
+        #     if (!condition)
+        #         goto _afterwards;
+        #     goto _destination;
+        #     _afterwards:
+        # This is useful because this allows us to do a "medium-length jump" of 12 bits in just *two* instructions.
+        # This is more lightweight than doing a full "b +6; lw reg_foo imm_address; j reg_foo;", which is *four* instructions.
+
     def branch_zero_pseudo_command(self, compare_mask, command, args):
         assert (compare_mask & 0xF0FF) == 0 and (
             compare_mask & 0x0F00
@@ -941,6 +971,40 @@ class Assembler:
             command, condition_reg, arg_list[1], f"second argument to {command}"
         )
 
+    @asm_command
+    def parse_command_lb(self, command, args):
+        arg_list = [e.strip() for e in args.split(" ", 1)]
+        # FIXME: Only emit this once per compilation unit.
+        self.error(
+            f"Command '{command}' inverts the condition register, and ends up needing three instructions."
+            " Consider using a combined longbranch-compare instead (e.g. lbles)."
+        )
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two space-separated register arguments, got {arg_list} instead."
+            )
+        # In case some maniac writes more than one space, like "add r4  r5":
+        arg_list[1] = arg_list[1].strip()
+        condition_reg = self.parse_reg(arg_list[0], f"first argument to {command}")
+        if condition_reg is None:
+            # Error already reported
+            return False
+        # "eqz condition_reg"
+        # That's essentially a boolean inversion.
+        # FIXME: Make "boolconv" and "boolnot" aliases of "nez" and "eqz", respectively.
+        if not self.push_word(0x8400 | (condition_reg << 4) | condition_reg):
+            # Error already reported
+            return False
+        # This inversion is inefficient, because the condition probably comes from a comparison right before the "lb".
+        # Hence the urging to use shorthands like lbles, which have built-in negation.
+        return self.emit_long_branch_inverted_to_imm_or_lab(
+            command,
+            condition_reg,
+            arg_list[1],
+            f"second argument to {command}",
+            allow_short=False,
+        )
+
     def command_j_register(self, register, offset):
         if offset >= 0xFF80:
             return self.error(
@@ -954,7 +1018,7 @@ class Assembler:
         offset_byte = offset & 0xFF
         return self.push_word(0xB000 | (register << 8) | offset_byte)
 
-    def emit_j_by_offset(self, command, offset):
+    def emit_j_by_offset(self, command, offset, allow_short):
         assert offset is not None
         if offset >= 0xFF80:
             return self.error(
@@ -974,6 +1038,16 @@ class Assembler:
             return self.error(
                 f"Command '{command}' cannot encode the nop-jump (offset 1). Try using 'nop' instead."
             )
+        if not allow_short and -118 < offset < 119:
+            # Even though anything in the range -128 < offset < 129 can be shortened, we don't want
+            # to be too aggressive: Changing the instruction can change several other offsets, and
+            # we don't want to force the user into a whack-a-mole game of swapping long-to-short-to-long
+            # branches. Hence, leave a slack of ehhh ten instructions I guess.
+            return self.error(
+                f"Pseudo-instruction '{command}' supports jumps in the range [-2048, 2049], but was"
+                f" used for just a short offset of {offset}. Try using the non-long version,"
+                " which uses fewer instructions."
+            )
         if offset < 0:
             sign_mask = 0x0800
             offset = -offset - 1
@@ -984,12 +1058,12 @@ class Assembler:
         assert 0 <= offset <= 0x7FF
         return self.push_word(0xA000 | sign_mask | offset)
 
-    def emit_j_to_label(self, command, label_name, extra_offset):
+    def emit_j_to_label(self, command, label_name, extra_offset, allow_short):
         destination = self.known_labels[label_name][0] + extra_offset
         self.unused_labels.discard(label_name)
         delta = mod_s16(destination - self.current_pointer)
         pseudo_command = f"{command} (to {label_name} {extra_offset:+} = by {delta:+})"
-        return self.emit_j_by_offset(pseudo_command, delta)
+        return self.emit_j_by_offset(pseudo_command, delta, allow_short)
 
     def command_j_onearg(self, command, arg):
         if not arg:
@@ -1009,10 +1083,10 @@ class Assembler:
             return self.command_j_register(reg, 0)
         if parsed_arg[0] == ArgType.IMMEDIATE:
             imm = parsed_arg[1]
-            return self.emit_j_by_offset("j", imm)
+            return self.emit_j_by_offset("j", imm, allow_short=True)
         if parsed_arg[0] == ArgType.LABEL:
             label_name = parsed_arg[1]
-            call_data = (command, label_name, 0)
+            call_data = (command, label_name, 0, True)
             return self.forward(1, label_name, self.emit_j_to_label, call_data)
         raise AssertionError(f"Unexpected type {parsed_arg}")
 
@@ -1034,7 +1108,7 @@ class Assembler:
             return self.command_j_register(reg, imm)
         if reg_or_lab[0] == ArgType.LABEL:
             label_name = reg_or_lab[1]
-            call_data = (command, label_name, imm)
+            call_data = (command, label_name, imm, True)
             return self.forward(1, label_name, self.emit_j_to_label, call_data)
         raise AssertionError(f"Unexpected type {reg_or_lab}")
 
