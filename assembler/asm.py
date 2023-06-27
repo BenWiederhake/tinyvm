@@ -1005,6 +1005,78 @@ class Assembler:
             allow_short=False,
         )
 
+    def parse_command_lb_cmp_tworeg(self, uninverted_compare_mask, command, args):
+        assert (uninverted_compare_mask & 0xF0FF) == 0 and (
+            uninverted_compare_mask & 0x0F00
+        ) != 0, uninverted_compare_mask
+        arg_list = [e.strip() for e in args.split(" ", 2)]
+        if len(arg_list) != 3:
+            return self.error(
+                f"Command '{command}' expects exactly three space-separated register arguments, got {arg_list} instead."
+            )
+        # In case some maniac writes more than one space, like "bne  r4  r5  r6":
+        # FIXME: Doesn't quite work for three args!
+        arg_list[1] = arg_list[1].strip()
+        reg_lhs = self.parse_reg(arg_list[0], f"first argument to {command}")
+        reg_rhs_dest = self.parse_reg(arg_list[1], f"second argument to {command}")
+        if reg_lhs is None or reg_rhs_dest is None:
+            # Error already reported
+            return False
+        # Invert the compare mask by inverting L(ess), E(qual), and G(reater), but not the S(igned) bit:
+        compare_mask = 0x0E00 ^ uninverted_compare_mask
+        if not self.push_word(0x8000 | compare_mask | (reg_lhs << 4) | reg_rhs_dest):
+            # Error already reported
+            return False
+        return self.emit_long_branch_inverted_to_imm_or_lab(
+            command,
+            reg_rhs_dest,
+            arg_list[2],
+            f"third argument to {command}",
+            allow_short=False,
+        )
+        # Overall, this method folds the inversion necessary for the "medium-length branch" into the
+        # comparison instruction, meaning that i.e. lbeq only takes one instruction more than beq.
+
+    @asm_command
+    def parse_command_lbeq(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0400, command, args)
+
+    @asm_command
+    def parse_command_lbne(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0A00, command, args)
+
+    @asm_command
+    def parse_command_lblt(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0800, command, args)
+
+    @asm_command
+    def parse_command_lble(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0C00, command, args)
+
+    @asm_command
+    def parse_command_lbgt(self, command, args):  # 🏳️‍🌈, kinda
+        return self.parse_command_lb_cmp_tworeg(0x0200, command, args)
+
+    @asm_command
+    def parse_command_lbge(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0600, command, args)
+
+    @asm_command
+    def parse_command_lblts(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0900, command, args)
+
+    @asm_command
+    def parse_command_lbles(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0D00, command, args)
+
+    @asm_command
+    def parse_command_lbgts(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0300, command, args)
+
+    @asm_command
+    def parse_command_lbges(self, command, args):
+        return self.parse_command_lb_cmp_tworeg(0x0700, command, args)
+
     def command_j_register(self, register, offset):
         if offset >= 0xFF80:
             return self.error(

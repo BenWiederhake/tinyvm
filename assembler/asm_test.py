@@ -1534,6 +1534,69 @@ ASM_TESTS = [
             "line 2: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
         ],
     ),
+    (
+        "longbranch condition tworeg, lbeq to imm positive",
+        """\
+        lbeq r0 r1 +0x123
+        """,
+        "8A01 9100 A121",
+        [],
+    ),
+    (
+        "longbranch condition tworeg, lbne to imm negative",
+        """\
+        lbne r10 r11 -0x234
+        """,
+        "84AB 9B00 AA33",
+        [],
+    ),
+    (
+        "longbranch condition tworeg, lblt to label forward positive",
+        """\
+        lblt r8 r9 _destination
+        nop
+        .offset 0xAA
+        .label _destination
+        """,
+        # Note that this cannot be done in a single instruction, as `b` also carries a sign bit.
+        "8689 9900 A0A6 5F00",
+        [],
+    ),
+    (
+        "longbranch condition tworeg, lbles to label forward negative",
+        """\
+        .offset 0x100
+        lbles r6 r7 _destination
+        nop
+        .offset 0
+        .label _destination
+        """,
+        "0000" * 0x100 + "8367 9700 A901 5F00",
+        [],
+    ),
+    (
+        "longbranch condition tworeg, lbgts to label backward positive",
+        """\
+        .offset 0x100
+        .label _destination
+        .offset 0
+        lbgts r9 r3 _destination
+        nop
+        """,
+        "8D93 9300 A0FC 5F00",
+        [],
+    ),
+    (
+        "longbranch condition tworeg, lbge to label backward negative",
+        """\
+        .label _destination
+        .offset 0x400
+        lbge r15 r14 _destination
+        nop
+        """,
+        "0000" * 0x400 + "88FE 9E00 AC01 5F00",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -1571,7 +1634,7 @@ NEGATIVE_TESTS = [
         bless
         """,
         [
-            "line 1: Command 'bless' not found. Close matches: bles, blesz, les",
+            "line 1: Command 'bless' not found. Close matches: bles, lbles, blesz",
         ],
     ),
     (
@@ -3055,7 +3118,7 @@ NEGATIVE_TESTS = [
         bgez r10, +42
         """,
         [
-            "line 1: Command 'bgez' not found. Close matches: bgesz, bge, gesz",
+            "line 1: Command 'bgez' not found. Close matches: bgesz, bge, lbge",
         ],
     ),
     (
@@ -3101,6 +3164,95 @@ NEGATIVE_TESTS = [
         [
             "line 1: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
             "line 1: Pseudo-instruction 'lb' supports jumps in the range [-2048, 2049], but was used for just a short offset of -10. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, no-arg",
+        """\
+        lbeq
+        """,
+        [
+            "line 1: Command 'lbeq' expects exactly three space-separated register arguments, got [''] instead.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, one-arg",
+        """\
+        lbne r1
+        """,
+        [
+            "line 1: Command 'lbne' expects exactly three space-separated register arguments, got ['r1'] instead.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, two-arg",
+        """\
+        lbne r1 r2
+        """,
+        [
+            "line 1: Command 'lbne' expects exactly three space-separated register arguments, got ['r1', 'r2'] instead.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, reg-reg-reg",
+        """\
+        lblt r1 r2 r3
+        """,
+        [
+            "line 1: Cannot parse immediate for third argument to lblt: Expected integer number, instead got 'r3'. Try something like '42', '0xABCD', or '-0x123' instead.",
+            "line 1: Label name for third argument to lblt must start with a '_' and contain at least two characters, found name 'r3' instead",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, reg-imm-imm",
+        """\
+        lble r1 2 3
+        """,
+        [
+            "line 1: Cannot parse register for second argument to lble: Expected register (beginning with 'r'), instead got '2'. Try something like 'r0' instead.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, too short imm pos",
+        """\
+        lbgt r1 r2 +3
+        """,
+        [
+            "line 1: Pseudo-instruction 'lbgt' supports jumps in the range [-2048, 2049], but was used for just a short offset of 3. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, too short imm neg",
+        """\
+        lbge r1 r2 -3
+        """,
+        [
+            "line 1: Pseudo-instruction 'lbge' supports jumps in the range [-2048, 2049], but was used for just a short offset of -3. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, too short label forward neg",
+        """\
+        .offset 10
+        lblts r1 r2 _destination
+        .offset 2
+        .label _destination
+        """,
+        [
+            "line 2: Pseudo-instruction 'lblts (to _destination +0 = by -10)' supports jumps in the range [-2048, 2049], but was used for just a short offset of -10. Try using the non-long version, which uses fewer instructions.",
+            "line 4: When label _destination was defined.",
+        ],
+    ),
+    (
+        "longbranch condition tworeg, too short label backward pos",
+        """\
+        .offset 10
+        .label _destination
+        .offset 2
+        lbles r1 r2 _destination
+        """,
+        [
+            "line 4: Pseudo-instruction 'lbles (to _destination +0 = by +6)' supports jumps in the range [-2048, 2049], but was used for just a short offset of 6. Try using the non-long version, which uses fewer instructions.",
         ],
     ),
 ]
