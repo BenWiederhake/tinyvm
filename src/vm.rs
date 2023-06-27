@@ -225,6 +225,7 @@ pub struct VirtualMachine {
     instructions: Segment,
     data: Segment,
     deterministic_so_far: bool,
+    dumped_input_memory: bool,
 }
 
 impl VirtualMachine {
@@ -237,6 +238,7 @@ impl VirtualMachine {
             instructions,
             data,
             deterministic_so_far: true,
+            dumped_input_memory: false,
         }
     }
 
@@ -375,14 +377,28 @@ impl VirtualMachine {
                         }
                     }
                     println!();
-                    println!(
-                        "Initial memory, suspiciously arranged like a board (top left is x=0,y=5):"
-                    );
-                    for y in 0..6 {
-                        for x in 0..7 {
-                            print!(" {:04X}", self.data[x * 6 + (6 - 1 - y)]);
+                    if !self.dumped_input_memory {
+                        self.dumped_input_memory = true;
+                        println!(
+                            "Initial memory, suspiciously arranged like a board (top left is x=0,y=5):"
+                        );
+                        for y in 0..6 {
+                            for x in 0..7 {
+                                print!(" {:04X}", self.data[x * 6 + (6 - 1 - y)]);
+                            }
+                            println!();
                         }
-                        println!();
+                        println!(
+                            "Time available: 0x{:04X}{:04X}{:04X}{:04X}, {}×{}, Move#: {}+{}(+1)",
+                            self.data[0xFF82],
+                            self.data[0xFF83],
+                            self.data[0xFF84],
+                            self.data[0xFF85],
+                            self.data[0xFF86],
+                            self.data[0xFF87],
+                            self.data[0xFF88],
+                            self.data[0xFF89],
+                        );
                     }
                     println!("=== END DEBUG DUMP ===");
                 }
