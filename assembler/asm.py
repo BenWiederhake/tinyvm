@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from enum import Enum
+import argparse
 import difflib
 import hashlib
 import sys
@@ -1445,7 +1446,16 @@ class Assembler:
         return segment_bytes
 
 
-def compile_to_segment(asm_text):
+class CompilationResult:
+    def __init__(self, segment, error_log):
+        self.segment = segment
+        self.error_log = error_log
+
+    def __eq__(self, other):
+        return self.segment == other.segment and self.error_log == other.error_log
+
+
+def compile_assembly(asm_text):
     """
     Returns a tuple of (asm_bytes, error_log), where:
     - asm_bytes is an instance of 'bytes' (in case of success) or is 'None' (in case of failure).
@@ -1454,32 +1464,45 @@ def compile_to_segment(asm_text):
     asm = Assembler()
     for i, line in enumerate(asm_text.split("\n")):
         if not asm.parse_line(line, i + 1):
-            return None, asm.error_log
-    return asm.segment_bytes(), asm.error_log
+            return CompilationResult(None, asm.error_log)
+    return CompilationResult(asm.segment_bytes(), asm.error_log)
 
 
-def run_on_files(infile, outfile):
-    with open(infile, "r") as fp:
-        asm_text = fp.read()
-    segment, error_log = compile_to_segment(asm_text)
-    for e in error_log:
+def run_on_files(args):
+    asm_text = args.infile.read()
+    result = compile_assembly(asm_text)
+    for e in result.error_log:
         print(e, file=sys.stderr)
-    if segment is None:
+    if result.segment is None:
         return False
-    assert len(segment) == 2 * (1 << 16)  # 64K two-byte words
-    with open(outfile, "wb") as fp:
-        fp.write(segment)
+    assert len(result.segment) == 2 * (1 << 16)  # 64K two-byte words
+    args.outfile.write(result.segment)
     return True
 
 
+def make_parser(progname):
+    parser = argparse.ArgumentParser(prog=progname)
+    parser.add_argument(
+        "infile",
+        type=argparse.FileType("r"),
+        default=sys.stdin,
+        metavar="/path/to/input.asm",
+    )
+    # FIXME: sys.stdout.buffer doesn't work in some wrappers like bpython.
+    parser.add_argument(
+        "outfile",
+        nargs="?",
+        type=argparse.FileType("wb"),
+        default=sys.stdout.buffer,
+        metavar="/path/to/output.segment",
+    )
+    return parser
+
+
 def run(argv):
-    if len(argv) != 3:
-        print(
-            f"Usage: {argv[0]} /path/to/input.asm /path/to/output.segment",
-            file=sys.stderr,
-        )
-        exit(1)
-    if not run_on_files(argv[1], argv[2]):
+    parser = make_parser(argv[0])
+    args = parser.parse_args(argv[1:])
+    if not run_on_files(args):
         exit(1)
 
 

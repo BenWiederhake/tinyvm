@@ -3938,9 +3938,9 @@ def uphex(bytes_or_none):
 
 class AsmTests(unittest.TestCase):
     def test_empty(self):
-        empty_result = (b"\x00" * asm.SEGMENT_LENGTH, [])
-        self.assertEqual(empty_result, asm.compile_to_segment(""))
-        self.assertEqual(empty_result, asm.compile_to_segment("\n"))
+        empty_result = asm.CompilationResult(b"\x00" * asm.SEGMENT_LENGTH, [])
+        self.assertEqual(empty_result, asm.compile_assembly(""))
+        self.assertEqual(empty_result, asm.compile_assembly("\n"))
 
     def test_testsuite_names(self):
         name_counter = Counter(name for name, _, _, _ in ASM_TESTS)
@@ -3961,9 +3961,9 @@ class AsmTests(unittest.TestCase):
                 self.assertEqual(count, 1)
 
     def assert_assembly(self, asm_text, expected_segment, expected_error_log):
-        actual_segment, actual_error_log = asm.compile_to_segment(asm_text)
-        self.assertEqual(expected_error_log, actual_error_log)
-        self.assertEqual(uphex(expected_segment), uphex(actual_segment))
+        actual_result = asm.compile_assembly(asm_text)
+        self.assertEqual(expected_error_log, actual_result.error_log)
+        self.assertEqual(uphex(expected_segment), uphex(actual_result.segment))
 
     def parse_and_extend_hex(self, code_prefix_hex):
         segment = bytearray.fromhex(code_prefix_hex)
