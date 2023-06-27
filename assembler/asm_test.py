@@ -34,7 +34,7 @@ class ModTests(unittest.TestCase):
 
 
 ASM_TESTS = [
-    ("empty", "", "", []),
+    ("empty", "", "", [], dict()),
     (
         "newline",
         # No trailing backslash here!
@@ -42,6 +42,7 @@ ASM_TESTS = [
         """,
         "",
         [],
+        dict(),
     ),
     (
         "comment",
@@ -50,6 +51,7 @@ ASM_TESTS = [
         """,
         "",
         [],
+        dict(),
     ),
     (
         "return",
@@ -58,6 +60,7 @@ ASM_TESTS = [
         """,
         "102A",
         [],
+        {0: 1},
     ),
     (
         "inline comment",
@@ -68,6 +71,7 @@ ASM_TESTS = [
         """,
         "102A",
         [],
+        {0: 2},
     ),
     (
         "inline comment multi",
@@ -76,6 +80,7 @@ ASM_TESTS = [
         """,
         "102A",
         [],
+        {0: 1},
     ),
     (
         "illegal",
@@ -84,6 +89,7 @@ ASM_TESTS = [
         """,
         "FFFF",
         [],
+        {0: 1},
     ),
     (
         "more than one instruction",
@@ -93,6 +99,7 @@ ASM_TESTS = [
         """,
         "102A FFFF",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "CPUID",
@@ -101,6 +108,7 @@ ASM_TESTS = [
         """,
         "102B",
         [],
+        {0: 1},
     ),
     (
         "Debug-dump",
@@ -109,6 +117,7 @@ ASM_TESTS = [
         """,
         "102C",
         [],
+        {0: 1},
     ),
     (
         "Time",
@@ -117,6 +126,7 @@ ASM_TESTS = [
         """,
         "102D",
         [],
+        {0: 1},
     ),
     (
         "Store word",
@@ -127,6 +137,7 @@ ASM_TESTS = [
         """,
         "2000 2010 20AF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "Load word instruction",
@@ -137,6 +148,7 @@ ASM_TESTS = [
         """,
         "2200 2210 22AF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "Load word data, memory-only",
@@ -147,6 +159,7 @@ ASM_TESTS = [
         """,
         "2100 2110 21AF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "Load word data immediate (single insn)",
@@ -160,6 +173,7 @@ ASM_TESTS = [
         """,
         "3000 31FF 352A 387F 3980 3AFE",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "Load word data immediate (single insn, extreme)",
@@ -170,6 +184,7 @@ ASM_TESTS = [
         """,
         "37FF 3BD6 3C80",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "Load word data immediate (double insn)",
@@ -182,6 +197,7 @@ ASM_TESTS = [
         """,
         "3081 4000 317F 41FF 32CD 42AB 3334 4312 397F 49FF",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4, 7: 4, 8: 5, 9: 5},
     ),
     (
         "Load word data immediate (alternate bases)",
@@ -191,6 +207,7 @@ ASM_TESTS = [
         """,
         "300A 3153",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "Load word data immediate high-only",
@@ -204,6 +221,7 @@ ASM_TESTS = [
         """,
         "4000 4112 42FF 43AB 4434 45FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "decr",
@@ -217,6 +235,7 @@ ASM_TESTS = [
         """,
         "5800 5800 5855 5866 5887 58FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "incr",
@@ -230,6 +249,7 @@ ASM_TESTS = [
         """,
         "5900 5900 5955 5966 5987 59FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "not",
@@ -243,6 +263,7 @@ ASM_TESTS = [
         """,
         "5A00 5A00 5A55 5A66 5A87 5AFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "popcnt",
@@ -256,6 +277,7 @@ ASM_TESTS = [
         """,
         "5B00 5B00 5B55 5B66 5B87 5BFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "clz",
@@ -269,6 +291,7 @@ ASM_TESTS = [
         """,
         "5C00 5C00 5C55 5C66 5C87 5CFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "ctz",
@@ -282,6 +305,7 @@ ASM_TESTS = [
         """,
         "5D00 5D00 5D55 5D66 5D87 5DFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "rnd",
@@ -295,6 +319,7 @@ ASM_TESTS = [
         """,
         "5E00 5E00 5E55 5E66 5E87 5EFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "mov",
@@ -306,6 +331,7 @@ ASM_TESTS = [
         """,
         "5F10 5F26 5F87 5FEF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "nop single",
@@ -314,6 +340,7 @@ ASM_TESTS = [
         """,
         "5F00",
         [],
+        {0: 1},
     ),
     (
         "nop multi",
@@ -324,6 +351,7 @@ ASM_TESTS = [
         """,
         "5F00 5F00 5F00",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "add",
@@ -335,6 +363,7 @@ ASM_TESTS = [
         """,
         "6000 6033 6078 60FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "add multi-space",
@@ -343,6 +372,7 @@ ASM_TESTS = [
         """,
         "6012",
         [],
+        {0: 1},
     ),
     (
         "sub",
@@ -354,6 +384,7 @@ ASM_TESTS = [
         """,
         "6100 6133 6178 61FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "mul",
@@ -365,6 +396,7 @@ ASM_TESTS = [
         """,
         "6200 6233 6278 62FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "mulh",
@@ -376,6 +408,7 @@ ASM_TESTS = [
         """,
         "6300 6333 6378 63FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "divu",
@@ -387,6 +420,7 @@ ASM_TESTS = [
         """,
         "6400 6433 6478 64FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "divs",
@@ -398,6 +432,7 @@ ASM_TESTS = [
         """,
         "6500 6533 6578 65FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "modu",
@@ -409,6 +444,7 @@ ASM_TESTS = [
         """,
         "6600 6633 6678 66FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "mods",
@@ -420,6 +456,7 @@ ASM_TESTS = [
         """,
         "6700 6733 6778 67FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "and",
@@ -431,6 +468,7 @@ ASM_TESTS = [
         """,
         "6800 6833 6878 68FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "or",
@@ -442,6 +480,7 @@ ASM_TESTS = [
         """,
         "6900 6933 6978 69FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "xor",
@@ -453,6 +492,7 @@ ASM_TESTS = [
         """,
         "6A00 6A33 6A78 6AFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "sl",
@@ -464,6 +504,7 @@ ASM_TESTS = [
         """,
         "6B00 6B33 6B78 6BFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "srl",
@@ -475,6 +516,7 @@ ASM_TESTS = [
         """,
         "6C00 6C33 6C78 6CFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "sra",
@@ -486,6 +528,7 @@ ASM_TESTS = [
         """,
         "6D00 6D33 6D78 6DFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "gt",
@@ -496,6 +539,7 @@ ASM_TESTS = [
         """,
         "8201 82EF 8278",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "eq",
@@ -506,6 +550,7 @@ ASM_TESTS = [
         """,
         "8401 84EF 8478",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "ge",
@@ -516,6 +561,7 @@ ASM_TESTS = [
         """,
         "8601 86EF 8678",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "lt",
@@ -526,6 +572,7 @@ ASM_TESTS = [
         """,
         "8801 88EF 8878",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "ne",
@@ -536,6 +583,7 @@ ASM_TESTS = [
         """,
         "8A01 8AEF 8A78",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "le",
@@ -546,6 +594,7 @@ ASM_TESTS = [
         """,
         "8C01 8CEF 8C78",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "gts",
@@ -556,6 +605,7 @@ ASM_TESTS = [
         """,
         "8301 83EF 8378",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "ges",
@@ -566,6 +616,7 @@ ASM_TESTS = [
         """,
         "8701 87EF 8778",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "lts",
@@ -576,6 +627,7 @@ ASM_TESTS = [
         """,
         "8901 89EF 8978",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "les",
@@ -586,6 +638,7 @@ ASM_TESTS = [
         """,
         "8D01 8DEF 8D78",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "branch simple",
@@ -599,6 +652,7 @@ ASM_TESTS = [
         """,
         "9000 9106 970E 9803 9F00 9780",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "branch extreme positive",
@@ -610,6 +664,7 @@ ASM_TESTS = [
         """,
         "937D 947D 957E 967F",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "branch extreme negative",
@@ -619,6 +674,7 @@ ASM_TESTS = [
         """,
         "99FE 9AFF",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "jump by immediate simple",
@@ -630,6 +686,7 @@ ASM_TESTS = [
         """,
         "A003 A000 A800 A829",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "jump by immediate extreme positive",
@@ -643,6 +700,7 @@ ASM_TESTS = [
         """,
         "A079 A121 A7FC A7FD A7FE A7FF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "jump by immediate extreme negative",
@@ -655,6 +713,7 @@ ASM_TESTS = [
         """,
         "A87A A922 AFFD AFFE AFFF",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5},
     ),
     (
         "jump to register onearg",
@@ -665,6 +724,7 @@ ASM_TESTS = [
         """,
         "B000 B100 BF00",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "jump to register twoarg positive",
@@ -676,6 +736,7 @@ ASM_TESTS = [
         """,
         "B000 B101 B212 B37F",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "jump to register twoarg negative",
@@ -686,6 +747,7 @@ ASM_TESTS = [
         """,
         "B400 B5FF B6EE",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "jump to register twoarg negative extreme",
@@ -695,6 +757,7 @@ ASM_TESTS = [
         """,
         "B781 B880",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "offset empty",
@@ -703,6 +766,7 @@ ASM_TESTS = [
         """,
         "0000",
         [],
+        dict(),
     ),
     (
         "offset basic",
@@ -712,6 +776,7 @@ ASM_TESTS = [
         """,
         "0000 " * 0x1234 + "102A",
         [],
+        {0x1234: 2},
     ),
     (
         "offset low",
@@ -722,6 +787,7 @@ ASM_TESTS = [
         """,
         "3123 0000 0000 102A",
         [],
+        {0: 1, 3: 3},
     ),
     (
         "offset weird order",
@@ -733,6 +799,7 @@ ASM_TESTS = [
         """,
         "3123 0000 0000 102A",
         [],
+        {0: 4, 3: 2},
     ),
     (
         "offset extreme",
@@ -743,6 +810,7 @@ ASM_TESTS = [
         """,
         "3456" + (" 0000" * (0x1_0000 - 2)) + " 3123",
         ["line 2: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 3, 0xFFFF: 2},
     ),
     (
         "literal simple",
@@ -754,6 +822,7 @@ ASM_TESTS = [
         """,
         "ABCD 04D2 0000 FFF7",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "literal extreme",
@@ -764,6 +833,7 @@ ASM_TESTS = [
         """,
         "FFFF 8000 8001",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "label simple",
@@ -775,6 +845,7 @@ ASM_TESTS = [
         """,
         "102A",
         [],
+        {0: 2},
     ),
     (
         "label multi",
@@ -791,6 +862,7 @@ ASM_TESTS = [
         """,
         "102A 3456",
         [],
+        {0: 3, 1: 5},
     ),
     (
         "branch label low negative",
@@ -802,6 +874,7 @@ ASM_TESTS = [
         """,
         "3210 3333 9480",
         [],
+        {0: 1, 1: 3, 2: 4},
     ),
     (
         "branch label medium negative",
@@ -814,6 +887,7 @@ ASM_TESTS = [
         """,
         "3333 3444 3555 9482",
         [],
+        {0: 2, 1: 3, 2: 4, 3: 5},
     ),
     (
         "branch label barely-overflow negative",
@@ -826,6 +900,7 @@ ASM_TESTS = [
         """,
         "102A 3333" + (" 0000" * (65536 - 3)) + " 9400",
         ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 3, 0xFFFF: 5},
     ),
     (
         "branch label overflow negative",
@@ -839,6 +914,7 @@ ASM_TESTS = [
         """,
         "102A 3333" + (" 0000" * (65536 - 4)) + " 9401 3579",
         ["line 6: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 3, 0xFFFE: 5, 0xFFFF: 6},
     ),
     (
         "branch label extreme negative",
@@ -851,6 +927,7 @@ ASM_TESTS = [
         """,
         "102A 3333" + (" 0000" * (0x81 - 2)) + " 94FF",
         [],
+        {0: 1, 1: 3, 0x0081: 5},
     ),
     (
         "branch label negative to undef",
@@ -862,6 +939,7 @@ ASM_TESTS = [
         """,
         "102A 0000 0000 0000 0000 9483",
         [],
+        {0: 1, 5: 4},
     ),
     (
         "branch label low positive",
@@ -873,6 +951,7 @@ ASM_TESTS = [
         """,
         "9600 3222 3333",
         [],
+        {0: 1, 1: 2, 2: 4},
     ),
     (
         "branch label medium positive",
@@ -887,6 +966,7 @@ ASM_TESTS = [
         """,
         "3333 9702 3444 3555 3666 3777",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 7},
     ),
     (
         "branch label barely-overflow positive",
@@ -899,6 +979,7 @@ ASM_TESTS = [
         """,
         "9480 102A" + (" 0000" * (65536 - 3)) + " 3333",
         ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 2, 0xFFFF: 5},
     ),
     (
         "branch label overflow positive",
@@ -914,6 +995,7 @@ ASM_TESTS = [
         """,
         "3333 3456 9483 102A" + (" 0000" * (65536 - 6)) + " 3666 3210",
         ["line 8: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 2, 2: 3, 3: 4, 0xFFFE: 7, 0xFFFF: 8},
     ),
     (
         "branch label extreme positive",
@@ -927,6 +1009,7 @@ ASM_TESTS = [
         """,
         "3333 947F 3456" + (" 0000" * (0x82 - 3)) + " 5F00",
         [],
+        {0: 1, 1: 2, 2: 3, 0x82: 6},
     ),
     (
         "branch label positive to undef",
@@ -938,6 +1021,7 @@ ASM_TESTS = [
         """,
         "9403 102A",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "jump label low negative",
@@ -949,6 +1033,7 @@ ASM_TESTS = [
         """,
         "3210 3333 A800",
         [],
+        {0: 1, 1: 3, 2: 4},
     ),
     (
         "jump label medium negative",
@@ -961,6 +1046,7 @@ ASM_TESTS = [
         """,
         "3333 3444 3555 A802",
         [],
+        {0: 2, 1: 3, 2: 4, 3: 5},
     ),
     (
         "jump label barely-overflow negative",
@@ -973,6 +1059,7 @@ ASM_TESTS = [
         """,
         "102A 3333" + (" 0000" * (65536 - 3)) + " A000",
         ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 3, 0xFFFF: 5},
     ),
     (
         "jump label overflow negative",
@@ -986,6 +1073,7 @@ ASM_TESTS = [
         """,
         "102A 3333" + (" 0000" * (65536 - 4)) + " A001 3579",
         ["line 6: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 3, 0xFFFE: 5, 0xFFFF: 6},
     ),
     (
         "jump label extreme negative",
@@ -998,6 +1086,7 @@ ASM_TESTS = [
         """,
         "102A 3333" + (" 0000" * (0x801 - 2)) + " AFFF",
         [],
+        {0: 1, 1: 3, 0x0801: 5},
     ),
     (
         "jump label negative to undef",
@@ -1009,6 +1098,7 @@ ASM_TESTS = [
         """,
         "102A 0000 0000 0000 0000 A803",
         [],
+        {0: 1, 5: 4},
     ),
     (
         "jump label low positive",
@@ -1020,6 +1110,7 @@ ASM_TESTS = [
         """,
         "A000 3222 3333",
         [],
+        {0: 1, 1: 2, 2: 4},
     ),
     (
         "jump label medium positive",
@@ -1034,6 +1125,7 @@ ASM_TESTS = [
         """,
         "3333 A002 3444 3555 3666 3777",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 7},
     ),
     (
         "jump label barely-overflow positive",
@@ -1046,6 +1138,7 @@ ASM_TESTS = [
         """,
         "A800 102A" + (" 0000" * (65536 - 3)) + " 3333",
         ["line 5: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 2, 0xFFFF: 5},
     ),
     (
         "jump label overflow positive",
@@ -1061,6 +1154,7 @@ ASM_TESTS = [
         """,
         "3333 3456 A803 102A" + (" 0000" * (65536 - 6)) + " 3666 3210",
         ["line 8: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 2, 2: 3, 3: 4, 0xFFFE: 7, 0xFFFF: 8},
     ),
     (
         "jump label extreme positive",
@@ -1074,6 +1168,7 @@ ASM_TESTS = [
         """,
         "3333 A7FF 3456" + (" 0000" * (0x802 - 3)) + " 5F00",
         [],
+        {0: 1, 1: 2, 2: 3, 0x0802: 6},
     ),
     (
         "jump label positive to undef",
@@ -1085,6 +1180,7 @@ ASM_TESTS = [
         """,
         "A003 102A",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "jump label offset, negative",
@@ -1097,6 +1193,7 @@ ASM_TESTS = [
         """,
         "3456 A004 102A 3210",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "jump label offset, positive",
@@ -1109,6 +1206,7 @@ ASM_TESTS = [
         """,
         "3456 102A 3210 A803",
         [],
+        {0: 1, 1: 3, 2: 4, 3: 5},
     ),
     (
         "offset with label zero",
@@ -1121,6 +1219,7 @@ ASM_TESTS = [
         """,
         "3333 0000 0000 102A",
         [],
+        {0: 5, 3: 3},
     ),
     (
         "offset with label nonzero",
@@ -1134,6 +1233,7 @@ ASM_TESTS = [
         """,
         "3210 3333 0000 102A",
         [],
+        {0: 1, 3: 4, 1: 6},
     ),
     (
         ".offset with label multi",
@@ -1148,6 +1248,7 @@ ASM_TESTS = [
         """,
         "3000 102A",
         [],
+        {0: 1, 1: 7},
     ),
     (
         "hash zero",
@@ -1156,6 +1257,7 @@ ASM_TESTS = [
         """,
         "0000",
         [],
+        dict(),
     ),
     (
         "hash zero lowercase",
@@ -1164,6 +1266,7 @@ ASM_TESTS = [
         """,
         "0000",
         [],
+        dict(),
     ),
     (
         "hash ret before",
@@ -1173,6 +1276,7 @@ ASM_TESTS = [
         """,
         "102A 0000",
         [],
+        {0: 2},
     ),
     (
         "hash ret after",
@@ -1182,6 +1286,7 @@ ASM_TESTS = [
         """,
         "102A 0000",
         [],
+        {0: 1},
     ),
     (
         "hash ret after, zero-word",
@@ -1192,6 +1297,7 @@ ASM_TESTS = [
         """,
         "102A 0000",
         [],
+        {0: 1, 1: 3},
     ),
     (
         "pseudo-instruction bgt immediate",
@@ -1200,6 +1306,7 @@ ASM_TESTS = [
         """,
         "8212 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bgt label",
@@ -1210,6 +1317,7 @@ ASM_TESTS = [
         """,
         "82EF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bgts immediate",
@@ -1218,6 +1326,7 @@ ASM_TESTS = [
         """,
         "8312 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bgts label",
@@ -1228,6 +1337,7 @@ ASM_TESTS = [
         """,
         "83EF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction beq immediate",
@@ -1236,6 +1346,7 @@ ASM_TESTS = [
         """,
         "8412 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction beq label",
@@ -1246,6 +1357,7 @@ ASM_TESTS = [
         """,
         "84EF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bge immediate",
@@ -1254,6 +1366,7 @@ ASM_TESTS = [
         """,
         "8612 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bge label",
@@ -1264,6 +1377,7 @@ ASM_TESTS = [
         """,
         "86EF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bges immediate",
@@ -1272,6 +1386,7 @@ ASM_TESTS = [
         """,
         "8712 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bges label",
@@ -1282,6 +1397,7 @@ ASM_TESTS = [
         """,
         "87EF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction blt immediate",
@@ -1290,6 +1406,7 @@ ASM_TESTS = [
         """,
         "8812 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction blt label",
@@ -1300,6 +1417,7 @@ ASM_TESTS = [
         """,
         "88EF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction blts immediate",
@@ -1308,6 +1426,7 @@ ASM_TESTS = [
         """,
         "8912 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction blts label",
@@ -1318,6 +1437,7 @@ ASM_TESTS = [
         """,
         "89EF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bne immediate",
@@ -1326,6 +1446,7 @@ ASM_TESTS = [
         """,
         "8A12 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bne label",
@@ -1336,6 +1457,7 @@ ASM_TESTS = [
         """,
         "8AEF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction ble immediate",
@@ -1344,6 +1466,7 @@ ASM_TESTS = [
         """,
         "8C12 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction ble label",
@@ -1354,6 +1477,7 @@ ASM_TESTS = [
         """,
         "8CEF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bles immediate",
@@ -1362,6 +1486,7 @@ ASM_TESTS = [
         """,
         "8D12 922b",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction bles label",
@@ -1372,6 +1497,7 @@ ASM_TESTS = [
         """,
         "8DEF 9F12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "pseudo-instruction eqz",
@@ -1382,6 +1508,7 @@ ASM_TESTS = [
         """,
         "8400 8466 84FF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "pseudo-instruction nez",
@@ -1392,6 +1519,7 @@ ASM_TESTS = [
         """,
         "8A00 8A66 8AFF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "pseudo-instruction ltsz",
@@ -1402,6 +1530,7 @@ ASM_TESTS = [
         """,
         "8900 8966 89FF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "pseudo-instruction lesz",
@@ -1412,6 +1541,7 @@ ASM_TESTS = [
         """,
         "8D00 8D66 8DFF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "pseudo-instruction gtsz",
@@ -1422,6 +1552,7 @@ ASM_TESTS = [
         """,
         "8300 8366 83FF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "pseudo-instruction gesz",
@@ -1432,6 +1563,7 @@ ASM_TESTS = [
         """,
         "8700 8766 87FF",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "pseudo-instruction beqz",
@@ -1442,6 +1574,7 @@ ASM_TESTS = [
         """,
         "8400 9028 8466 9628 84FF 9F28",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3},
     ),
     (
         "pseudo-instruction bnez",
@@ -1452,6 +1585,7 @@ ASM_TESTS = [
         """,
         "9028 9628 9F28",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "pseudo-instruction bltsz",
@@ -1462,6 +1596,7 @@ ASM_TESTS = [
         """,
         "8900 9028 8966 9628 89FF 9F28",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3},
     ),
     (
         "pseudo-instruction blesz",
@@ -1472,6 +1607,7 @@ ASM_TESTS = [
         """,
         "8D00 9028 8D66 9628 8DFF 9F28",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3},
     ),
     (
         "pseudo-instruction bgtsz",
@@ -1482,6 +1618,7 @@ ASM_TESTS = [
         """,
         "8300 9028 8366 9628 83FF 9F28",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3},
     ),
     (
         "pseudo-instruction bgesz",
@@ -1492,6 +1629,7 @@ ASM_TESTS = [
         """,
         "8700 9028 8766 9628 87FF 9F28",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3},
     ),
     (
         "pseudo-instruction bgesz to label",
@@ -1504,6 +1642,7 @@ ASM_TESTS = [
         """,
         "8700 9004 8766 9602 87FF 9F00 102A",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3, 6: 4},
     ),
     (
         "longbranch to label manual",
@@ -1519,6 +1658,7 @@ ASM_TESTS = [
         """,
         "8400 9000 A2FC 8455 9500 A2F9",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "longbranch to label",
@@ -1533,6 +1673,7 @@ ASM_TESTS = [
             "line 1: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
             "line 2: Command 'lb' inverts the condition register, and ends up needing three instructions. Consider using a combined longbranch-compare instead (e.g. lbles).",
         ],
+        {0: 1, 1: 1, 2: 1, 3: 2, 4: 2, 5: 2},
     ),
     (
         "longbranch condition tworeg, lbeq to imm positive",
@@ -1541,6 +1682,7 @@ ASM_TESTS = [
         """,
         "8A01 9100 A121",
         [],
+        {0: 1, 1: 1, 2: 1},
     ),
     (
         "longbranch condition tworeg, lbne to imm negative",
@@ -1549,6 +1691,7 @@ ASM_TESTS = [
         """,
         "84AB 9B00 AA33",
         [],
+        {0: 1, 1: 1, 2: 1},
     ),
     (
         "longbranch condition tworeg, lblt to label forward positive",
@@ -1561,6 +1704,7 @@ ASM_TESTS = [
         # Note that this cannot be done in a single instruction, as `b` also carries a sign bit.
         "8689 9900 A0A6 5F00",
         [],
+        {0: 1, 1: 1, 2: 1, 3: 2},
     ),
     (
         "longbranch condition tworeg, lbles to label forward negative",
@@ -1573,6 +1717,7 @@ ASM_TESTS = [
         """,
         "0000" * 0x100 + "8367 9700 A901 5F00",
         [],
+        {0x100: 2, 0x101: 2, 0x102: 2, 0x103: 3},
     ),
     (
         "longbranch condition tworeg, lbgts to label backward positive",
@@ -1585,6 +1730,7 @@ ASM_TESTS = [
         """,
         "8D93 9300 A0FC 5F00",
         [],
+        {0: 4, 1: 4, 2: 4, 3: 5},
     ),
     (
         "longbranch condition tworeg, lbge to label backward negative",
@@ -1596,6 +1742,7 @@ ASM_TESTS = [
         """,
         "0000" * 0x400 + "88FE 9E00 AC01 5F00",
         [],
+        {0x400: 3, 0x401: 3, 0x402: 3, 0x403: 4},
     ),
     (
         "longbranch condition zero, lbltsz to imm positive",
@@ -1604,6 +1751,7 @@ ASM_TESTS = [
         """,
         "8700 9000 A121",
         [],
+        {0: 1, 1: 1, 2: 1},
     ),
     (
         "longbranch condition zero, lbeqz to imm positive",
@@ -1612,6 +1760,7 @@ ASM_TESTS = [
         """,
         "9000 A121",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "longbranch condition zero, lbnez to imm negative",
@@ -1620,6 +1769,7 @@ ASM_TESTS = [
         """,
         "84AA 9A00 AA33",
         [],
+        {0: 1, 1: 1, 2: 1},
     ),
     (
         "longbranch condition zero, lbltsz to label forward positive",
@@ -1632,6 +1782,7 @@ ASM_TESTS = [
         # Note that this cannot be done in a single instruction, as `b` also carries a sign bit.
         "8788 9800 A0A6 5F00",
         [],
+        {0: 1, 1: 1, 2: 1, 3: 2},
     ),
     (
         "longbranch condition zero, lblesz to label forward negative",
@@ -1644,6 +1795,7 @@ ASM_TESTS = [
         """,
         "0000" * 0x100 + "8366 9600 A901 5F00",
         [],
+        {0x100: 2, 0x101: 2, 0x102: 2, 0x103: 3},
     ),
     (
         "longbranch condition zero, lbgtsz to label backward positive",
@@ -1656,6 +1808,7 @@ ASM_TESTS = [
         """,
         "8D99 9900 A0FC 5F00",
         [],
+        {0: 4, 1: 4, 2: 4, 3: 5},
     ),
     (
         "longbranch condition zero, lbgesz to label backward negative",
@@ -1667,6 +1820,7 @@ ASM_TESTS = [
         """,
         "0000" * 0x400 + "89FF 9F00 AC01 5F00",
         [],
+        {0x400: 3, 0x401: 3, 0x402: 3, 0x403: 4},
     ),
     (
         "branch condition zero, bnez optimization immediate",
@@ -1676,6 +1830,7 @@ ASM_TESTS = [
         """,
         "9308 5F00",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "branch condition zero, bnez optimization label",
@@ -1687,6 +1842,7 @@ ASM_TESTS = [
         """,
         "9C4E 5F00",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "longbranch condition zero, lbeqz optimization immediate",
@@ -1696,6 +1852,7 @@ ASM_TESTS = [
         """,
         "9300 A0A8 5F00",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "longbranch condition zero, lbeqz optimization label",
@@ -1707,6 +1864,7 @@ ASM_TESTS = [
         """,
         "9C00 A120 5F00",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
 ]
 
@@ -3471,6 +3629,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "B005 5F00 5F00 5F00 5F00 102D",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6},
     ),
     (
         "from test_time_long",
@@ -3483,6 +3642,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "37AB 5877 9780 102D 102A",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5},
     ),
     (
         "from test_time_very_long",
@@ -3502,6 +3662,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3705 47B5 5F71 5F72 5822 9280 5811 9183 102D 102A",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 4, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 11},
     ),
     (
         "from test_store_data_doc",
@@ -3512,6 +3673,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3234 4212 3578 4556 2025",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3},
     ),
     (
         "from test_store_data_simple",
@@ -3522,6 +3684,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3245 3567 2025",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "from test_load_data_doc",
@@ -3531,6 +3694,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3234 4212 2125",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "from test_load_data_simple",
@@ -3540,6 +3704,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3205 2125",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "from test_load_instruction_doc",
@@ -3549,6 +3714,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3234 4212 2225",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "from test_load_instruction_simple",
@@ -3558,6 +3724,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3205 2225",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "from test_load_imm_high_doc_setup",
@@ -3566,6 +3733,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3A34 4A12",
         [],
+        {0: 1, 1: 1},
     ),
     (
         "from test_load_imm_high_doc",
@@ -3575,6 +3743,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3A34 4A12 4A56",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "from test_load_imm_high_simple",
@@ -3583,6 +3752,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "45AB",
         [],
+        {0: 1},
     ),
     (
         "from test_jump_register_doc1",
@@ -3592,6 +3762,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "4712 B734",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "from test_jump_register_doc2",
@@ -3601,6 +3772,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3734 4712 B7FF",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "from test_jump_register_simple",
@@ -3609,6 +3781,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "B042",
         [],
+        {0: 1},
     ),
     (
         "from test_jump_register_overflow",
@@ -3618,6 +3791,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "37FF B710",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "from test_jump_register_underflow",
@@ -3626,6 +3800,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "B080",
         [],
+        {0: 1},
     ),
     (
         "from test_jump_register_extreme_positive_imm",
@@ -3634,6 +3809,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "B07F",
         [],
+        {0: 1},
     ),
     (
         "from test_jump_register_extreme_negative_imm",
@@ -3642,6 +3818,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "B080",
         [],
+        {0: 1},
     ),
     (
         "from test_jump_register_extreme_positive",
@@ -3651,6 +3828,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "37FF B77F",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "from test_jump_register_extreme_positive_nowrap",
@@ -3660,6 +3838,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "37FF 477F B77F",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "from test_jump_register_extreme_negative",
@@ -3669,6 +3848,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "37FF B780",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "from test_jump_register_extreme_negative_signedish",
@@ -3679,6 +3859,7 @@ TESTS_INSTRUCTIONS_RS = [
         # The example doesn't use 3700, but the assembler shouldn't make such optimizations.
         "3700 4780 B780",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "from test_program_counter_wraps",
@@ -3690,6 +3871,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "37FF B700 " + ("0000 " * (65536 - 3)) + "3412",
         ["line 4: segment pointer overflow, now at 0x0000 (non-fatal)"],
+        {0: 1, 1: 2, 0xFFFF: 4},
     ),
     (
         "from test_jump_imm_doc1",
@@ -3701,6 +3883,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "4350 B300 " + ("0000 " * (0x5000 - 2)) + "A123",
         [],
+        {0: 1, 1: 2, 0x5000: 4},
     ),
     (
         "from test_jump_imm_doc2",
@@ -3712,6 +3895,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "4312 B334 " + ("0000 " * (0x1234 - 2)) + "A800",
         [],
+        {0: 1, 1: 2, 0x1234: 4},
     ),
     (
         "from test_jump_immediate_overflow",
@@ -3724,6 +3908,7 @@ TESTS_INSTRUCTIONS_RS = [
         # The example doesn't use 3300, but the assembler shouldn't make such optimizations.
         "3300 43FF B300 " + ("0000 " * (0xFF00 - 3)) + "A200" + (" 0000" * 0xFF),
         [],
+        {0: 1, 1: 1, 2: 2, 0xFF00: 4},
     ),
     (
         "from test_jump_immediate_underflow",
@@ -3732,6 +3917,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "A830",
         [],
+        {0: 1},
     ),
     (
         "from test_jump_immediate_extreme_positive",
@@ -3740,6 +3926,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "A7FF",
         [],
+        {0: 1},
     ),
     (
         "from test_jump_immediate_extreme_negative",
@@ -3748,6 +3935,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "AFFF",
         [],
+        {0: 1},
     ),
     (
         "from test_branch_doc1",
@@ -3760,6 +3948,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3301 4712 B734 " + ("0000 " * (0x1234 - 3)) + "9380",
         [],
+        {0: 1, 1: 2, 2: 3, 0x1234: 5},
     ),
     (
         "from test_branch_doc2",
@@ -3768,6 +3957,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "9580",
         [],
+        {0: 1},
     ),
     (
         "from test_compare_doc",
@@ -3778,6 +3968,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3305 3407 8A34",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "from test_unary_doc1",
@@ -3787,6 +3978,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3534 4512 5A56",
         [],
+        {0: 1, 1: 1, 2: 2},
     ),
     (
         "from test_unary_doc2",
@@ -3796,6 +3988,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3329 5933",
         [],
+        {0: 1, 1: 2},
     ),
     (
         "from test_unary_rnd_inclusive",
@@ -3807,6 +4000,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3105 5E12 8C21 8620",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "from test_unary_rnd_extreme",
@@ -3818,6 +4012,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "31FF 5E12 8421 8420",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
     ),
     (
         "from test_binary_doc",
@@ -3828,6 +4023,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3505 3607 6256",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "from test_fibonacci",
@@ -3846,6 +4042,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3018 3101 6012 5800 2002 6021 5800 2001 9085 102A",
         [],
+        {0: 1, 1: 2, 2: 4, 3: 5, 4: 6, 5: 7, 6: 8, 7: 9, 8: 10, 9: 11},
     ),
     (
         "from test_rnd_(not_)exec",
@@ -3856,6 +4053,7 @@ TESTS_INSTRUCTIONS_RS = [
         """,
         "3007 5F00 5E02",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
 ]
 
@@ -3870,6 +4068,7 @@ TESTS_CONNECT4_RS = [
         """,
         "3037 4013 37CD 47AB 2077 102A",
         [],
+        {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 4},
     ),
     (
         "from test_board_full player one",
@@ -3882,6 +4081,7 @@ TESTS_CONNECT4_RS = [
         """,
         "3189 2111 3007 6610 102A",
         [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5},
     ),
     (
         "from test_board_full player two",
@@ -3906,6 +4106,7 @@ TESTS_CONNECT4_RS = [
         """,
         "3189 2111 9101 3003 102A 3012 8610 9000 5811 3007 6610 102A",
         [],
+        -1,  # Mapping too long, not interesting
     ),
     (
         "from test_determine_answer_random",
@@ -3916,6 +4117,7 @@ TESTS_CONNECT4_RS = [
         """,
         "3006 5E01 102A",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
     (
         "from test_two_random",
@@ -3926,6 +4128,7 @@ TESTS_CONNECT4_RS = [
         """,
         "5E11 3001 102A",
         [],
+        {0: 1, 1: 2, 2: 3},
     ),
 ]
 
@@ -3938,12 +4141,12 @@ def uphex(bytes_or_none):
 
 class AsmTests(unittest.TestCase):
     def test_empty(self):
-        empty_result = asm.CompilationResult(b"\x00" * asm.SEGMENT_LENGTH, [])
+        empty_result = asm.CompilationResult(b"\x00" * asm.SEGMENT_LENGTH, [], dict())
         self.assertEqual(empty_result, asm.compile_assembly(""))
         self.assertEqual(empty_result, asm.compile_assembly("\n"))
 
     def test_testsuite_names(self):
-        name_counter = Counter(name for name, _, _, _ in ASM_TESTS)
+        name_counter = Counter(name for name, _, _, _, _ in ASM_TESTS)
         for name, count in name_counter.items():
             with self.subTest(t="ASM_TESTS", name=name):
                 self.assertEqual(count, 1)
@@ -3951,19 +4154,25 @@ class AsmTests(unittest.TestCase):
         for name, count in name_counter.items():
             with self.subTest(t="NEGATIVE_TESTS", name=name):
                 self.assertEqual(count, 1)
-        name_counter = Counter(name for name, _, _, _ in TESTS_INSTRUCTIONS_RS)
+        name_counter = Counter(name for name, _, _, _, _ in TESTS_INSTRUCTIONS_RS)
         for name, count in name_counter.items():
             with self.subTest(t="TESTS_INSTRUCTIONS_RS", name=name):
                 self.assertEqual(count, 1)
-        name_counter = Counter(name for name, _, _, _ in TESTS_CONNECT4_RS)
+        name_counter = Counter(name for name, _, _, _, _ in TESTS_CONNECT4_RS)
         for name, count in name_counter.items():
             with self.subTest(t="TESTS_CONNECT4_RS", name=name):
                 self.assertEqual(count, 1)
 
-    def assert_assembly(self, asm_text, expected_segment, expected_error_log):
+    def assert_assembly(
+        self, asm_text, expected_segment, expected_error_log, expected_mapping
+    ):
         actual_result = asm.compile_assembly(asm_text)
         self.assertEqual(expected_error_log, actual_result.error_log)
         self.assertEqual(uphex(expected_segment), uphex(actual_result.segment))
+        if isinstance(expected_mapping, int) and expected_mapping == -1:
+            self.assertIsNotNone(actual_result.mapping)
+        else:
+            self.assertEqual(expected_mapping, actual_result.mapping)
 
     def parse_and_extend_hex(self, code_prefix_hex):
         segment = bytearray.fromhex(code_prefix_hex)
@@ -3979,30 +4188,54 @@ class AsmTests(unittest.TestCase):
 
     def test_hardcoded(self):
         for i, data_tuple in enumerate(ASM_TESTS):
-            name, asm_text, code_prefix_hex, expected_error_log = data_tuple
+            (
+                name,
+                asm_text,
+                code_prefix_hex,
+                expected_error_log,
+                expected_mapping,
+            ) = data_tuple
             with self.subTest(i=i, name=name):
                 expected_segment = self.parse_and_extend_hex(code_prefix_hex)
-                self.assert_assembly(asm_text, expected_segment, expected_error_log)
+                self.assert_assembly(
+                    asm_text, expected_segment, expected_error_log, expected_mapping
+                )
 
     def test_negative(self):
         for i, data_tuple in enumerate(NEGATIVE_TESTS):
             name, asm_text, expected_error_log = data_tuple
             with self.subTest(i=i, name=name):
-                self.assert_assembly(asm_text, None, expected_error_log)
+                self.assert_assembly(asm_text, None, expected_error_log, None)
 
     def test_from_instructions_rs(self):
         for i, data_tuple in enumerate(TESTS_INSTRUCTIONS_RS):
-            name, asm_text, code_prefix_hex, expected_error_log = data_tuple
+            (
+                name,
+                asm_text,
+                code_prefix_hex,
+                expected_error_log,
+                expected_mapping,
+            ) = data_tuple
             with self.subTest(i=i, name=name):
                 expected_segment = self.parse_and_extend_hex(code_prefix_hex)
-                self.assert_assembly(asm_text, expected_segment, expected_error_log)
+                self.assert_assembly(
+                    asm_text, expected_segment, expected_error_log, expected_mapping
+                )
 
     def test_from_connect4_rs(self):
         for i, data_tuple in enumerate(TESTS_CONNECT4_RS):
-            name, asm_text, code_prefix_hex, expected_error_log = data_tuple
+            (
+                name,
+                asm_text,
+                code_prefix_hex,
+                expected_error_log,
+                expected_mapping,
+            ) = data_tuple
             with self.subTest(i=i, name=name):
                 expected_segment = self.parse_and_extend_hex(code_prefix_hex)
-                self.assert_assembly(asm_text, expected_segment, expected_error_log)
+                self.assert_assembly(
+                    asm_text, expected_segment, expected_error_log, expected_mapping
+                )
 
 
 if __name__ == "__main__":

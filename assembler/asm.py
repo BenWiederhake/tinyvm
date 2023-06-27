@@ -4,6 +4,7 @@ from enum import Enum
 import argparse
 import difflib
 import hashlib
+import json
 import sys
 
 SEGMENT_LENGTH = 131072
@@ -116,6 +117,7 @@ class Assembler:
         self.forward_references = dict()
         self.error_log = []
         self.expect_hash = None  # Or tuple (line, SHA256 hex)
+        self.mapping = dict()  # instruction offset to line number
 
     def error(self, msg):
         self.error_log.append(f"line {self.current_lineno}: {msg}")
@@ -141,6 +143,8 @@ class Assembler:
                 f"Attempted to overwrite word 0x{self.segment_words[self.current_pointer]:04X} at 0x{self.current_pointer:04X} with 0x{word:04X}."
             )
         self.segment_words[self.current_pointer] = word
+        assert self.current_pointer not in self.mapping
+        self.mapping[self.current_pointer] = self.current_lineno
         self.advance(1)
         return True
 
@@ -1447,12 +1451,13 @@ class Assembler:
 
 
 class CompilationResult:
-    def __init__(self, segment, error_log):
+    def __init__(self, segment, error_log, mapping):
         self.segment = segment
         self.error_log = error_log
+        self.mapping = mapping
 
     def __eq__(self, other):
-        return self.segment == other.segment and self.error_log == other.error_log
+        return self.__dict__ == other.__dict__
 
 
 def compile_assembly(asm_text):
@@ -1464,8 +1469,10 @@ def compile_assembly(asm_text):
     asm = Assembler()
     for i, line in enumerate(asm_text.split("\n")):
         if not asm.parse_line(line, i + 1):
-            return CompilationResult(None, asm.error_log)
-    return CompilationResult(asm.segment_bytes(), asm.error_log)
+            return CompilationResult(None, asm.error_log, None)
+    segment = asm.segment_bytes()
+    mapping = asm.mapping if segment is not None else None
+    return CompilationResult(segment, asm.error_log, mapping)
 
 
 def run_on_files(args):
@@ -1477,6 +1484,9 @@ def run_on_files(args):
         return False
     assert len(result.segment) == 2 * (1 << 16)  # 64K two-byte words
     args.outfile.write(result.segment)
+    if args.mapfile is not None:
+        write_map = {f"{k:04X}": v for k, v in result.mapping.items()}
+        json.dump(write_map, args.mapfile, indent=0, sort_keys=True)
     return True
 
 
@@ -1495,6 +1505,13 @@ def make_parser(progname):
         type=argparse.FileType("wb"),
         default=sys.stdout.buffer,
         metavar="/path/to/output.segment",
+    )
+    parser.add_argument(
+        "mapfile",
+        nargs="?",
+        type=argparse.FileType("w"),
+        default=None,
+        metavar="/path/to/output.map.json",
     )
     return parser
 
