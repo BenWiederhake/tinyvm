@@ -896,7 +896,8 @@ class Assembler:
 
     @asm_command
     def parse_command_bnez(self, command, args):
-        return self.branch_zero_pseudo_command(0xA00, command, args)
+        # Optimization: Don't call branch_zero_pseudo_command here, because we don't need to prepare/compare the reg_value at all.
+        return self.parse_command_b(command, args)
 
     @asm_command
     def parse_command_bgtsz(self, command, args):
@@ -1106,11 +1107,31 @@ class Assembler:
             allow_short=False,
         )
         # Overall, this method folds the inversion necessary for the "medium-length branch" into the
-        # comparison instruction, meaning that i.e. lbeqz only takes one instruction more than beqz.
+        # comparison instruction, meaning that i.e. lbltsz only takes one instruction more than bltsz.
 
     @asm_command
     def parse_command_lbeqz(self, command, args):
-        return self.parse_command_lb_cmp_zero(0x0400, command, args)
+        # Optimization: Don't call parse_command_lb_cmp_zero, because we don't need to prepare/compare the reg_value at all.
+        arg_list = [e.strip() for e in args.split(" ", 1)]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two space-separated register arguments, got {arg_list} instead."
+            )
+        # In case some maniac writes more than one space, like "lbeqz r4  r5":
+        # FIXME: Doesn't quite work!
+        arg_list[1] = arg_list[1].strip()
+        reg_value = self.parse_reg(arg_list[0], f"first argument to {command}")
+        if reg_value is None:
+            # Error already reported
+            return False
+        # Intentionally emit no comparison instruction here.
+        return self.emit_long_branch_inverted_to_imm_or_lab(
+            command,
+            reg_value,
+            arg_list[1],
+            f"second argument to {command}",
+            allow_short=False,
+        )
 
     @asm_command
     def parse_command_lbnez(self, command, args):

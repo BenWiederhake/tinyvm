@@ -1450,7 +1450,7 @@ ASM_TESTS = [
         bnez r6 +42
         bnez r15 +42
         """,
-        "8A00 9028 8A66 9628 8AFF 9F28",
+        "9028 9628 9F28",
         [],
     ),
     (
@@ -1598,11 +1598,19 @@ ASM_TESTS = [
         [],
     ),
     (
+        "longbranch condition zero, lbltsz to imm positive",
+        """\
+        lbltsz r0 +0x123
+        """,
+        "8700 9000 A121",
+        [],
+    ),
+    (
         "longbranch condition zero, lbeqz to imm positive",
         """\
         lbeqz r0 +0x123
         """,
-        "8A00 9000 A121",
+        "9000 A121",
         [],
     ),
     (
@@ -1658,6 +1666,46 @@ ASM_TESTS = [
         nop
         """,
         "0000" * 0x400 + "89FF 9F00 AC01 5F00",
+        [],
+    ),
+    (
+        "branch condition zero, bnez optimization immediate",
+        """\
+        bnez r3 +10
+        nop
+        """,
+        "9308 5F00",
+        [],
+    ),
+    (
+        "branch condition zero, bnez optimization label",
+        """\
+        bnez r12 _foo
+        nop
+        .offset 0x50
+        .label _foo
+        """,
+        "9C4E 5F00",
+        [],
+    ),
+    (
+        "longbranch condition zero, lbeqz optimization immediate",
+        """\
+        lbeqz r3 +0xAA
+        nop
+        """,
+        "9300 A0A8 5F00",
+        [],
+    ),
+    (
+        "longbranch condition zero, lbeqz optimization label",
+        """\
+        lbeqz r12 _foo
+        nop
+        .offset 0x123
+        .label _foo
+        """,
+        "9C00 A120 5F00",
         [],
     ),
 ]

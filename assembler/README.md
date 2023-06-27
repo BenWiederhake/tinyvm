@@ -149,11 +149,12 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
 - `bgt reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
     * Also with other comparisons: `bgts`, `beq`, `bge`, `bges`, `blt`, `blts`, `bne`, `ble`, `bles`
     * Also with the zero comparisons: `bgtsz`, `beqz`, `bgesz`, `bltsz`, `bnez`, `blesz`
-    * The assembler instead emits the two instructions:
+    * The assembler *usually* instead emits the two instructions:
       ```
       gt reg_lhs reg_rhs_dest
       b reg_rhs_dest ( imm_offset | _lab_destination )
       ```
+    * Except in the case of `bnez`, which actually simplifies to a single instruction: `b reg_rhs_dest ( imm_offset | _lab_destination )`
     * The same restrictions as to `b` apply:
         * This pseudo-instruction only support branch-offsets in the range \[-128, +129\], and the 129 is not a typo.
         * Support for longer jumps is currently missing, but should ideally be a separate instruction (to preserve predictability).
@@ -166,11 +167,16 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
     * If the extended range is really necessary, you might want to use one of the following pseudo-instructions to merge it with a preceding comparison:
         * `( lbeq | lbge | lbges | lbgt | lbgts | lble | lbles | lblt | lblts | lbne ) reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
         * `( lbeqz | lbgesz | lbgtsz | lblesz | lbltsz | lbnez ) reg_value ( imm_offset | _lab_destination )`
-        * Note that, again, `reg_rhs_dest` (or `reg_value`) is overwritten with the *opposite* of the resulting boolean value.
-        * These medium-longbranch-comparison pseudo-instructions will compile down to just three instructions:
+        * Note that, again, `reg_rhs_dest` (or `reg_value`) is usually overwritten with the *opposite* of the resulting boolean value.
+        * These medium-longbranch-comparison pseudo-instructions will usually compile down to just three instructions:
           ```
           cmp_opposite reg_lhs reg_rhs_dest  # or "cmp_opposite_z reg_value"
           b reg_rhs_dest +2
+          j ( imm_offset | _lab_destination )
+          ```
+        * Except in the case of `lbeqz`, which actually simplifies to two instructions, because `nez` is not required:
+          ```
+          b reg_value +2
           j ( imm_offset | _lab_destination )
           ```
     * All forms result in the same kind of instruction sequence. Therefore, they only support branch-offsets in the range \[-2048, 2049\], and the 2049 is not a typo.
