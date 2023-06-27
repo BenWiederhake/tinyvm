@@ -923,7 +923,7 @@ class Assembler:
         if not (-128 <= offset_value <= 129):
             return self.error(
                 f"Command '{command}' can only branch by offsets in [-128, 129], but not by {offset_value}."
-                " Try using 'j' instead, which supports larger jumps."
+                " Try using 'j' instead, which supports larger jumps, or an 'lb*' pseudo-instruction."
             )
         if offset_value == 0:
             return self.error(

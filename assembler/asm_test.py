@@ -2363,7 +2363,7 @@ NEGATIVE_TESTS = [
         b r5 130
         """,
         [
-            "line 1: Command 'b' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps."
+            "line 1: Command 'b' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps, or an 'lb*' pseudo-instruction."
         ],
     ),
     (
@@ -2372,7 +2372,7 @@ NEGATIVE_TESTS = [
         b r10 -129
         """,
         [
-            "line 1: Command 'b' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps."
+            "line 1: Command 'b' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps, or an 'lb*' pseudo-instruction."
         ],
     ),
     (
@@ -2790,7 +2790,7 @@ NEGATIVE_TESTS = [
         b r4 _some_label # the label is at relative -0x81
         """,
         [
-            "line 5: Command 'b (to label _some_label=0x0001, defined in line 2)' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps."
+            "line 5: Command 'b (to label _some_label=0x0001, defined in line 2)' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps, or an 'lb*' pseudo-instruction."
         ],
     ),
     (
@@ -2804,7 +2804,7 @@ NEGATIVE_TESTS = [
         nop
         """,
         [
-            "line 2: Command 'b (to label _some_label=0x0083, defined in line 5)' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps.",
+            "line 2: Command 'b (to label _some_label=0x0083, defined in line 5)' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps, or an 'lb*' pseudo-instruction.",
             "line 5: When label _some_label was defined.",
         ],
     ),
@@ -3107,7 +3107,7 @@ NEGATIVE_TESTS = [
         bgts r5 r6 130
         """,
         [
-            "line 1: Command 'bgts' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps."
+            "line 1: Command 'bgts' can only branch by offsets in [-128, 129], but not by 130. Try using 'j' instead, which supports larger jumps, or an 'lb*' pseudo-instruction."
         ],
     ),
     (
@@ -3116,7 +3116,7 @@ NEGATIVE_TESTS = [
         bles r10 r9 -129
         """,
         [
-            "line 1: Command 'bles' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps."
+            "line 1: Command 'bles' can only branch by offsets in [-128, 129], but not by -129. Try using 'j' instead, which supports larger jumps, or an 'lb*' pseudo-instruction."
         ],
     ),
     (
