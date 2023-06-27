@@ -165,10 +165,11 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
     * These three instructions are obviously somewhat expensive, and the assembler will prevent accidental use below some threshold, although not the entire range \[-128, +129\] is flagged, only \[-118, +119\]. This is to allow for some slack when code offsets are changing while programming.
     * If the extended range is really necessary, you might want to use one of the following pseudo-instructions to merge it with a preceding comparison:
         * `( lbeq | lbge | lbges | lbgt | lbgts | lble | lbles | lblt | lblts | lbne ) reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
-        * Note that, again, `reg_rhs_dest` is overwritten with the *opposite* of the resulting boolean value.
+        * `( lbeqz | lbgesz | lbgtsz | lblesz | lbltsz | lbnez ) reg_value ( imm_offset | _lab_destination )`
+        * Note that, again, `reg_rhs_dest` (or `reg_value`) is overwritten with the *opposite* of the resulting boolean value.
         * These medium-longbranch-comparison pseudo-instructions will compile down to just three instructions:
           ```
-          cmp_opposite reg_lhs reg_rhs_dest
+          cmp_opposite reg_lhs reg_rhs_dest  # or "cmp_opposite_z reg_value"
           b reg_rhs_dest +2
           j ( imm_offset | _lab_destination )
           ```

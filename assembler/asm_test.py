@@ -1597,6 +1597,69 @@ ASM_TESTS = [
         "0000" * 0x400 + "88FE 9E00 AC01 5F00",
         [],
     ),
+    (
+        "longbranch condition zero, lbeqz to imm positive",
+        """\
+        lbeqz r0 +0x123
+        """,
+        "8A00 9000 A121",
+        [],
+    ),
+    (
+        "longbranch condition zero, lbnez to imm negative",
+        """\
+        lbnez r10 -0x234
+        """,
+        "84AA 9A00 AA33",
+        [],
+    ),
+    (
+        "longbranch condition zero, lbltsz to label forward positive",
+        """\
+        lbltsz r8 _destination
+        nop
+        .offset 0xAA
+        .label _destination
+        """,
+        # Note that this cannot be done in a single instruction, as `b` also carries a sign bit.
+        "8788 9800 A0A6 5F00",
+        [],
+    ),
+    (
+        "longbranch condition zero, lblesz to label forward negative",
+        """\
+        .offset 0x100
+        lblesz r6 _destination
+        nop
+        .offset 0
+        .label _destination
+        """,
+        "0000" * 0x100 + "8366 9600 A901 5F00",
+        [],
+    ),
+    (
+        "longbranch condition zero, lbgtsz to label backward positive",
+        """\
+        .offset 0x100
+        .label _destination
+        .offset 0
+        lbgtsz r9 _destination
+        nop
+        """,
+        "8D99 9900 A0FC 5F00",
+        [],
+    ),
+    (
+        "longbranch condition zero, lbgesz to label backward negative",
+        """\
+        .label _destination
+        .offset 0x400
+        lbgesz r15 _destination
+        nop
+        """,
+        "0000" * 0x400 + "89FF 9F00 AC01 5F00",
+        [],
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -3091,7 +3154,7 @@ NEGATIVE_TESTS = [
         bltz r10, +42
         """,
         [
-            "line 1: Command 'bltz' not found. Close matches: bltsz, blt, ltsz",
+            "line 1: Command 'bltz' not found. Close matches: bltsz, blt, lbltsz",
         ],
     ),
     (
@@ -3118,7 +3181,7 @@ NEGATIVE_TESTS = [
         bgez r10, +42
         """,
         [
-            "line 1: Command 'bgez' not found. Close matches: bgesz, bge, lbge",
+            "line 1: Command 'bgez' not found. Close matches: bgesz, bge, lbgesz",
         ],
     ),
     (
@@ -3253,6 +3316,96 @@ NEGATIVE_TESTS = [
         """,
         [
             "line 4: Pseudo-instruction 'lbles (to _destination +0 = by +6)' supports jumps in the range [-2048, 2049], but was used for just a short offset of 6. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch condition zero, no-arg",
+        """\
+        lbeqz
+        """,
+        [
+            "line 1: Command 'lbeqz' expects exactly two space-separated register arguments, got [''] instead.",
+        ],
+    ),
+    (
+        "longbranch condition zero, one-arg",
+        """\
+        lbnez r1
+        """,
+        [
+            "line 1: Command 'lbnez' expects exactly two space-separated register arguments, got ['r1'] instead.",
+        ],
+    ),
+    (
+        "longbranch condition zero, reg-reg",
+        """\
+        lbgtsz r1 r2
+        """,
+        [
+            "line 1: Cannot parse immediate for second argument to lbgtsz: Expected integer number, instead got 'r2'. Try something like '42', '0xABCD', or '-0x123' instead.",
+            "line 1: Label name for second argument to lbgtsz must start with a '_' and contain at least two characters, found name 'r2' instead",
+        ],
+    ),
+    (
+        "longbranch condition zero, three arg",
+        """\
+        lbltsz r1 r2 r3
+        """,
+        [
+            "line 1: Cannot parse immediate for second argument to lbltsz: Expected integer number, instead got 'r2 r3'. Try something like '42', '0xABCD', or '-0x123' instead.",
+            "line 1: Label name for second argument to lbltsz must start with a '_' and contain at least two characters, found name 'r2 r3' instead",
+        ],
+    ),
+    (
+        "longbranch condition zero, imm-imm",
+        """\
+        lblesz 1 2
+        """,
+        [
+            "line 1: Cannot parse register for first argument to lblesz: Expected register (beginning with 'r'), instead got '1'. Try something like 'r0' instead.",
+        ],
+    ),
+    (
+        "longbranch condition zero, too short imm pos",
+        """\
+        lbgtsz r1 +3
+        """,
+        [
+            "line 1: Pseudo-instruction 'lbgtsz' supports jumps in the range [-2048, 2049], but was used for just a short offset of 3. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch condition zero, too short imm neg",
+        """\
+        lbgesz r1 -3
+        """,
+        [
+            "line 1: Pseudo-instruction 'lbgesz' supports jumps in the range [-2048, 2049], but was used for just a short offset of -3. Try using the non-long version, which uses fewer instructions.",
+        ],
+    ),
+    (
+        "longbranch condition zero, too short label forward neg",
+        """\
+        .offset 10
+        lbltsz r1 _destination
+        .offset 2
+        .label _destination
+        """,
+        [
+            "line 2: Pseudo-instruction 'lbltsz (to _destination +0 = by -10)' supports jumps in the range [-2048, 2049], but was used for just a short offset of -10. Try using the non-long version, which uses fewer instructions.",
+            "line 4: When label _destination was defined.",
+        ],
+    ),
+    (
+        "longbranch condition zero, too short label backward pos",
+        """\
+        .offset 10
+        .label _destination
+        .offset 2
+        lblesz r1 _destination
+        """,
+        [
+            "line 4: Pseudo-instruction 'lblesz (to _destination +0 = by +6)' supports jumps in the range [-2048, 2049], but was used for just a short offset of 6. Try using the non-long version, which uses fewer instructions.",
         ],
     ),
 ]

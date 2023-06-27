@@ -1077,6 +1077,61 @@ class Assembler:
     def parse_command_lbges(self, command, args):
         return self.parse_command_lb_cmp_tworeg(0x0700, command, args)
 
+    def parse_command_lb_cmp_zero(self, uninverted_compare_mask, command, args):
+        assert (uninverted_compare_mask & 0xF0FF) == 0 and (
+            uninverted_compare_mask & 0x0F00
+        ) != 0, uninverted_compare_mask
+        arg_list = [e.strip() for e in args.split(" ", 1)]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two space-separated register arguments, got {arg_list} instead."
+            )
+        # In case some maniac writes more than one space, like "bne  r4  r5  r6":
+        # FIXME: Doesn't quite work!
+        arg_list[1] = arg_list[1].strip()
+        reg_value = self.parse_reg(arg_list[0], f"first argument to {command}")
+        if reg_value is None:
+            # Error already reported
+            return False
+        # Invert the compare mask by inverting L(ess), E(qual), and G(reater), but not the S(igned) bit:
+        compare_mask = 0x0E00 ^ uninverted_compare_mask
+        if not self.push_word(0x8000 | compare_mask | (reg_value << 4) | reg_value):
+            # Error already reported
+            return False
+        return self.emit_long_branch_inverted_to_imm_or_lab(
+            command,
+            reg_value,
+            arg_list[1],
+            f"second argument to {command}",
+            allow_short=False,
+        )
+        # Overall, this method folds the inversion necessary for the "medium-length branch" into the
+        # comparison instruction, meaning that i.e. lbeqz only takes one instruction more than beqz.
+
+    @asm_command
+    def parse_command_lbeqz(self, command, args):
+        return self.parse_command_lb_cmp_zero(0x0400, command, args)
+
+    @asm_command
+    def parse_command_lbnez(self, command, args):
+        return self.parse_command_lb_cmp_zero(0x0A00, command, args)
+
+    @asm_command
+    def parse_command_lbltsz(self, command, args):
+        return self.parse_command_lb_cmp_zero(0x0900, command, args)
+
+    @asm_command
+    def parse_command_lblesz(self, command, args):
+        return self.parse_command_lb_cmp_zero(0x0D00, command, args)
+
+    @asm_command
+    def parse_command_lbgtsz(self, command, args):
+        return self.parse_command_lb_cmp_zero(0x0300, command, args)
+
+    @asm_command
+    def parse_command_lbgesz(self, command, args):
+        return self.parse_command_lb_cmp_zero(0x0700, command, args)
+
     def command_j_register(self, register, offset):
         if offset >= 0xFF80:
             return self.error(
