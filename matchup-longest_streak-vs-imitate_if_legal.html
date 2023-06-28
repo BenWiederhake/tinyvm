@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no">
+<meta name="description" content="Silly tournament page of terrible Connect4 algorithms">
+<meta name="keywords" content="silly, tournament, connect4, algorithms, simulation, competition">
+<title>Matchup of longest_streak vs. imitate_if_legal | TinyVM</title>
+<link rel="canonical" href="https://BenWiederhake.github.io/tinyvm/matchup-longest_streak-vs-imitate_if_legal.html">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="shortcut icon" href="favicon.png">
+<link rel="stylesheet" href="bootstrap_4.5.1.min.css" integrity="sha384-VCmXjywReHh4PwowAiWNagnWcLhlEJLA5buUprzK8rxFgeH0kww/aWY76TfkUoSX" crossorigin="anonymous">
+<!-- Inline styles would break my ad-hoc templating thing. -->
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<main class="container my-5 pb-5" id="content">
+
+<h1>TinyVM Connect4 Tournament – Specific Matchup</h1>
+
+<h2><code>longest_streak</code> against <code>imitate_if_legal</code></h2>
+<p>This page is about how longest_streak fares as an <em>attacker</em> against imitate_if_legal. There's a different page for the <a href="matchup-imitate_if_legal-vs-longest_streak.html">reverse matchup</a>. For a more general overview, visit the <a href="index.html#results">overview page</a>.</p>
+
+<div class="matchup-big-summary" style="background-color: #30ff30;">1 win, 0 draws, and 0 losses</div>
+
+<p>This matchup is deterministic, i.e. both players never used the <code>rnd</code> instruction. Therefore, only a single game was simulated, as all games are identical in this matchup.</p>
+
+<h3>The Game</h3>
+
+<p>Win due to connect4. (Executed 3303 instructions in total; opponent executed 51 instructions in total.)</p><div class="game"><table><tr><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td></tr><tr><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td></tr><tr><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td></tr><tr><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td></tr><tr><td class="cy">#2</td><td class="cy">#4</td><td class="cy">#6</td><td class="ce"></td><td class="ce"></td><td class="ce"></td><td class="ce"></td></tr><tr><td class="cr">#1</td><td class="cr">#3</td><td class="cr">#5</td><td class="cr">#7</td><td class="ce"></td><td class="ce"></td><td class="ce"></td></tr></table></div>
+
+<div class="py-4"></div>
+<p class="small text-muted">This page was last rebuilt on 2023-06-28 02:02:32 CEST.</p>
+<p class="small text-muted">The raw data on this webpage is also available as a <a href="results_general.json">JSON file</a>.</p>
+<div class="py-4"></div>
+
+</main>
+
+<nav class="fixed-bottom bg-light d-flex p-2 flex-row flex-wrap justify-content-between align-items-center">
+  <div class="mx-2">
+    <img class="logo" src="logo.png">
+  </div>
+
+  <div class="mx-2">
+    <a href="https://github.com/BenWiederhake/tinyvm/">Repo</a>&nbsp;|&nbsp;<a href="https://help.github.com/articles/github-privacy-statement/">Data&nbsp;Protection</a>&nbsp;|&nbsp;<a href="https://github.com/BenWiederhake/tinyvm/blob/master/LICENSE">License</a>
+  </div>
+</nav>
+
+</body>
+</html>
