@@ -1275,6 +1275,34 @@ class Assembler:
             return self.command_j_twoarg(command, arg_parts[0], arg_parts[1])
         raise AssertionError(f"Wtf .split(, 1) returned {arg_parts}?")
 
+    def emit_jhi_to_imm(self, command, dest_reg, high_byte_imm):
+        if high_byte_imm < 0 or high_byte_imm > 0xFFFF:
+            return self.error(
+                f"Command '{command}' requires an offset in [0x0000, 0xFF00], got 0x{high_byte_imm:04x} instead."
+            )
+        if high_byte_imm % 0x100 != 0:
+            return self.error(
+                f"Offset for {command} must be multiple of 256 in interval [0x0000, 0xFF00], got 0x{high_byte_imm:04x} instead."
+            )
+        return self.push_word(0xC000 | (dest_reg << 8) | (high_byte_imm >> 8))
+
+    @asm_command
+    def parse_command_jhi(self, command, args):
+        arg_list = [e.strip() for e in args.split(" ")]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two space-separated arguments, got {arg_list} instead."
+            )
+        dest_reg = self.parse_reg(arg_list[0], f"first argument to {command}")
+        if dest_reg is None:
+            # Error already reported
+            return False
+        high_byte_imm = self.parse_imm(arg_list[1], f"second argument to {command}")
+        if high_byte_imm is None:
+            # Error already reported
+            return False
+        return self.emit_jhi_to_imm(command, dest_reg, high_byte_imm)
+
     @asm_directive
     def parse_directive_offset(self, command, args):
         args = args.strip()

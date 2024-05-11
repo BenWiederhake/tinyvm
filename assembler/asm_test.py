@@ -1866,6 +1866,84 @@ ASM_TESTS = [
         [],
         {0: 1, 1: 1, 2: 2},
     ),
+    (
+        "jump register high",
+        """\
+        jhi r13 +0xEF00
+        """,
+        "CDEF",
+        [],
+        {0: 1},
+    ),
+    (
+        "jump register high, no plus-sign",
+        """\
+        jhi r13 0xEF00
+        """,
+        "CDEF",
+        [],
+        {0: 1},
+    ),
+    (
+        "jump register high, decimal, plus-sign",
+        """\
+        # This is difficult to read, don't do this!
+        jhi r13 +61184
+        """,
+        "CDEF",
+        [],
+        {0: 2},
+    ),
+    (
+        "jump register high, decimal, no plus-sign",
+        """\
+        # This is difficult to read, don't do this!
+        jhi r13 61184
+        """,
+        "CDEF",
+        [],
+        {0: 2},
+    ),
+    (
+        "jump register high, low decimal, no plus-sign",
+        """\
+        # This is difficult to read, don't do this!
+        jhi r13 256
+        """,
+        "CD01",
+        [],
+        {0: 2},
+    ),
+    (
+        "jump register high, three hexits",
+        """\
+        # This is difficult to read, don't do this!
+        jhi r4 0x300
+        """,
+        "C403",
+        [],
+        {0: 2},
+    ),
+    (
+        "jump register high, two hexits",
+        """\
+        # This is difficult to read, don't do this!
+        jhi r4 0x00
+        """,
+        "C400",
+        [],
+        {0: 2},
+    ),
+    (
+        "jump register high, one digit",
+        """\
+        # This is difficult to read, don't do this!
+        jhi r4 0
+        """,
+        "C400",
+        [],
+        {0: 2},
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -3614,6 +3692,87 @@ NEGATIVE_TESTS = [
             "line 4: Pseudo-instruction 'lblesz (to _destination +0 = by +6)' supports jumps in the range [-2048, 2049], but was used for just a short offset of 6. Try using the non-long version, which uses fewer instructions.",
         ],
     ),
+    (
+        "jump register high, comma",
+        """\
+        jhi r0, +0x0000
+        """,
+        [
+            "line 1: Cannot parse register for first argument to jhi: Expected register with numeric index, instead got 'r0,'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "jump register high, one-arg",
+        """\
+        jhi r0
+        """,
+        [
+            "line 1: Command 'jhi' expects exactly two space-separated arguments, got ['r0'] instead.",
+        ],
+    ),
+    (
+        "jump register high, no-arg",
+        """\
+        jhi
+        """,
+        [
+            "line 1: Command 'jhi' expects exactly two space-separated arguments, got [''] instead.",
+        ],
+    ),
+    (
+        "jump register high, three-arg",
+        """\
+        jhi r0 +0x0000 123
+        """,
+        [
+            "line 1: Command 'jhi' expects exactly two space-separated arguments, got ['r0', '+0x0000', '123'] instead."
+        ],
+    ),
+    (
+        "jump register high, first not a register",
+        """\
+        jhi 123 +0x0000
+        """,
+        [
+            "line 1: Cannot parse register for first argument to jhi: Expected register (beginning with 'r'), instead got '123'. Try something like 'r0' instead."
+        ],
+    ),
+    (
+        "jump register high, offset not aligned",
+        """\
+        jhi r0 +0x0001
+        """,
+        [
+            "line 1: Offset for jhi must be multiple of 256 in interval [0x0000, 0xFF00], got 0x0001 instead."
+        ],
+    ),
+    (
+        "jump register high, negative",
+        """\
+        jhi r0 -256
+        """,
+        [
+            "line 1: Command 'jhi' requires an offset in [0x0000, 0xFF00], got 0x-100 instead."
+        ],
+    ),
+    (
+        "jump register high, strong negative",
+        """\
+        jhi r0 -4096
+        """,
+        [
+            "line 1: Command 'jhi' requires an offset in [0x0000, 0xFF00], got 0x-1000 instead."
+        ],
+    ),
+    (
+        "jump register high, too positive",
+        """\
+        jhi r0 65536
+        """,
+        [
+            "line 1: Immediate value 65536 (hex: +10000) in second argument to jhi is out of bounds [-0x8000, 0xFFFF]"
+        ],
+    ),
 ]
 
 TESTS_INSTRUCTIONS_RS = [
@@ -3860,6 +4019,54 @@ TESTS_INSTRUCTIONS_RS = [
         "3700 4780 B780",
         [],
         {0: 1, 1: 1, 2: 2},
+    ),
+    (
+        "from test_jump_register_high_doc1",
+        """\
+        lw r10, 0x0034
+        jhi r10 +0x1200
+        """,
+        "3A34 CA12",
+        [],
+        {0: 1, 1: 2},
+    ),
+    (
+        "from test_jump_register_high_doc2",
+        """\
+        lw r0, 0xA5A5
+        jhi r0 +0xF000
+        """,
+        "30A5 40A5 C0F0",
+        [],
+        {0: 1, 1: 1, 2: 2},
+    ),
+    (
+        "from test_jump_register_high_simple",
+        """\
+        jhi r0 +0x4200
+        """,
+        "C042",
+        [],
+        {0: 1},
+    ),
+    (
+        "from test_jump_register_high_extreme",
+        """\
+        lw r7, 0xFFFF
+        jhi r7 +0xFF00
+        """,
+        "37FF C7FF",
+        [],
+        {0: 1, 1: 2},
+    ),
+    (
+        "from test_jump_register_high_zero",
+        """\
+        jhi r0 +0x0000
+        """,
+        "C000",
+        [],
+        {0: 1},
     ),
     (
         "from test_program_counter_wraps",

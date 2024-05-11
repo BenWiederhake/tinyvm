@@ -245,7 +245,7 @@ Example: The instruction is `0b0110 0010 0101 0110`, register 5 contains the val
 
 This reads from registers 0bAAAA and 0bBBBB, and writes to register 0bBBBB.
 
-This compares the values in registers 0bAAAA and the right-hand-side, and writes 0x0000 (false) or 0x0001 (true) into register 0bBBBB. The bits L, E, G, and S are flags. If 0bAAAA == 0bBBBB, then the right-hand-side is the value zero; otherwise, it is the value in register 0bBBBB.
+This compares the values in registers 0bAAAA and the right-hand-side (defined in the next sentences), and writes 0x0000 (false) or 0x0001 (true) into register 0bBBBB. The bits L, E, G, and S are flags. If 0bAAAA == 0bBBBB, then the right-hand-side is the value zero; otherwise, it is the value in register 0bBBBB.
 
 - By default, the result of the comparison is false, and the contents of the registers are interpreted as unsigned.
 - If L=1 and the content of register 0bAAAA is *smaller* than the content of register 0bBBBB.
