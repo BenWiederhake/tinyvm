@@ -327,18 +327,14 @@ impl VirtualMachine {
     }
 
     fn step_special(&mut self, instruction: u16, increment_pc_as_usual: &mut bool) -> StepResult {
-        if instruction & 0x0F00 != 0x0000 {
-            return StepResult::IllegalInstruction(instruction);
-        }
-
-        match instruction & 0x00FF {
-            0x2A => {
+        match instruction & 0x0FFF {
+            0x02A => {
                 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102a-return
                 // Return
                 *increment_pc_as_usual = false;
                 StepResult::Return(self.registers[0])
             }
-            0x2B => {
+            0x02B => {
                 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102b-cpuid
                 // CPUID
                 if self.registers[0] == 0x0000 {
@@ -354,7 +350,7 @@ impl VirtualMachine {
                 }
                 StepResult::Continue
             }
-            0x2C => {
+            0x02C => {
                 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102c-debug-dump
                 // Debug-dump
                 if *DUMP_ON_DEBUG {
@@ -404,7 +400,7 @@ impl VirtualMachine {
                 }
                 StepResult::DebugDump
             }
-            0x2D => {
+            0x02D => {
                 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102d-time
                 // Time
                 self.registers[0] = (self.time >> 48) as u16;
