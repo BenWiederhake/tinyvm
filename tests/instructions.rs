@@ -840,6 +840,97 @@ fn test_jump_register_extreme_negative_signedish() {
     );
 }
 
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xcxxx-jump-to-register-high
+// The instruction is `0b1100 1010 0001 0010`, and register 10 contains the value 0x0034. Then the program counter is updated to 0x1234.
+#[test]
+fn test_jump_register_high_doc1() {
+    run_test(
+        &[
+            0x3A34, // lw r10, 0x0034
+            0xCA12, // jhi r10 +0x1200
+        ],
+        &[],
+        2,
+        &[
+            Expectation::Register(10, 0x0034),
+            Expectation::ProgramCounter(0x1234),
+            Expectation::ActualNumSteps(2),
+            Expectation::LastStep(StepResult::Continue),
+            Expectation::Deterministic(true),
+        ],
+    );
+}
+
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xcxxx-jump-to-register-high
+// The instruction is `0b1100 0000 1111 0000`, and register 0 contains the value 0xA5A5. Then the program counter is updated to 0xF0A5.
+#[test]
+fn test_jump_register_high_doc2() {
+    run_test(
+        &[
+            0x30A5, 0x40A5, // lw r0, 0xA5A5
+            0xC0F0, // jhi r0 +0xF000
+        ],
+        &[],
+        3,
+        &[
+            Expectation::Register(0, 0xA5A5),
+            Expectation::ProgramCounter(0xF0A5),
+            Expectation::ActualNumSteps(3),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_high_simple() {
+    run_test(
+        &[
+            0xC042, // jhi r0 +0x4200
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ProgramCounter(0x4200),
+            Expectation::ActualNumSteps(1),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_high_extreme() {
+    run_test(
+        &[
+            0x37FF, // lw r7, 0xFFFF
+            0xC7FF, // jhi r7 +0xFF00
+        ],
+        &[],
+        2,
+        &[
+            Expectation::Register(7, 0xFFFF),
+            Expectation::ProgramCounter(0xFFFF),
+            Expectation::ActualNumSteps(2),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
+#[test]
+fn test_jump_register_high_zero() {
+    run_test(
+        &[
+            0xC000, // jhi r0 +0x0000
+        ],
+        &[],
+        1,
+        &[
+            Expectation::ProgramCounter(0x0000),
+            Expectation::ActualNumSteps(1),
+            Expectation::LastStep(StepResult::Continue),
+        ],
+    );
+}
+
 #[test]
 fn test_program_counter_wraps() {
     let mut instructions = vec![0; 1 << 16];

@@ -5,10 +5,10 @@
 - Havard architecture (separate instruction memory and data memory). The reason is to make self-modifying programs impossible.
 - Every pointer is 16 bit. This implies relatively low memory limits, which is basically the point of this VM.
 - Every instruction is 16 bit. This simplifies parsing and code generation.
-- By design, an all-zero and an all-ones value is an illegal instruction. This should make is slightly easier to detect programming errors. It is unintentional yet hilarious that the instructions `DEAD` and `C0DE` are illegal.
+- By design, an all-zero and an all-ones value is an illegal instruction. This should make is slightly easier to detect programming errors. It is unintentional yet hilarious that the instruction `DEAD` is illegal.
 - There are 64K addressable 16-bit words. (That is 128K bytes.) Alternatively, you could say that our bytes have 16 bits, but let's stick to the terms "byte = 8 bit" and "word = 16 bit".
 - There are 16 registers, all of which are general-purpose.
-- There is no build-in support for stack frames or anything. I want this to be a seriously limited VM with only basic algorithms, and if you want fancy things like recursion or local variables, then you'll have to pay for it by yourself.
+- There is no built-in support for stack frames or anything. I want this to be a seriously limited VM with only basic algorithms, and if you want fancy things like recursion or local variables, then you'll have to pay for it by yourself.
 - There is special support for ease of use (return, cpuid, etc.)
 - Data is stored in big-endian order. E.g., if the first byte in data memory is 0x12, and the second byte is 0x34, then loading the first word into a register results in that register having value 0x1234.
 - The program counter is not explicitly readable, and usually increments by one (with overflow) after each instruction (except for illegal, reserved, return, jump, and branch instructions).
@@ -19,7 +19,7 @@
 All instructions consist of exactly 16 bits. They are arranged in a prefix-tree pattern, so that reading from the most-significant bits of the first byte down to the least-significant bits of the second byte progressively specifies more and more about the instruction.
 
 There are three types of valid instructions:
-1. The first 4 bits identifies the instruction command, and the remaining 12 bits indicate data (usually 4 bits to identify a register, and 8 bits to encode an immediate value).
+1. The first 4 bits identify the instruction command, and the remaining 12 bits indicate data (usually 4 bits to identify a register, and 8 bits to encode an immediate value).
 2. The first 8 bits identify the instruction command, and the remaining 8 bits indicate data (4+4 bits to identify two registers).
 3. All bits are part of the instruction command, and the instruction carries no data.
 
@@ -57,7 +57,7 @@ Case distinction over the first (most significant) four bits of the first byte:
 - 1001: Branch
 - 1010: Jump by immediate
 - 1011: Jump to register
-- 1100: reserved (see note)
+- 1100: Jump to register HIGH
 - 1101: reserved (see note)
 - 1110: reserved (see note)
 - 1111:
@@ -66,7 +66,7 @@ Case distinction over the first (most significant) four bits of the first byte:
 
 Notes:
 - "illegal instruction" means: Any attempt to execute this instruction should halt the machine, and result in an error.
-- "reseved" means: For now these instructions should be treated as illegal instructions. Future versions of the VM, possibly when some flags are enabled, are allowed to behave differently. Implementors should make an effort that any deviation from treating reserved instructions as illegal instructions can be safely and easily deduced from the CPUID instruction.
+- "reserved" means: For now these instructions should be treated as illegal instructions. Future versions of the VM, possibly when some flags are enabled, are allowed to behave differently. Implementors should make an effort that any deviation from treating reserved instructions as illegal instructions can be safely and easily deduced from the CPUID instruction.
 
 ## Specific instruction documentation
 
@@ -312,10 +312,26 @@ This reads from register 0bRRRR, and will affect the program counter.
 
 Instead of incrementing the program counter by one, it is instead set to a new value independent of the old value. The new value is computed as the content of register 0bRRRR plus the value 0bSSSS SSSS SVVV VVVV, i.e. the second instruction byte is interpreted as a sign-extended offset.
 
-Note that the program counter is allowed to overflow.
+Note that the program counter is allowed to wraparound.
 
 Note that this means that any jump takes at most three instructions: two instructions to load the value into an unused register, and one instruction for this jump.
 
 Example: The instruction is `0b1011 0111 0011 0100`, and register 7 contains the value 0x1200. Then the program counter is updated to 0x1234.
 
 Example: The instruction is `0b1011 0111 1111 1111`, and register 7 contains the value 0x1234. Then the program counter is updated to 0x1233.
+
+### `0xCxxx`: Jump to register HIGH
+
+`0b1100 RRRR VVVV VVVV`, type 1 (instruction carries one register index and an 8-bit value)
+
+This reads from register 0bRRRR, and will affect the program counter.
+
+Instead of incrementing the program counter by one, it is instead set to a new value independent of the old value. The new value is computed as if executing the instruction 0b0100 JJJJ VVVV VVVV, where JJJJ is the hypothetical program-counter register. In other words, if register 0bRRRR contains the value 0bXXXX XXXX YYYY YYYY, then the next instruction to be executed will be read from 0bVVVV VVVV YYYY YYYY.
+
+Note that the program counter is allowed to wraparound.
+
+Note that this means that any jump takes at most two instructions: one instruction to load the lower byte into an unused register, and one instruction for this jump.
+
+Example: The instruction is `0b1100 1010 0001 0010`, and register 10 contains the value 0x0034. Then the program counter is updated to 0x1234.
+
+Example: The instruction is `0b1100 0000 1111 0000`, and register 0 contains the value 0xA5A5. Then the program counter is updated to 0xF0A5.

@@ -307,7 +307,11 @@ impl VirtualMachine {
                 increment_pc_as_usual = false;
                 self.step_jump_reg(instruction)
             }
-            // 0xC000, 0xD000, 0xE000, 0xF000 illegal
+            0xC000 => {
+                increment_pc_as_usual = false;
+                self.step_jump_reg_high(instruction)
+            }
+            // 0xD000, 0xE000, 0xF000 illegal
             _ => {
                 increment_pc_as_usual = false;
                 StepResult::IllegalInstruction(instruction)
@@ -688,6 +692,15 @@ impl VirtualMachine {
         let register = (instruction & 0x0F00) >> 8;
         let offset = i16::from((instruction & 0x00FF) as i8) as u16; // sign-extend to 16 bits
         self.program_counter = self.registers[register as usize].wrapping_add(offset);
+        StepResult::Continue
+    }
+
+    // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0xcxxx-jump-to-register-high
+    fn step_jump_reg_high(&mut self, instruction: u16) -> StepResult {
+        let register = (instruction & 0x0F00) >> 8;
+        let byte_high = (instruction & 0x00FF) << 8;
+        let byte_low = self.registers[register as usize] & 0x00FF;
+        self.program_counter = byte_high | byte_low;
         StepResult::Continue
     }
 }
