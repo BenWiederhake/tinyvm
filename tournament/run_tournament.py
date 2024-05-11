@@ -216,7 +216,7 @@ def emit_matchup(vm_one, vm_two):
     context["vm_one"] = vm_one.name
     context["vm_two"] = vm_two.name
     context["matchup_filename"] = matchup_filename(vm_one, vm_two)
-    context["reverse_matchup_filename"] = matchup_filename(vm_two, vm_one)
+    context["reverse_matchup_filename"] = matchup_filename(vm_two, vm_one)  # ignore W1114
     context["matchup_color"] = compute_color(wins, draws, losses)
     context["wins"], context["draws"], context["losses"] = wins, draws, losses
     context["wins_plural"] = "s" if wins != 1 else ""
@@ -244,7 +244,7 @@ def emit_matchup(vm_one, vm_two):
         fp.write(template.format(**context))
 
 
-def emit_vm_summary(vm, all_vms):
+def emit_vm_summary(vm, _all_vms):
     print(f"Skipping VM summary page for {vm.name}")
     # FIXME: raise NotImplementedError()
 
