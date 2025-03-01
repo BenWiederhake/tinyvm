@@ -28,6 +28,7 @@ class VM:
     def __init__(self, name):
         self.name = name
         self.matchups = dict()
+        self.score = None  # Will be set later
 
     def filename(self):
         return VMS_DIR + self.name + ".segment"
@@ -42,6 +43,7 @@ def collect_vms():
     for filename in os.listdir(VMS_DIR):
         if filename.endswith(".segment"):
             vms.append(VM(filename[: -len(".segment")]))
+    # listdir does not result in a deterministic order. Sort it lexicographically to prevent weird behaviors:
     vms.sort(key=lambda vm: vm.name)
     for i in range(len(vms) - 1):
         if vms[i + 1].name.startswith(vms[i].name):
@@ -207,6 +209,9 @@ def generate_games_list(games_by_type):
 def emit_matchup(vm_one, vm_two):
     matchup = vm_one.matchups[vm_two.name]
     wins, draws, losses = analyze_matchup(matchup)
+    score = (wins - losses) / len(matchup)
+    vm_one.score += score
+    vm_two.score -= score
     context = dict()
     games_by_type = collections.defaultdict(list)
     for game in matchup:
@@ -277,7 +282,7 @@ def generate_overview_table(all_vms):
     # Data
     for vm_one in all_vms:
         parts.append("<tr>")
-        parts.append(f'<th class="attacker">{vm_one.name}</th>')
+        parts.append(f'<th class="attacker">{vm_one.name} ({vm_one.score:+.0%})</th>')
         for vm_two in all_vms:
             matchup = vm_one.matchups[vm_two.name]
             wins, draws, losses = analyze_matchup(matchup)
@@ -301,6 +306,7 @@ def emit_total_summary(all_vms):
     total_dict = {vm.name: vm.matchups for vm in all_vms}
     with open(OUTPUT_DIR + "results_general.json", "w") as fp:
         json.dump(total_dict, fp, separators=",:", sort_keys=True)
+    # FIXME: results_summary.json with only the scores
 
 
 async def run_matches_from_queue(queue):
@@ -347,12 +353,17 @@ async def run():
 
     await run_all_matchups(vms)
 
+    # Compute scores, sort by scores
     started_at = time.monotonic()
+    for vm in vms:
+        vm.score = 0
     for vm_one in vms:
         for vm_two in vms:
-            emit_matchup(vm_one, vm_two)
-    # FIXME: Should order vms by success, but no idea how to measure that.
-    # Hopefully that becomes clear later.
+            emit_matchup(vm_one, vm_two)  # This also updates vm_*.score
+    for vm in vms:
+        vm.score /= 2 * (len(vms) - 1)
+    # All matchups have been evaluated, 'vm.score' is now valid:
+    vms.sort(key=lambda vm: (-vm.score, vm.name))
     for vm in vms:
         emit_vm_summary(vm, vms)
     emit_total_summary(vms)

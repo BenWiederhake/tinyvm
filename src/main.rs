@@ -53,7 +53,7 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
     let mut game = Game::new(
         instructions_one.clone(),
         instructions_two.clone(),
-        1_000_000,
+        30_000,
     );
     let result = game.conclude();
     print!("{{\"moves\": \"");
@@ -98,7 +98,7 @@ fn main() -> Result<()> {
     print!("[");
     let first_was_deterministic = run_and_print_game(&instructions_one, &instructions_two);
     if !first_was_deterministic {
-        for _ in 0..99 {
+        for _ in 0..999 {
             print!(",");
             let was_deterministic = run_and_print_game(&instructions_one, &instructions_two);
             assert!(!was_deterministic);

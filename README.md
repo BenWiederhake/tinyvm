@@ -85,7 +85,6 @@ In case you want to build your very own tournament page, e.g. to compare the per
 mkdir ./tournament/pages/  # Or a checkout of the latest gh-pages branch
 ./tournament/run_tournament.py
 ```
-FIXME: Not implemented yet, duh
 
 ### Run all self-tests
 
