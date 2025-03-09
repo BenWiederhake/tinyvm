@@ -359,7 +359,7 @@ class Assembler:
         return self.push_word(high_byte | registers_byte)
 
     @asm_command
-    def parse_command_ret(self, command, args):
+    def parse_command_yield(self, command, args):
         if args != "":
             return self.error(
                 f"Command '{command}' does not take any arguments (expected end of line, found '{args}' instead)"

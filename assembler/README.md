@@ -25,7 +25,7 @@ Instructions by prefix:
     * 0000: illegal instruction, cannot be generated
     * 0001-1111: reserved, cannot be generated
 - 0001:
-    * 0000: `ret`, `cpuid`, `debug`, `time`
+    * 0000: `yield`, `cpuid`, `debug`, `time`
     * 0001-1111: reserved, cannot be generated
 - 0010:
     * 0000: `sw reg_addr, reg_value` (Store word data)

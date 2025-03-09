@@ -54,9 +54,9 @@ ASM_TESTS = [
         dict(),
     ),
     (
-        "return",
+        "yield",
         """\
-        ret
+        yield
         """,
         "102A",
         [],
@@ -66,7 +66,7 @@ ASM_TESTS = [
         "inline comment",
         """\
         # This is awesome.
-        ret  # Return, yo!
+        yield  # Yield, yo!
         # Hooray!
         """,
         "102A",
@@ -76,7 +76,7 @@ ASM_TESTS = [
     (
         "inline comment multi",
         """\
-        ret # Return   # but you knew that already, didn't you?
+        yield # Yield   # but you knew that already, didn't you?
         """,
         "102A",
         [],
@@ -94,7 +94,7 @@ ASM_TESTS = [
     (
         "more than one instruction",
         """\
-        ret
+        yield
         ill
         """,
         "102A FFFF",
@@ -772,7 +772,7 @@ ASM_TESTS = [
         "offset basic",
         """\
         .offset 0x1234
-        ret
+        yield
         """,
         "0000 " * 0x1234 + "102A",
         [],
@@ -783,7 +783,7 @@ ASM_TESTS = [
         """\
         lw r1, 0x23
         .offset 3
-        ret
+        yield
         """,
         "3123 0000 0000 102A",
         [],
@@ -793,7 +793,7 @@ ASM_TESTS = [
         "offset weird order",
         """\
         .offset 3
-        ret
+        yield
         .offset 0
         lw r1, 0x23
         """,
@@ -839,7 +839,7 @@ ASM_TESTS = [
         "label simple",
         """\
         .label _hello_world
-        ret
+        yield
         # Cannot have an unreferenced label, sadly :(
         .offset _hello_world
         """,
@@ -852,7 +852,7 @@ ASM_TESTS = [
         """\
         .label _hello_world
         .label _hello_world_again
-        ret
+        yield
         .label _hello_more_world
         lw r4, 0x56
         # Cannot have an unreferenced label, sadly :(
@@ -892,7 +892,7 @@ ASM_TESTS = [
     (
         "branch label barely-overflow negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0xFFFF
@@ -905,7 +905,7 @@ ASM_TESTS = [
     (
         "branch label overflow negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0xFFFE
@@ -919,7 +919,7 @@ ASM_TESTS = [
     (
         "branch label extreme negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0x0081
@@ -932,7 +932,7 @@ ASM_TESTS = [
     (
         "branch label negative to undef",
         """\
-        ret
+        yield
         .label _some_label
         .offset 0x005
         b r4 _some_label # the label is at relative -4
@@ -972,7 +972,7 @@ ASM_TESTS = [
         "branch label barely-overflow positive",
         """\
         b r4 _some_label
-        ret
+        yield
         .offset 0xFFFF
         .label _some_label
         lw r3, 0x33
@@ -987,7 +987,7 @@ ASM_TESTS = [
         lw r3, 0x33
         lw r4, 0x56
         b r4 _some_label # offset is -4
-        ret
+        yield
         .offset 0xFFFE
         .label _some_label
         lw r6, 0x66
@@ -1015,7 +1015,7 @@ ASM_TESTS = [
         "branch label positive to undef",
         """\
         b r4 _some_label
-        ret
+        yield
         .offset 5
         .label _some_label
         """,
@@ -1051,7 +1051,7 @@ ASM_TESTS = [
     (
         "jump label barely-overflow negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0xFFFF
@@ -1064,7 +1064,7 @@ ASM_TESTS = [
     (
         "jump label overflow negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0xFFFE
@@ -1078,7 +1078,7 @@ ASM_TESTS = [
     (
         "jump label extreme negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0x0801
@@ -1091,7 +1091,7 @@ ASM_TESTS = [
     (
         "jump label negative to undef",
         """\
-        ret
+        yield
         .label _some_label
         .offset 0x005
         j _some_label # the label is at relative -4
@@ -1131,7 +1131,7 @@ ASM_TESTS = [
         "jump label barely-overflow positive",
         """\
         j _some_label
-        ret
+        yield
         .offset 0xFFFF
         .label _some_label
         lw r3, 0x33
@@ -1146,7 +1146,7 @@ ASM_TESTS = [
         lw r3, 0x33
         lw r4, 0x56
         j _some_label # offset is -4
-        ret
+        yield
         .offset 0xFFFE
         .label _some_label
         lw r6, 0x66
@@ -1174,7 +1174,7 @@ ASM_TESTS = [
         "jump label positive to undef",
         """\
         j _some_label
-        ret
+        yield
         .offset 5
         .label _some_label
         """,
@@ -1187,7 +1187,7 @@ ASM_TESTS = [
         """\
         lw r4, 0x56
         j _some_label +0x3  # Effective offset is +6
-        ret
+        yield
         lw r2, 0x10
         .label _some_label
         """,
@@ -1200,7 +1200,7 @@ ASM_TESTS = [
         """\
         lw r4, 0x56
         .label _some_label
-        ret
+        yield
         lw r2, 0x10
         j _some_label -2  # Effective offset is -4
         """,
@@ -1213,7 +1213,7 @@ ASM_TESTS = [
         """\
         .label _some_label
         .offset 3
-        ret
+        yield
         .offset _some_label
         lw r3, 0x33
         """,
@@ -1227,7 +1227,7 @@ ASM_TESTS = [
         lw r2, 0x10
         .label _some_label
         .offset 3
-        ret
+        yield
         .offset _some_label
         lw r3, 0x33
         """,
@@ -1244,7 +1244,7 @@ ASM_TESTS = [
         .offset _some_label
         .offset _some_label
         .offset _some_label
-        ret
+        yield
         """,
         "3000 102A",
         [],
@@ -1269,19 +1269,19 @@ ASM_TESTS = [
         dict(),
     ),
     (
-        "hash ret before",
+        "hash yield before",
         """\
         .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
-        ret
+        yield
         """,
         "102A 0000",
         [],
         {0: 2},
     ),
     (
-        "hash ret after",
+        "hash yield after",
         """\
-        ret
+        yield
         .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
         """,
         "102A 0000",
@@ -1289,9 +1289,9 @@ ASM_TESTS = [
         {0: 1},
     ),
     (
-        "hash ret after, zero-word",
+        "hash yield after, zero-word",
         """\
-        ret
+        yield
         .assert_hash AE86FC31C317812B22F44972414587BB06FC0BE674129DF9AD783E2FBCB9050B
         .word 0000
         """,
@@ -1637,7 +1637,7 @@ ASM_TESTS = [
         bgesz r0 _foo
         bgesz r6 _foo
         bgesz r15 _foo
-        ret
+        yield
         .label _foo
         """,
         "8700 9004 8766 9602 87FF 9F00 102A",
@@ -1957,18 +1957,18 @@ NEGATIVE_TESTS = [
         ],
     ),
     (
-        "return with arg",
+        "yield with arg",
         """\
-        ret 42
+        yield 42
         """,
         [
-            "line 1: Command 'ret' does not take any arguments (expected end of line, found '42' instead)"
+            "line 1: Command 'yield' does not take any arguments (expected end of line, found '42' instead)"
         ],
     ),
     (
         "late garbage",
         """\
-        ret
+        yield
         garbage
         """,
         [
@@ -2003,13 +2003,13 @@ NEGATIVE_TESTS = [
         ],
     ),
     (
-        "late return with arg",
+        "late yield with arg",
         """\
-        ret
-        ret 42
+        yield
+        yield 42
         """,
         [
-            "line 2: Command 'ret' does not take any arguments (expected end of line, found '42' instead)"
+            "line 2: Command 'yield' does not take any arguments (expected end of line, found '42' instead)"
         ],
     ),
     (
@@ -2737,9 +2737,9 @@ NEGATIVE_TESTS = [
     (
         "offset overwrite",
         """\
-        ret
+        yield
         .offset 0
-        ret
+        yield
         """,
         ["line 3: Attempted to overwrite word 0x102A at 0x0000 with 0x102A."],
     ),
@@ -2749,9 +2749,9 @@ NEGATIVE_TESTS = [
         .offset 2
         lw r4, 0x56
         .offset 0
-        ret
-        ret
-        ret # Bam!
+        yield
+        yield
+        yield # Bam!
         """,
         ["line 6: Attempted to overwrite word 0x3456 at 0x0002 with 0x102A."],
     ),
@@ -2858,7 +2858,7 @@ NEGATIVE_TESTS = [
         "label multidef",
         """\
         .label _hello_world
-        ret
+        yield
         .label _hello_world
         """,
         [
@@ -3019,7 +3019,7 @@ NEGATIVE_TESTS = [
     (
         "branch label too extreme negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0x0082
@@ -3088,7 +3088,7 @@ NEGATIVE_TESTS = [
     (
         "jump label extreme negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0x0802
@@ -3128,7 +3128,7 @@ NEGATIVE_TESTS = [
         """\
         j _some_label
         .label _some_label
-        ret
+        yield
         """,
         [
             "line 1: Command 'j (to _some_label +0 = by +1)' cannot encode the nop-jump (offset 1). Try using 'nop' instead.",
@@ -3138,7 +3138,7 @@ NEGATIVE_TESTS = [
     (
         "jump label offset extreme negative",
         """\
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         .offset 0x0801
@@ -3167,7 +3167,7 @@ NEGATIVE_TESTS = [
         "jump label offset zero",
         """\
         j _some_label -2
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         """,
@@ -3180,7 +3180,7 @@ NEGATIVE_TESTS = [
         "jump label offset one",
         """\
         j _some_label -1
-        ret
+        yield
         .label _some_label
         lw r3, 0x33
         """,
@@ -3206,7 +3206,7 @@ NEGATIVE_TESTS = [
         """\
         lw r0, 0
         .label _some_label
-        ret
+        yield
         .offset _some_label
         lw r1, 1
         """,
@@ -3797,7 +3797,7 @@ TESTS_INSTRUCTIONS_RS = [
         decr r7
         b r7 -0x1
         time
-        ret
+        yield
         """,
         "37AB 5877 9780 102D 102A",
         [],
@@ -3816,8 +3816,7 @@ TESTS_INSTRUCTIONS_RS = [
         decr r1 # executed 0xB505 times
         b r1 _outer_loop # (offset is -0x4) # executed 0xB505 times
         time # executed 0 times or 1 time, depending on how you look at it
-        ret # executed 0 times
-        # Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
+        yield # executed 1 times
         """,
         "3705 47B5 5F71 5F72 5822 9280 5811 9183 102D 102A",
         [],
@@ -4245,7 +4244,7 @@ TESTS_INSTRUCTIONS_RS = [
         decr r0
         sw r0, r1
         b r0 _start # (offset is -0x6)
-        ret
+        yield
         """,
         "3018 3101 6012 5800 2002 6021 5800 2001 9085 102A",
         [],
@@ -4271,7 +4270,7 @@ TESTS_CONNECT4_RS = [
         lw r0, 0x1337
         lw r7, 0xABCD
         sw r7, r7
-        ret
+        yield
         """,
         "3037 4013 37CD 47AB 2077 102A",
         [],
@@ -4284,7 +4283,7 @@ TESTS_CONNECT4_RS = [
         lw r1, r1
         lw r0, 7
         modu r1 r0
-        ret
+        yield
         """,
         "3189 2111 3007 6610 102A",
         [],
@@ -4298,7 +4297,7 @@ TESTS_CONNECT4_RS = [
         b r1 _move_nonzero # (offset is +0x3)
         # .label _move_zero # On move 0, play in column 3.
         lw r0, 3
-        ret
+        yield
         .label _move_nonzero
         lw r0, 18
         ge r1 r0
@@ -4309,7 +4308,7 @@ TESTS_CONNECT4_RS = [
         .label _move_late # On moves 18-20, play in column n % 7.
         lw r0, 7
         modu r1 r0
-        ret
+        yield
         """,
         "3189 2111 9101 3003 102A 3012 8610 9000 5811 3007 6610 102A",
         [],
@@ -4320,7 +4319,7 @@ TESTS_CONNECT4_RS = [
         """\
         lw r0, 6
         rnd r1, r0
-        ret
+        yield
         """,
         "3006 5E01 102A",
         [],
@@ -4331,7 +4330,7 @@ TESTS_CONNECT4_RS = [
         """\
         rnd r1
         lw r0, 1
-        ret
+        yield
         """,
         "5E11 3001 102A",
         [],
