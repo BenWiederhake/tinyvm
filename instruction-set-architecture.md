@@ -9,9 +9,9 @@
 - There are 64K addressable 16-bit words. (That is 128K bytes.) Alternatively, you could say that our bytes have 16 bits, but let's stick to the terms "byte = 8 bit" and "word = 16 bit".
 - There are 16 registers, all of which are general-purpose.
 - There is no built-in support for stack frames or anything. I want this to be a seriously limited VM with only basic algorithms, and if you want fancy things like recursion or local variables, then you'll have to pay for it by yourself.
-- There is special support for ease of use (return, cpuid, etc.)
+- There is special support for ease of use (yield, cpuid, etc.)
 - Data is stored in big-endian order. E.g., if the first byte in data memory is 0x12, and the second byte is 0x34, then loading the first word into a register results in that register having value 0x1234.
-- The program counter is not explicitly readable, and usually increments by one (with overflow) after each instruction (except for illegal, reserved, return, jump, and branch instructions).
+- The program counter is not explicitly readable, and usually increments by one (with overflow) after each instruction (except for illegal, reserved, yield, jump, and branch instructions).
 - There are no hardware exceptions or interrupts.
 
 ## General instruction pattern
@@ -31,7 +31,7 @@ Case distinction over the first (most significant) four bits of the first byte:
     * 0000: illegal instruction
     * 0001-1111: reserved (see note)
 - 0001:
-    * 0000: Special argument-less instructions (Return, CPUID, Debug-dump, Time)
+    * 0000: Special argument-less instructions (Yield, CPUID, Debug-dump, Time)
         * other instructions starting with 00010000 are reserved (see note)
     * 0001-1111: reserved (see note)
 - 0010:
@@ -70,15 +70,17 @@ Notes:
 
 ## Specific instruction documentation
 
-### `0x102A`: Return
+### `0x102A`: Yield
 
 `0b0001 0000 0010 1010`, type 3 (instruction carries no data)
 
 This reads register 0 – or, in some sense, reads all registers and all memory.
 
-Halts the machine. There is no execution beyond this point. The content of register 0 is considered to be the primary return value. Depending on the use case, other registers and/or memory may also be considered to be return value.
+Halts the machine, and returns control to the outside. There might be no execution beyond this point. The content of register 0 is considered to be the primary yielded/return value. Depending on the use case, other registers and/or memory may also be considered to be yielded/return value.
 
-Example: The instruction is `0b0001 0000 0010 1010`, and register 0 contains the value 0x0042. Then this instruction will halt the machine, and present the value 0x0042 as the main result.
+Note that execution will continue from the next instruction, with possibly changed contents of registers 0 through 3, or changes to the first few words of memory. The exact semantics of this is left to the execution context; for example, if the yielded value is some kind of game move, the changes to registers and memory might represent the updates associated with this and/or an opponent's move.
+
+Example: The instruction is `0b0001 0000 0010 1010`, and register 0 contains the value 0x0042. Then this instruction will halt the machine, and present the value 0x0042 as the main result. Execution *might* continue with the next instruction, and registers 0 through 3 as well as the first few words of memory might change.
 
 ### `0x102B`: CPUID
 
