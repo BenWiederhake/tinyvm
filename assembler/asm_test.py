@@ -4263,7 +4263,88 @@ TESTS_INSTRUCTIONS_RS = [
     ),
 ]
 
+
 TESTS_CONNECT4_RS = [
+    (
+        "from test_two_random 202503",
+        """\
+        lw r0, 1
+        rnd r1
+        yield
+        j -3
+        """,
+        "3001 5E11 102A A802",
+        [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
+    ),
+    (
+        "from test_connect4 202503 player two",
+        """\
+        lw r0, 0x0001
+        yield
+        j -2
+        """,
+        "3001 102A A801",
+        [],
+        {0: 1, 1: 2, 2: 3},
+    ),
+    (
+        "from test_connect4 202503 player one",
+        """\
+        lw r0, 0
+        yield
+        j -2
+        """,
+        "3000 102A A801",
+        [],
+        {0: 1, 1: 2, 2: 3},
+    ),
+    (
+        "from test_two_illegal_column 202503",
+        """\
+        lw r0, 0
+        yield
+        """,
+        "3000 102A",
+        [],
+        {0: 1, 1: 2},
+    ),
+    (
+        "from test_timeout 202503",
+        """\
+        lw r0, 1
+        j r0 +0x0000
+        """,
+        "3001 B000",
+        [],
+        {0: 1, 1: 2},
+    ),
+    (
+        "from test_full_column 202503",
+        """\
+        lw r0, 0
+        yield
+        j -2
+        """,
+        "3000 102A A801",
+        [],
+        {0: 1, 1: 2, 2: 3},
+    ),
+    (
+        "from test_determine_answer_multiple",
+        """\
+        lw r0, 0x7A
+        lw r1, 0x23
+        sw r0, r1
+        yield
+        lw r0, 0x3B
+        sw r1, r0
+        yield
+        """,
+        "307A 3123 2001 102A 303B 2010 102A",
+        [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7},
+    ),
     (
         "from test_determine_answer",
         """\

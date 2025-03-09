@@ -217,7 +217,7 @@ mod test_random {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VirtualMachine {
     registers: [u16; 16],
     program_counter: u16,
@@ -272,13 +272,13 @@ impl VirtualMachine {
     }
 
     #[must_use]
-    pub fn was_deterministic_so_far(&self) -> bool {
-        self.deterministic_so_far
+    pub fn get_data_mut(&mut self) -> &mut Segment {
+        &mut self.data
     }
 
     #[must_use]
-    pub fn release_to_data_segment(self) -> Segment {
-        self.data
+    pub fn was_deterministic_so_far(&self) -> bool {
+        self.deterministic_so_far
     }
 
     pub fn set_data_word(&mut self, index: u16, value: u16) {
