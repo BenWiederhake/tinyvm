@@ -78,7 +78,7 @@ pub enum StepResult {
     Continue,
     DebugDump,
     IllegalInstruction(u16),
-    Return(u16),
+    Yield(u16),
 }
 
 impl Debug for StepResult {
@@ -89,7 +89,7 @@ impl Debug for StepResult {
             Self::IllegalInstruction(insn) => {
                 f.write_fmt(format_args!("IllegalInstruction(0x{:04x})", *insn))
             }
-            Self::Return(value) => f.write_fmt(format_args!("Return(0x{:04x})", *value)),
+            Self::Yield(value) => f.write_fmt(format_args!("Yield(0x{:04x})", *value)),
         }
     }
 }
@@ -290,7 +290,7 @@ impl VirtualMachine {
         let mut increment_pc_as_usual = true;
         let step_result = match instruction & 0xF000 {
             // 0x0000 illegal
-            0x1000 => self.step_special(instruction, &mut increment_pc_as_usual),
+            0x1000 => self.step_special(instruction),
             0x2000 => self.step_memory(instruction),
             0x3000 => self.step_load_imm_low(instruction),
             0x4000 => self.step_load_imm_high(instruction),
@@ -321,7 +321,7 @@ impl VirtualMachine {
             self.program_counter = self.program_counter.wrapping_add(1);
         }
         match step_result {
-            StepResult::Continue | StepResult::DebugDump => {
+            StepResult::Continue | StepResult::DebugDump | StepResult::Yield(_) => {
                 self.time += 1;
             }
             _ => {}
@@ -330,13 +330,12 @@ impl VirtualMachine {
         step_result
     }
 
-    fn step_special(&mut self, instruction: u16, increment_pc_as_usual: &mut bool) -> StepResult {
+    fn step_special(&mut self, instruction: u16) -> StepResult {
         match instruction & 0x0FFF {
             0x02A => {
-                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102a-return
-                // Return
-                *increment_pc_as_usual = false;
-                StepResult::Return(self.registers[0])
+                // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102a-yield
+                // Yield
+                StepResult::Yield(self.registers[0])
             }
             0x02B => {
                 // https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102b-cpuid

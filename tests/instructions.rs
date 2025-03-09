@@ -39,7 +39,8 @@ fn run_test(
             StepResult::IllegalInstruction(_) => {
                 break;
             }
-            StepResult::Return(_) => {
+            StepResult::Yield(_) => {
+                actual_steps += 1;
                 break;
             }
         }
@@ -222,34 +223,34 @@ fn test_load_imm_low_simple() {
 }
 
 #[test]
-fn test_return_simple() {
+fn test_yield_simple() {
     run_test(
         &[0x102A],
         &[],
         1,
         &[
-            Expectation::ActualNumSteps(0),
-            Expectation::ProgramCounter(0),
+            Expectation::ActualNumSteps(1),
+            Expectation::ProgramCounter(1),
             Expectation::Register(0, 0),
-            Expectation::LastStep(StepResult::Return(0x0000)),
+            Expectation::LastStep(StepResult::Yield(0x0000)),
             Expectation::Deterministic(true),
         ],
     );
 }
 
 #[test]
-// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102a-return
-// The instruction is `0b0001 0000 0010 1010`, and register 0 contains the value 0x0042. Then this instruction will halt the machine, and present the value 0x0042 as the main result.
-fn test_return_value() {
+// https://github.com/BenWiederhake/tinyvm/blob/master/instruction-set-architecture.md#0x102a-yield
+// The instruction is `0b0001 0000 0010 1010`, and register 0 contains the value 0x0042. Then this instruction will halt the machine, and present the value 0x0042 as the main result. Execution *might* continue with the next instruction, and registers 0 through 3 as well as the first few words of memory might change.
+fn test_yield_value() {
     run_test(
         &[0x3042, 0x102A],
         &[],
-        2,
+        3,
         &[
-            Expectation::ActualNumSteps(1),
-            Expectation::ProgramCounter(1),
+            Expectation::ActualNumSteps(2),
+            Expectation::ProgramCounter(2),
             Expectation::Register(0, 0x0042),
-            Expectation::LastStep(StepResult::Return(0x0042)),
+            Expectation::LastStep(StepResult::Yield(0x0042)),
             Expectation::Deterministic(true),
         ],
     );
@@ -404,14 +405,14 @@ fn test_time_long() {
             0x5877, // decr r7
             0x9780, // b r7 -0x1
             0x102D, // time
-            0x102A, // ret
+            0x102A, // yield
         ],
         &[],
         0xF_FFFF, // More than enough; definitely not tight
         &[
-            Expectation::ActualNumSteps(1 + 2 * 0xFFAB + 1),
-            Expectation::ProgramCounter(4),
-            Expectation::LastStep(StepResult::Return(0)),
+            Expectation::ActualNumSteps(1 + 2 * 0xFFAB + 2),
+            Expectation::ProgramCounter(5),
+            Expectation::LastStep(StepResult::Yield(0)),
             Expectation::Register(0, 0x0000),
             Expectation::Register(1, 0x0000),
             Expectation::Register(2, 0x0001),
@@ -438,15 +439,15 @@ fn test_time_very_long() {
             0x5811, // decr r1 # executed 0xB505 times
             0x9183, // b r1 _outer_loop # (offset is -0x4) # executed 0xB505 times
             0x102D, // time # executed 0 times or 1 time, depending on how you look at it
-            0x102A, // ret # executed 0 times
+            0x102A, // yield # executed 1 times
             // Total steps: (3 or 4) + 3 * 0xB505 + 2 * 0xB505 * 0xB505 = 0x100024344 or 0x100024345
         ],
         &[],
         0x1_FFFF_FFFF, // More than enough; definitely not tight
         &[
-            Expectation::ActualNumSteps(0x1_0002_4345),
-            Expectation::ProgramCounter(9),
-            Expectation::LastStep(StepResult::Return(0)),
+            Expectation::ActualNumSteps(0x1_0002_4346),
+            Expectation::ProgramCounter(10),
+            Expectation::LastStep(StepResult::Yield(0)),
             Expectation::Register(0, 0x0000),
             Expectation::Register(1, 0x0001),
             Expectation::Register(2, 0x0002),
@@ -1979,13 +1980,13 @@ fn test_fibonacci() {
             0x5800, // decr r0
             0x2001, // sw r0, r1
             0x9085, // b r0 _start # (offset is -0x6)
-            0x102A, // ret
+            0x102A, // yield
         ],
         &[],
         0xFFFF,
         &[
-            Expectation::ActualNumSteps(2 + (24 / 2) * 7),
-            Expectation::ProgramCounter(9),
+            Expectation::ActualNumSteps(3 + (24 / 2) * 7),
+            Expectation::ProgramCounter(10),
             Expectation::Data(23, 1),
             Expectation::Data(22, 2),
             Expectation::Data(21, 3),
@@ -2013,7 +2014,7 @@ fn test_fibonacci() {
             Expectation::Register(0, 0),
             Expectation::Register(1, 9489),
             Expectation::Register(2, 46368),
-            Expectation::LastStep(StepResult::Return(0)),
+            Expectation::LastStep(StepResult::Yield(0)),
             Expectation::Deterministic(true),
         ],
     );

@@ -527,7 +527,7 @@ impl PlayerData {
                     self.total_insns += step + 1;
                     return AlgorithmResult::IllegalInstruction(insn);
                 }
-                StepResult::Return(column_index) => {
+                StepResult::Yield(column_index) => { // FIXME
                     let deterministic = vm.was_deterministic_so_far();
                     self.data = vm.release_to_data_segment();
                     self.last_move = column_index;
@@ -598,7 +598,7 @@ mod test_player_data {
         instructions[2] = 0x37CD; // ↓
         instructions[3] = 0x47AB; // lw r7, 0xABCD
         instructions[4] = 0x2077; // sw r7, r7
-        instructions[5] = 0x102A; // ret
+        instructions[5] = 0x102A; // yield
         let mut player_data = PlayerData::new(instructions);
         assert_eq!(player_data.last_move, 0xFFFF);
         assert_eq!(player_data.total_moves, 0);
@@ -618,7 +618,7 @@ mod test_player_data {
         let mut instructions = Segment::new_zeroed();
         instructions[0] = 0x3006; // lw r0, 6
         instructions[1] = 0x5E01; // rnd r1, r0
-        instructions[2] = 0x102A; // ret
+        instructions[2] = 0x102A; // yield
         let mut player_data = PlayerData::new(instructions);
         assert_eq!(player_data.last_move, 0xFFFF);
         assert_eq!(player_data.total_moves, 0);
@@ -823,7 +823,7 @@ mod test_game {
     #[test]
     fn test_full_column() {
         let mut instructions = Segment::new_zeroed();
-        instructions[0] = 0x102A; // ret
+        instructions[0] = 0x102A; // yield
         let mut game = Game::new(instructions.clone(), instructions, 0x12345);
         assert!(game.was_deterministic_so_far());
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
@@ -863,7 +863,7 @@ mod test_game {
     fn test_illegal_column() {
         let mut instructions = Segment::new_zeroed();
         instructions[0] = 0x30FF; // lw r3, 0xFFFF
-        instructions[1] = 0x102A; // ret
+        instructions[1] = 0x102A; // yield
         let mut game = Game::new(instructions.clone(), instructions, 0x12345);
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
         // Next, player 1 attempts to insert into column 0xFFFF, which is an invalid column,
@@ -909,10 +909,10 @@ mod test_game {
     #[test]
     fn test_two_illegal_column() {
         let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x102A; // ret
+        instructions_one[0] = 0x102A; // yield
         let mut instructions_two = Segment::new_zeroed();
         instructions_two[0] = 0x30FF; // lw r0, 0xFFFF
-        instructions_two[1] = 0x102A; // ret
+        instructions_two[1] = 0x102A; // yield
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
         // Player 2 tries to play into an illegal column, losing the game.
@@ -930,7 +930,7 @@ mod test_game {
     #[test]
     fn test_two_illegal_instruction() {
         let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x102A; // ret
+        instructions_one[0] = 0x102A; // yield
         let mut instructions_two = Segment::new_zeroed();
         instructions_two[0] = 0x0000; // ill 0x0000
         let mut game = Game::new(instructions_one, instructions_two, 123);
@@ -950,10 +950,10 @@ mod test_game {
     #[test]
     fn test_connect4() {
         let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x102A; // ret
+        instructions_one[0] = 0x102A; // yield
         let mut instructions_two = Segment::new_zeroed();
         instructions_two[0] = 0x3001; // lw r0, 0x0001
-        instructions_two[1] = 0x102A; // ret
+        instructions_two[1] = 0x102A; // yield
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
         // Player 1 finishes a connect4 in column 0.
@@ -976,7 +976,7 @@ mod test_game {
         instructions_one[1] = 0x2111; // lw r1, r1
         instructions_one[2] = 0x3007; // lw r0, 7
         instructions_one[3] = 0x6610; // modu r1 r0
-        instructions_one[4] = 0x102A; // ret
+        instructions_one[4] = 0x102A; // yield
 
         // Mark it read-only to prevent typos.
         let instructions_one = instructions_one;
@@ -988,7 +988,7 @@ mod test_game {
         instructions_two[2] = 0x9101; // b r1 _move_nonzero # (offset is +0x3)
                                       // # .label _move_zero # On move 0, play in column 3.
         instructions_two[3] = 0x3003; // lw r0, 3
-        instructions_two[4] = 0x102A; // ret
+        instructions_two[4] = 0x102A; // yield
                                       // .label _move_nonzero
         instructions_two[5] = 0x3012; // lw r0, 18
         instructions_two[6] = 0x8610; // ge r1 r0
@@ -999,7 +999,7 @@ mod test_game {
                                       // .label _move_late # On moves 18-20, play in column n % 7.
         instructions_two[9] = 0x3007; // lw r0, 7
         instructions_two[10] = 0x6610; // modu r1 r0
-        instructions_two[11] = 0x102A; // ret
+        instructions_two[11] = 0x102A; // yield
 
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
@@ -1021,11 +1021,11 @@ mod test_game {
     #[test]
     fn test_two_random() {
         let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x102A; // ret
+        instructions_one[0] = 0x102A; // yield
         let mut instructions_two = Segment::new_zeroed();
         instructions_two[0] = 0x5E11; // rnd r1
         instructions_two[1] = 0x3001; // lw r0, 1
-        instructions_two[2] = 0x102A; // ret
+        instructions_two[2] = 0x102A; // yield
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
         // Player 1 wins by connect 4.
