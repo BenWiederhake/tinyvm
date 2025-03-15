@@ -45,10 +45,13 @@ jobs:
         run: git ls-files '*.py' | xargs black
       - name: Lint VMs for debug statements
         run: |
-          if git ls-files '*.asm' | xargs grep -n; then
-            echo "ERROR: Published VMs should not contain debug statements."
-            exit 1
-          fi
+          for file in $(git ls-files '*.asm'); do
+            if grep -Pn '^[^#]*debug' "${file}"; then
+              echo "ERROR: Published VMs should not contain debug statements."
+              exit 1
+            fi
+            echo "File $file is good."
+          done
 
       - name: Self-test Rust VM
         run: cargo test --all
