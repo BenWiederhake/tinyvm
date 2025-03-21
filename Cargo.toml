@@ -9,3 +9,6 @@ edition = "2021"
 [dependencies]
 getrandom = "0.2.8"
 lazy_static = "1.4.0"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(fuzzing)'] }

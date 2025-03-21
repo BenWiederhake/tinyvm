@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Index, IndexMut};
 
 lazy_static! {
-    static ref DUMP_ON_DEBUG: bool = env::var("TINYVM_DUMP_ON_DEBUG").is_ok();
+    static ref DUMP_ON_DEBUG: bool = cfg!(fuzzing) || env::var("TINYVM_DUMP_ON_DEBUG").is_ok();
 }
 
 #[derive(Clone, PartialEq, Eq)]
