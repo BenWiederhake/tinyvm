@@ -1,4 +1,3 @@
-use getrandom::getrandom;
 use std::env;
 use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Index, IndexMut};
@@ -101,7 +100,7 @@ fn random_upto_including(upper_bound: u16) -> u16 {
     // so pretty darn unlikely to be noticed by anyone.
     let mut bytes = [0u8; 8];
     // If getrandom fails, tinyvm probably doesn't matter anymore. Crash and burn.
-    getrandom(&mut bytes).expect("Cannot satisfy rnd instruction");
+    getrandom::fill(&mut bytes).expect("Cannot satisfy rnd instruction");
     let mut value: u64 = 0;
     value |= u64::from(bytes[0]);
     value <<= 8;
