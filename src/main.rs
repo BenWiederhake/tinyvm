@@ -1,18 +1,38 @@
 // This lint could have been useful, but it generates too many false positives, so deactivate it:
 #![allow(clippy::cast_possible_truncation)]
 
+use std::fs;
 use std::io::{Error, ErrorKind, Result};
-use std::{env, fs, process};
+
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Whether to run in general judgement mode
+    #[arg(short, long)]
+    judge: bool,
+
+    /// One of more instruction segments (two for 'connect4' mode, two or more for 'judge' mode.)
+    /// TODO: These bounds should be checked by clap.
+    instruction_segments: Vec<String>,
+}
 
 use tinyvm::{Game, GameResult, Segment, WinReason};
 
-fn parse_segment(segment_bytes: &[u8], segment_type: &str) -> Result<Segment> {
+fn parse_segment(segment_filename: &str) -> Result<Segment> {
+    let segment_bytes = fs::read(segment_filename).map_err(|e| {
+        Error::new(
+            e.kind(),
+            format!("Cannot read instruction segment from file {segment_filename}: {e}"),
+        )
+    })?;
     if segment_bytes.len() != (1 << 17) {
         return Err(Error::new(
             ErrorKind::InvalidData,
             format!(
-                "Wrong {} segment length, expected 131072, got {} instead.",
-                segment_type,
+                "{}: Wrong segment length, expected 131072, got {} instead.",
+                segment_filename,
                 segment_bytes.len()
             ),
         ));
@@ -30,31 +50,8 @@ fn parse_segment(segment_bytes: &[u8], segment_type: &str) -> Result<Segment> {
     Ok(segment)
 }
 
-fn parse_args() -> Result<(Segment, Segment)> {
-    let args = env::args().collect::<Vec<_>>();
-    if args.len() != 3 {
-        eprintln!(
-            "USAGE: {} /path/to/instruction_segment_player_one /path/to/instruction_segment_player_two",
-            args[0]
-        );
-        process::exit(1);
-    }
-
-    let instructions_one_bytes = fs::read(args[1].clone())?;
-    let instructions_two_bytes = fs::read(args[2].clone())?;
-
-    Ok((
-        parse_segment(&instructions_one_bytes, "player one instruction")?,
-        parse_segment(&instructions_two_bytes, "player two instruction")?,
-    ))
-}
-
-fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) -> bool {
-    let mut game = Game::new(
-        instructions_one.clone(),
-        instructions_two.clone(),
-        30_000,
-    );
+fn run_and_print_connect4_game(instructions_one: &Segment, instructions_two: &Segment) -> bool {
+    let mut game = Game::new(instructions_one.clone(), instructions_two.clone(), 30_000);
     let result = game.conclude();
     print!("{{\"moves\": \"");
     for &col in game.get_move_order() {
@@ -92,19 +89,43 @@ fn run_and_print_game(instructions_one: &Segment, instructions_two: &Segment) ->
     game.was_deterministic_so_far()
 }
 
-fn main() -> Result<()> {
-    let (instructions_one, instructions_two) = parse_args()?;
-
+fn run_and_print_many_connect4_games(instructions_one: &Segment, instructions_two: &Segment) {
     print!("[");
-    let first_was_deterministic = run_and_print_game(&instructions_one, &instructions_two);
+    let first_was_deterministic = run_and_print_connect4_game(instructions_one, instructions_two);
     if !first_was_deterministic {
         for _ in 0..999 {
             print!(",");
-            let was_deterministic = run_and_print_game(&instructions_one, &instructions_two);
+            let was_deterministic = run_and_print_connect4_game(instructions_one, instructions_two);
             assert!(!was_deterministic);
         }
     }
     println!("]");
+}
+
+fn main() -> Result<()> {
+    let args = Args::parse();
+
+    println!("args are: {args:?}");
+
+    let segments = args
+        .instruction_segments
+        .iter()
+        .map(|p| parse_segment(p))
+        .collect::<Result<Vec<_>>>()?;
+
+    if args.judge {
+        assert!(
+            segments.len() >= 2,
+            "Wrong number of segments provided; TODO: should be checked by clap"
+        );
+        unimplemented!();
+    } else {
+        assert!(
+            segments.len() == 2,
+            "Wrong number of segments provided; TODO: should be checked by clap"
+        );
+        run_and_print_many_connect4_games(&segments[0], &segments[1]);
+    }
 
     Ok(())
 }
