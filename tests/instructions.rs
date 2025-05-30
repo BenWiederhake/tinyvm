@@ -1,4 +1,4 @@
-use tinyvm::{Segment, StepResult, VirtualMachine};
+use tinyvm::vm::{Segment, StepResult, VirtualMachine};
 
 enum Expectation {
     ActualNumSteps(u64),
