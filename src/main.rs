@@ -4,14 +4,22 @@
 use std::fs;
 use std::io::{Error, ErrorKind, Result};
 
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+
+#[derive(Clone, Debug, Default, ValueEnum)]
+enum RunnerType {
+    #[default]
+    Connect4,
+    Judge,
+    TestDriver,
+}
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Whether to run in general judgement mode
-    #[arg(short, long)]
-    judge: bool,
+    /// Which type of execution environment to use.
+    #[arg(short, long, value_enum, default_value_t)]
+    mode: RunnerType,
 
     /// One of more instruction segments (two for 'connect4' mode, two or more for 'judge' mode.)
     /// TODO: These bounds should be checked by clap.
@@ -113,18 +121,28 @@ fn main() -> Result<()> {
         .map(|p| parse_segment(p))
         .collect::<Result<Vec<_>>>()?;
 
-    if args.judge {
-        assert!(
-            segments.len() >= 2,
-            "Wrong number of segments provided; TODO: should be checked by clap"
-        );
-        unimplemented!();
-    } else {
-        assert!(
-            segments.len() == 2,
-            "Wrong number of segments provided; TODO: should be checked by clap"
-        );
-        run_and_print_many_connect4_games(&segments[0], &segments[1]);
+    match args.mode {
+        RunnerType::Connect4 => {
+            assert!(
+                segments.len() == 2,
+                "Wrong number of segments provided; TODO: should be checked by clap"
+            );
+            run_and_print_many_connect4_games(&segments[0], &segments[1]);
+        }
+        RunnerType::Judge => {
+            assert!(
+                segments.len() >= 2,
+                "Wrong number of segments provided; TODO: should be checked by clap"
+            );
+            unimplemented!();
+        }
+        RunnerType::TestDriver => {
+            assert!(
+                segments.len() == 2,
+                "Wrong number of segments provided; TODO: should be checked by clap"
+            );
+            unimplemented!();
+        }
     }
 
     Ok(())
