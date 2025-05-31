@@ -77,6 +77,7 @@ fn main() -> Result<()> {
                 segments.len() == 2,
                 "Wrong number of segments provided; TODO: should be checked by clap"
             );
+            // TODO: Make the budget per move configurable through the CLI?
             connect4::run_and_print_many_games(&segments[0], &segments[1]);
         }
         RunnerType::Judge => {
@@ -91,7 +92,8 @@ fn main() -> Result<()> {
                 segments.len() == 2,
                 "Wrong number of segments provided; TODO: should be checked by clap"
             );
-            test_driver::run_and_print_tests(&segments[0], &segments[1]);
+            let total_budget = 30_000; // TODO: make it configurable through CLI
+            test_driver::run_and_print_tests(&segments[0], &segments[1], total_budget);
         }
     }
 

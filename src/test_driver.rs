@@ -39,15 +39,22 @@ impl TestDriverData {
     }
 
     pub fn do_step(&mut self) -> Option<TestResult> {
-        unimplemented!()
+        if self.testee_remaining > 0 {
+            unimplemented!() // Testee step
+        } else {
+            unimplemented!() // Driver step
+            // VM
+            // If valid, add total insn
+        }
     }
 
-    pub fn conclude(&mut self) -> TestResult {
-        loop {
+    pub fn conclude(&mut self, total_budget: u64) -> TestResult {
+        while self.driver_insns + self.testee_insns < total_budget {
             if let Some(result) = self.do_step() {
                 return result;
             }
         }
+        TestResult::Timeout
     }
 }
 
@@ -71,11 +78,40 @@ impl Display for TestResult {
     }
 }
 
-pub fn run_and_print_tests(driver_instructions: &Segment, testee_instructions: &Segment) {
+pub fn run_and_print_tests(
+    driver_instructions: &Segment,
+    testee_instructions: &Segment,
+    total_budget: u64,
+) {
     let mut test_driver_data =
         TestDriverData::new(driver_instructions.clone(), testee_instructions.clone());
-    let result = test_driver_data.conclude();
+    let result = test_driver_data.conclude(total_budget);
     // TODO: Verbose mode? Quiet mode?
     println!("{}", result);
     eprintln!("{:?}", result);
+}
+
+#[cfg(test)]
+mod test_test_driver {
+    use super::*;
+
+    #[test]
+    fn test_no_budget() {
+        let driver_insns = Segment::new_zeroed();
+        let testee_insns = Segment::new_zeroed();
+        let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
+        let result = test_driver_data.conclude(0);
+        // If any instruction got executed, it would be instruction 0x0000, which is an illegal instruction by design.
+        assert_eq!(result, TestResult::Timeout);
+    }
+}
+
+#[cfg(test)]
+mod test_result_printing {
+    use super::*;
+
+    #[test]
+    fn test_anything() {
+        todo!();
+    }
 }
