@@ -464,7 +464,7 @@ pub enum AlgorithmResult {
 impl PlayerData {
     pub fn new(instructions: Segment) -> Self {
         let mut data = Segment::new_zeroed();
-        // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/connect4.md#data-segment-content-and-layout-for-connect4
+        // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/0001_connect4.md#data-segment-content-and-layout-for-connect4
         // - starting at 0xFFFE, size 2 words:
         //     * Written only once. Note that these addresses only need one instruction to be loaded.
         //         - 0xFFFF: Major version of the game and data: Must always be 0x0001, to distinguish it from other games. (In case someone wants to write a multi-game algorithm.)
@@ -495,7 +495,7 @@ impl PlayerData {
         board: &Board,
         other: &Self,
     ) {
-        // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/connect4.md#data-segment-content-and-layout-for-connect4
+        // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/0001_connect4.md#data-segment-content-and-layout-for-connect4
         // - starting at 0x0000, size 4 words:
         //     * Written before each move
         //     * Total time available for this move, most significant word first, similar to the returned value of the Time instruction.

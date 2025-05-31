@@ -6,8 +6,8 @@ Enables one VM (the "driver") to run some tests on an associated VM-under-test (
 
 In particular:
 - At the beginning of execution, the data segment, registers and program counter of the driver and the testee are initialized to all-zeros, except for:
-    * The data segment at address 0xFFFF of the driver is initialized to 0x0003 ("test\_driver")
-    * The data segment at address 0xFFFE of the driver is initialized to 0x0001 ("version 1")
+    * The data segment at address 0xFFFF of the driver is initialized to 0x0003 (meaning "test\_driver")
+    * The data segment at address 0xFFFE of the driver is initialized to 0x0001 (meaning "version 1")
 - When the driver yields with value 1, the testee will now be executed until it yields or the allotted time is up.
 - When the driver yields with value 2, it indicates that it is done, and returns the test results. See [Returning test results](#returning-test-results) section.
 - When the driver yields with value 3, some of the registers of the testee will be overwritten/read. See [Reading/overwriting the testee registers](#reading-overwriting-the-testee-registers).
@@ -16,7 +16,8 @@ In particular:
 - When the driver yields with value 6, some of the testee instruction segment will be read. See [Reading the testee instruction segment](#reading-the-testee-instruction-segment).
 - When the driver yields with value 7, the testee's data segment, registers and program counter will be reset to all-zeros.
 - When the driver yields with value 8, the testee's allotted time is reset. See [Resetting the time limit](#resetting-the-time-limit).
-- IP FIXME
+- When the driver yields with value 9, the testee's program counter is set to the value of register 1 of the driver.
+- When the driver yields with value 10, the testee's data segment, registers and program counter is set to all-zeros.
 - Any other value in register 0 is interpreted as a fatal error of the test suite, and results in a corresponding output.
 
 Of particular note is that the time taken by the testee is subtracted from the total time budget of the test driver. Therefore, the driver should either attempt to restrict the testee's time, or live with the fact that a timeout results in very uninformative output.

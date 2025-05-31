@@ -21,7 +21,8 @@ New silly algorithms are very welcome! I'd love to hear your feedback, or any ot
 
 This repository contains:
 - `assembler/`: An assembler from program text to binary TinyVM instructions.
-- `data-layout/`: The specification of how [Connect4 data](https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/connect4.md#connect4-conventions) is passed to your algorithm.
+- `data-layout/`: The specification of how various data layouts and execution environments work
+  * Primarily how [Connect4 data](https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/0001_connect4.md#connect4-conventions) is passed to your algorithm.
 - `instruction-set-architecture.md`: An in-depth definition of all the TinyVM instructions and their effect.
 - `src/`: The source code for TinyVM itself, which can execute TinyVM binaries. (Just like the jvm can execute java binaries, for example.)
 - `tournament/`: Management code that generates this [neat website](https://benwiederhake.github.io/tinyvm/).
