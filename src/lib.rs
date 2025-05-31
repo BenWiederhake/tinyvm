@@ -9,4 +9,5 @@
 extern crate lazy_static;
 
 pub mod connect4;
+pub mod test_driver;
 pub mod vm;

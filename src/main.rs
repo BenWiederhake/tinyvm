@@ -7,6 +7,7 @@ use std::io::{Error, ErrorKind, Result};
 use clap::{Parser, ValueEnum};
 
 use tinyvm::connect4;
+use tinyvm::test_driver;
 use tinyvm::vm::Segment;
 
 #[derive(Clone, Debug, Default, ValueEnum)]
@@ -90,7 +91,7 @@ fn main() -> Result<()> {
                 segments.len() == 2,
                 "Wrong number of segments provided; TODO: should be checked by clap"
             );
-            unimplemented!();
+            test_driver::run_and_print_tests(&segments[0], &segments[1]);
         }
     }
 
