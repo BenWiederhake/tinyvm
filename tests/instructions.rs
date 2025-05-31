@@ -9,22 +9,14 @@ enum Expectation {
     Deterministic(bool),
 }
 
-fn segment_from_prefix(prefix: &[u16]) -> Segment {
-    let mut segment = Segment::new_zeroed();
-    for (i, &v) in prefix.iter().enumerate() {
-        segment[i as u16] = v;
-    }
-    segment
-}
-
 fn run_test(
     instruction_prefix: &[u16],
     data_prefix: &[u16],
     max_steps: usize,
     expectations: &[Expectation],
 ) {
-    let instruction_segment = segment_from_prefix(instruction_prefix);
-    let data_segment = segment_from_prefix(data_prefix);
+    let instruction_segment = Segment::from_prefix(instruction_prefix);
+    let data_segment = Segment::from_prefix(data_prefix);
 
     let mut vm = VirtualMachine::new(instruction_segment, data_segment);
 

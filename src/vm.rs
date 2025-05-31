@@ -18,6 +18,20 @@ impl Segment {
             backing: Box::new([0; 1 << 16]),
         }
     }
+
+    #[must_use]
+    pub fn from_prefix(prefix: &[u16]) -> Segment {
+        assert!(
+            prefix.len() <= 65536,
+            "'Prefix' is so long that it doesn't fit?! Expected 65536 or less, actual {}",
+            prefix.len()
+        );
+        let mut segment = Segment::new_zeroed();
+        for (i, &v) in prefix.iter().enumerate() {
+            segment[i as u16] = v;
+        }
+        segment
+    }
 }
 
 impl Debug for Segment {
@@ -26,7 +40,7 @@ impl Debug for Segment {
             f.write_fmt(format_args!(", {word:04X}"))
         }
         fn close_repetitions(f: &mut Formatter, last_word: u16, repetitions: usize) -> Result {
-            if repetitions < 2 {
+            if repetitions < 4 {
                 for _ in 0..repetitions {
                     append_value(f, last_word)?;
                 }
@@ -54,7 +68,110 @@ impl Debug for Segment {
         }
         close_repetitions(f, last_word, repetitions)?;
 
-        f.write_str(" ] }")
+        f.write_str("] }")
+    }
+}
+
+#[cfg(test)]
+mod test_segment {
+    use super::*;
+
+    #[test]
+    fn test_empty() {
+        let segment = Segment::new_zeroed();
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [0000, <elided 65535 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_prefix() {
+        let segment = Segment::from_prefix(&[1, 2, 3, 4]);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [0001, 0002, 0003, 0004, 0000, <elided 65531 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_prefix_empty() {
+        let segment = Segment::from_prefix(&[]);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [0000, <elided 65535 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_prefix_long() {
+        let long_prefix = vec![0xABCD; 65534];
+        let segment = Segment::from_prefix(&long_prefix);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [ABCD, <elided 65533 repetitions>, 0000, 0000] }"
+        );
+    }
+
+    #[test]
+    #[should_panic = "Expected 65536 or less, actual 65537"]
+    fn test_prefix_overlong() {
+        let long_prefix = vec![0xABCD; 65537];
+        assert_eq!(65537, long_prefix.len());
+        let seg = Segment::from_prefix(&long_prefix);
+        println!("{seg:?}");
+    }
+
+    #[test]
+    fn test_1_no_elide() {
+        let segment = Segment::from_prefix(&[0xABCD]);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [ABCD, 0000, <elided 65534 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_2_no_elide() {
+        let segment = Segment::from_prefix(&[0xABCD, 0xABCD]);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [ABCD, ABCD, 0000, <elided 65533 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_3_no_elide() {
+        let segment = Segment::from_prefix(&[0xABCD, 0xABCD, 0xABCD]);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [ABCD, ABCD, ABCD, 0000, <elided 65532 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_4_no_elide() {
+        let segment = Segment::from_prefix(&[0xABCD, 0xABCD, 0xABCD, 0xABCD]);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [ABCD, ABCD, ABCD, ABCD, 0000, <elided 65531 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_5_elide() {
+        let segment = Segment::from_prefix(&[0xABCD, 0xABCD, 0xABCD, 0xABCD, 0xABCD]);
+        assert_eq!(
+            format!("{segment:?}"),
+            "Segment { backing: [ABCD, <elided 4 repetitions>, 0000, <elided 65530 repetitions>] }"
+        );
+    }
+
+    #[test]
+    fn test_middle() {
+        let mut segment = Segment::new_zeroed();
+        segment[1234] = 0xABCD;
+        assert_eq!(format!("{segment:?}"), "Segment { backing: [0000, <elided 1233 repetitions>, ABCD, 0000, <elided 64300 repetitions>] }");
     }
 }
 

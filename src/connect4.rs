@@ -594,13 +594,14 @@ mod test_player_data {
 
     #[test]
     fn test_determine_answer() {
-        let mut instructions = Segment::new_zeroed();
-        instructions[0] = 0x3037; // ↓
-        instructions[1] = 0x4013; // lw r0, 0x1337
-        instructions[2] = 0x37CD; // ↓
-        instructions[3] = 0x47AB; // lw r7, 0xABCD
-        instructions[4] = 0x2077; // sw r7, r7
-        instructions[5] = 0x102A; // yield
+        let instructions = Segment::from_prefix(&[
+            0x3037, // ↓
+            0x4013, // lw r0, 0x1337
+            0x37CD, // ↓
+            0x47AB, // lw r7, 0xABCD
+            0x2077, // sw r7, r7
+            0x102A, // yield
+        ]);
         let mut player_data = PlayerData::new(instructions);
         assert_eq!(player_data.last_move, 0xFFFF);
         assert_eq!(player_data.total_moves, 0);
@@ -620,10 +621,11 @@ mod test_player_data {
 
     #[test]
     fn test_determine_answer_random() {
-        let mut instructions = Segment::new_zeroed();
-        instructions[0] = 0x3006; // lw r0, 6
-        instructions[1] = 0x5E01; // rnd r1, r0
-        instructions[2] = 0x102A; // yield
+        let instructions = Segment::from_prefix(&[
+            0x3006, // lw r0, 6
+            0x5E01, // rnd r1, r0
+            0x102A, // yield
+        ]);
         let mut player_data = PlayerData::new(instructions);
         assert_eq!(player_data.last_move, 0xFFFF);
         assert_eq!(player_data.total_moves, 0);
@@ -638,14 +640,15 @@ mod test_player_data {
     #[test]
     fn test_determine_answer_multiple() {
         // TODO: Maybe should also be a VM test?
-        let mut instructions = Segment::new_zeroed();
-        instructions[0] = 0x307A; // lw r0, 0x7A
-        instructions[1] = 0x3123; // lw r1, 0x23
-        instructions[2] = 0x2001; // sw r0, r1
-        instructions[3] = 0x102A; // yield
-        instructions[4] = 0x303B; // lw r0, 0x3B
-        instructions[5] = 0x2010; // sw r1, r0
-        instructions[6] = 0x102A; // yield
+        let instructions = Segment::from_prefix(&[
+            0x307A, // lw r0, 0x7A
+            0x3123, // lw r1, 0x23
+            0x2001, // sw r0, r1
+            0x102A, // yield
+            0x303B, // lw r0, 0x3B
+            0x2010, // sw r1, r0
+            0x102A, // yield
+        ]);
         let mut player_data = PlayerData::new(instructions);
         assert_eq!(player_data.last_move, 0xFFFF);
         assert_eq!(player_data.total_moves, 0);
@@ -909,10 +912,11 @@ mod test_game {
 
     #[test]
     fn test_full_column() {
-        let mut instructions = Segment::new_zeroed();
-        instructions[0] = 0x3000; // lw r0, 0
-        instructions[1] = 0x102A; // yield
-        instructions[2] = 0xA801; // j -2
+        let instructions = Segment::from_prefix(&[
+            0x3000, // lw r0, 0
+            0x102A, // yield
+            0xA801, // j -2
+        ]);
         let mut game = Game::new(instructions.clone(), instructions, 0x12345);
         assert!(game.was_deterministic_so_far());
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
@@ -950,9 +954,10 @@ mod test_game {
 
     #[test]
     fn test_illegal_column() {
-        let mut instructions = Segment::new_zeroed();
-        instructions[0] = 0x30FF; // lw r0, 0xFFFF
-        instructions[1] = 0x102A; // yield
+        let instructions = Segment::from_prefix(&[
+            0x30FF, // lw r0, 0xFFFF
+            0x102A, // yield
+        ]);
         let mut game = Game::new(instructions.clone(), instructions, 0x12345);
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
         // Next, player 1 attempts to insert into column 0xFFFF, which is an invalid column,
@@ -981,9 +986,10 @@ mod test_game {
 
     #[test]
     fn test_timeout() {
-        let mut instructions = Segment::new_zeroed();
-        instructions[0] = 0x3001; // lw r0, 1
-        instructions[1] = 0xB000; // j r0 +0x0000
+        let instructions = Segment::from_prefix(&[
+            0x3001, // lw r0, 1
+            0xB000, // j r0 +0x0000
+        ]);
         let mut game = Game::new(instructions.clone(), instructions, 123);
         assert_eq!(game.get_state(), GameState::RunningNextIs(Player::One));
         // Next, player 1 times out, thus losing the game.
@@ -998,12 +1004,14 @@ mod test_game {
 
     #[test]
     fn test_two_illegal_column() {
-        let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x3000; // lw r0, 0
-        instructions_one[1] = 0x102A; // yield
-        let mut instructions_two = Segment::new_zeroed();
-        instructions_two[0] = 0x30FF; // lw r0, 0xFFFF
-        instructions_two[1] = 0x102A; // yield
+        let instructions_one = Segment::from_prefix(&[
+            0x3000, // lw r0, 0
+            0x102A, // yield
+        ]);
+        let instructions_two = Segment::from_prefix(&[
+            0x30FF, // lw r0, 0xFFFF
+            0x102A, // yield
+        ]);
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
         // Player 2 tries to play into an illegal column, losing the game.
@@ -1020,11 +1028,13 @@ mod test_game {
 
     #[test]
     fn test_two_illegal_instruction() {
-        let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x3000; // lw r0, 0
-        instructions_one[1] = 0x102A; // yield
-        let mut instructions_two = Segment::new_zeroed();
-        instructions_two[0] = 0x0000; // ill 0x0000
+        let instructions_one = Segment::from_prefix(&[
+            0x3000, // lw r0, 0
+            0x102A, // yield
+        ]);
+        let instructions_two = Segment::from_prefix(&[
+            0x0000, // ill 0x0000
+        ]);
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
         // Player 2 terminates with an illegal instruction, losing the game.
@@ -1041,14 +1051,16 @@ mod test_game {
 
     #[test]
     fn test_connect4() {
-        let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x3000; // lw r0, 0
-        instructions_one[1] = 0x102A; // yield
-        instructions_one[2] = 0xA801; // j -2
-        let mut instructions_two = Segment::new_zeroed();
-        instructions_two[0] = 0x3001; // lw r0, 0x0001
-        instructions_two[1] = 0x102A; // yield
-        instructions_two[2] = 0xA801; // j -2
+        let instructions_one = Segment::from_prefix(&[
+            0x3000, // lw r0, 0
+            0x102A, // yield
+            0xA801, // j -2
+        ]);
+        let instructions_two = Segment::from_prefix(&[
+            0x3001, // lw r0, 0x0001
+            0x102A, // yield
+            0xA801, // j -2
+        ]);
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
         // Player 1 finishes a connect4 in column 0.
@@ -1066,36 +1078,39 @@ mod test_game {
     #[ignore = "programs not adjusted yet"]
     #[test]
     fn test_board_full() {
-        let mut instructions_one = Segment::new_zeroed();
-        // On the nth move, place in column n % 7
-        instructions_one[0] = 0x3189; // lw r1, 0xFF89
-        instructions_one[1] = 0x2111; // lw r1, r1
-        instructions_one[2] = 0x3007; // lw r0, 7
-        instructions_one[3] = 0x6610; // modu r1 r0
-        instructions_one[4] = 0x102A; // yield
+        let instructions_one = Segment::from_prefix(&[
+            // On the nth move, place in column n % 7
+            0x3189, // lw r1, 0xFF89
+            0x2111, // lw r1, r1
+            0x3007, // lw r0, 7
+            0x6610, // modu r1 r0
+            0x102A, // yield
+        ]);
 
         // Mark it read-only to prevent typos.
         let instructions_one = instructions_one;
 
-        let mut instructions_two = Segment::new_zeroed();
-        // Force the same pattern as in test_board::test_full_board.
-        instructions_two[0] = 0x3189; // lw r1, 0xFF89
-        instructions_two[1] = 0x2111; // lw r1, r1
-        instructions_two[2] = 0x9101; // b r1 _move_nonzero # (offset is +0x3)
-                                      // # .label _move_zero # On move 0, play in column 3.
-        instructions_two[3] = 0x3003; // lw r0, 3
-        instructions_two[4] = 0x102A; // yield
-                                      // .label _move_nonzero
-        instructions_two[5] = 0x3012; // lw r0, 18
-        instructions_two[6] = 0x8610; // ge r1 r0
-        instructions_two[7] = 0x9000; // b r0 _move_late # (offset is +0x2)
-                                      // # .label _move_early # On moves 1-17, play in column (n - 1) % 7.
-        instructions_two[8] = 0x5811; // decr r1
-                                      // # j _move_late # Surprise optimization: This is a noop, this time!
-                                      // .label _move_late # On moves 18-20, play in column n % 7.
-        instructions_two[9] = 0x3007; // lw r0, 7
-        instructions_two[10] = 0x6610; // modu r1 r0
-        instructions_two[11] = 0x102A; // yield
+        #[rustfmt::skip] // Would break the labels. See https://github.com/rust-lang/rustfmt/issues/5630
+        let instructions_two = Segment::from_prefix(&[
+            // Force the same pattern as in test_board::test_full_board.
+            0x3189, // lw r1, 0xFF89
+            0x2111, // lw r1, r1
+            0x9101, // b r1 _move_nonzero # (offset is +0x3)
+                    // # .label _move_zero # On move 0, play in column 3.
+            0x3003, // lw r0, 3
+            0x102A, // yield
+                    // .label _move_nonzero
+            0x3012, // lw r0, 18
+            0x8610, // ge r1 r0
+            0x9000, // b r0 _move_late # (offset is +0x2)
+                    // # .label _move_early # On moves 1-17, play in column (n - 1) % 7.
+            0x5811, // decr r1
+                    // # j _move_late # Surprise optimization: This is a noop, this time!
+                    // .label _move_late # On moves 18-20, play in column n % 7.
+            0x3007, // lw r0, 7
+            0x6610, // modu r1 r0
+            0x102A, // yield
+        ]);
 
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
@@ -1116,15 +1131,17 @@ mod test_game {
 
     #[test]
     fn test_two_random() {
-        let mut instructions_one = Segment::new_zeroed();
-        instructions_one[0] = 0x3000; // lw r0, 0
-        instructions_one[1] = 0x102A; // yield
-        instructions_one[2] = 0xA801; // j -2
-        let mut instructions_two = Segment::new_zeroed();
-        instructions_two[0] = 0x3001; // lw r0, 1
-        instructions_two[1] = 0x5E11; // rnd r1
-        instructions_two[2] = 0x102A; // yield
-        instructions_two[3] = 0xA802; // j -3
+        let instructions_one = Segment::from_prefix(&[
+            0x3000, // lw r0, 0
+            0x102A, // yield
+            0xA801, // j -2
+        ]);
+        let instructions_two = Segment::from_prefix(&[
+            0x3001, // lw r0, 1
+            0x5E11, // rnd r1
+            0x102A, // yield
+            0xA802, // j -3
+        ]);
         let mut game = Game::new(instructions_one, instructions_two, 123);
 
         // Player 1 wins by connect 4.

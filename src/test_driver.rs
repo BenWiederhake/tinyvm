@@ -95,15 +95,38 @@ pub fn run_and_print_tests(
 mod test_test_driver {
     use super::*;
 
+    fn run_test(
+        driver_instructions_prefix: &[u16],
+        testee_instructions_prefix: &[u16],
+        total_budget: u64,
+    ) -> (TestDriverData, TestResult) {
+        let driver_insns = Segment::from_prefix(driver_instructions_prefix);
+        let testee_insns = Segment::from_prefix(testee_instructions_prefix);
+        let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
+        let result = test_driver_data.conclude(total_budget);
+        (test_driver_data, result)
+    }
+
     #[test]
     fn test_no_budget() {
         let driver_insns = Segment::new_zeroed();
         let testee_insns = Segment::new_zeroed();
         let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
         let result = test_driver_data.conclude(0);
-        // If any instruction got executed, it would be instruction 0x0000, which is an illegal instruction by design.
         assert_eq!(result, TestResult::Timeout);
     }
+
+    #[test]
+    fn test_illegal_instruction() {
+        let driver_insns = Segment::new_zeroed();
+        let testee_insns = Segment::new_zeroed();
+        let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
+        let result = test_driver_data.conclude(1);
+        // Driver tries to execute instruction 0x0000, which is an illegal instruction by design.
+        assert_eq!(result, TestResult::IllegalInstruction(0x0000));
+    }
+
+    // TODO: All the other behaviors
 }
 
 #[cfg(test)]
