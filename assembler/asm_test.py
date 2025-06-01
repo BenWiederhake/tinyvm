@@ -4419,6 +4419,42 @@ TESTS_CONNECT4_RS = [
     ),
 ]
 
+TESTS_TEST_DRIVER_RS = [
+    (
+        "from test_illegal_instruction_late 202506",
+        """\
+        nop
+        debug
+        nop
+        .word 0xFFFF # 'ill2'
+        """,
+        "5F00 102C 5F00 FFFF",
+        [],
+        {0: 1, 1: 2, 2: 3, 3: 4},
+    ),
+    (
+        "from test_illegal_yield 202506",
+        """\
+        lw r0, 0x42
+        yield
+        """,
+        "3042 102A",
+        [],
+        {0: 1, 1: 2},
+    ),
+    (
+        "from test_illegal_yield_ffff 202506",
+        """\
+        lw r0, 0xFFFF
+        nop
+        yield
+        """,
+        "30FF 5F00 102A",
+        [],
+        {0: 1, 1: 2, 2: 3},
+    ),
+]
+
 
 def uphex(bytes_or_none):
     if bytes_or_none is None:
@@ -4432,23 +4468,18 @@ class AsmTests(unittest.TestCase):
         self.assertEqual(empty_result, asm.compile_assembly(""))
         self.assertEqual(empty_result, asm.compile_assembly("\n"))
 
+    def check_testsuite_consistency(self, suite, suite_name):
+        name_counter = Counter(entry[0] for entry in suite)
+        for name, count in name_counter.items():
+            with self.subTest(t=suite_name, name=name):
+                self.assertEqual(count, 1)
+
     def test_testsuite_names(self):
-        name_counter = Counter(name for name, _, _, _, _ in ASM_TESTS)
-        for name, count in name_counter.items():
-            with self.subTest(t="ASM_TESTS", name=name):
-                self.assertEqual(count, 1)
-        name_counter = Counter(name for name, _, _ in NEGATIVE_TESTS)
-        for name, count in name_counter.items():
-            with self.subTest(t="NEGATIVE_TESTS", name=name):
-                self.assertEqual(count, 1)
-        name_counter = Counter(name for name, _, _, _, _ in TESTS_INSTRUCTIONS_RS)
-        for name, count in name_counter.items():
-            with self.subTest(t="TESTS_INSTRUCTIONS_RS", name=name):
-                self.assertEqual(count, 1)
-        name_counter = Counter(name for name, _, _, _, _ in TESTS_CONNECT4_RS)
-        for name, count in name_counter.items():
-            with self.subTest(t="TESTS_CONNECT4_RS", name=name):
-                self.assertEqual(count, 1)
+        self.check_testsuite_consistency(ASM_TESTS, "ASM_TESTS")
+        self.check_testsuite_consistency(NEGATIVE_TESTS, "NEGATIVE_TESTS")
+        self.check_testsuite_consistency(TESTS_INSTRUCTIONS_RS, "TESTS_INSTRUCTIONS_RS")
+        self.check_testsuite_consistency(TESTS_CONNECT4_RS, "TESTS_CONNECT4_RS")
+        self.check_testsuite_consistency(TESTS_TEST_DRIVER_RS, "TESTS_TEST_DRIVER_RS")
 
     def assert_assembly(
         self, asm_text, expected_segment, expected_error_log, expected_mapping
@@ -4473,8 +4504,8 @@ class AsmTests(unittest.TestCase):
             segment.extend(padding)
         return segment
 
-    def test_hardcoded(self):
-        for i, data_tuple in enumerate(ASM_TESTS):
+    def run_positive_hardcoded(self, testsuite):
+        for i, data_tuple in enumerate(testsuite):
             (
                 name,
                 asm_text,
@@ -4487,6 +4518,9 @@ class AsmTests(unittest.TestCase):
                 self.assert_assembly(
                     asm_text, expected_segment, expected_error_log, expected_mapping
                 )
+
+    def test_hardcoded(self):
+        self.run_positive_hardcoded(ASM_TESTS)
 
     def test_negative(self):
         for i, data_tuple in enumerate(NEGATIVE_TESTS):
@@ -4495,34 +4529,13 @@ class AsmTests(unittest.TestCase):
                 self.assert_assembly(asm_text, None, expected_error_log, None)
 
     def test_from_instructions_rs(self):
-        for i, data_tuple in enumerate(TESTS_INSTRUCTIONS_RS):
-            (
-                name,
-                asm_text,
-                code_prefix_hex,
-                expected_error_log,
-                expected_mapping,
-            ) = data_tuple
-            with self.subTest(i=i, name=name):
-                expected_segment = self.parse_and_extend_hex(code_prefix_hex)
-                self.assert_assembly(
-                    asm_text, expected_segment, expected_error_log, expected_mapping
-                )
+        self.run_positive_hardcoded(TESTS_INSTRUCTIONS_RS)
 
     def test_from_connect4_rs(self):
-        for i, data_tuple in enumerate(TESTS_CONNECT4_RS):
-            (
-                name,
-                asm_text,
-                code_prefix_hex,
-                expected_error_log,
-                expected_mapping,
-            ) = data_tuple
-            with self.subTest(i=i, name=name):
-                expected_segment = self.parse_and_extend_hex(code_prefix_hex)
-                self.assert_assembly(
-                    asm_text, expected_segment, expected_error_log, expected_mapping
-                )
+        self.run_positive_hardcoded(TESTS_CONNECT4_RS)
+
+    def test_from_test_driver_rs(self):
+        self.run_positive_hardcoded(TESTS_TEST_DRIVER_RS)
 
 
 if __name__ == "__main__":

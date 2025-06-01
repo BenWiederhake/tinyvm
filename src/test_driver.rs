@@ -22,7 +22,7 @@ enum TesteeExecutionResult {
 
 #[repr(u16)]
 #[derive(Debug, Eq, Clone, Copy, N, PartialEq)]
-enum DriverCommands {
+enum DriverCommand {
     // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/0003_test_driver.md#miscellaneous
     // - When the driver yields with value 1, the testee will now be executed until it stops by itself. See [Executing the testee](#executing-the-testee) section.
     ExecuteTestee = 0x0001,
@@ -46,9 +46,9 @@ enum DriverCommands {
     Illegal = 0xFFFF,
 }
 
-impl From<u16> for DriverCommands {
+impl From<u16> for DriverCommand {
     fn from(value: u16) -> Self {
-        Self::n(value).unwrap_or(DriverCommands::Illegal)
+        Self::n(value).unwrap_or(DriverCommand::Illegal)
     }
 }
 
@@ -92,12 +92,14 @@ impl TestDriverData {
             match self.vm_testee.step() {
                 StepResult::Continue | StepResult::DebugDump => None,
                 StepResult::IllegalInstruction(insn) => {
-                    self.vm_driver.set_register(0, TesteeExecutionResult::IllegalInstruction as u16);
+                    self.vm_driver
+                        .set_register(0, TesteeExecutionResult::IllegalInstruction as u16);
                     self.vm_driver.set_register(1, insn);
                     None
                 }
                 StepResult::Yield(yield_value) => {
-                    self.vm_driver.set_register(0, TesteeExecutionResult::Yielded as u16);
+                    self.vm_driver
+                        .set_register(0, TesteeExecutionResult::Yielded as u16);
                     self.vm_driver.set_register(1, yield_value);
                     self.testee_remaining = 0;
                     None
@@ -114,9 +116,59 @@ impl TestDriverData {
     }
 
     fn handle_driver_yield(&mut self, command: u16) -> Option<TestResult> {
-        unimplemented!();
-        // on execution, always write "1", i.e. "testee timeout"!
-        self.vm_driver.set_register(0, TesteeExecutionResult::Timeout as u16);
+        match DriverCommand::from(command) {
+            DriverCommand::ExecuteTestee => self.handle_execute_testee(),
+            DriverCommand::Done => self.handle_done(),
+            DriverCommand::AccessRegisters => self.handle_access_registers(),
+            DriverCommand::OverwriteData => self.handle_overwrite_data(),
+            DriverCommand::ReadData => self.handle_read_data(),
+            DriverCommand::ReadInstructions => self.handle_read_instructions(),
+            DriverCommand::ResetTesteeVM => self.handle_reset_testee_vm(),
+            DriverCommand::ResetTimeLimit => self.handle_reset_time_limit(),
+            DriverCommand::SetProgramCounter => self.handle_set_program_counter(),
+            DriverCommand::Illegal => {
+                return Some(TestResult::IllegalYield(command));
+            }
+        }
+        None
+    }
+
+    fn handle_execute_testee(&mut self) {
+        // Already set "testee timeout" as "response" in register 0, so that the timeout case doesn't have to be recognized separately.
+        self.vm_driver
+            .set_register(0, TesteeExecutionResult::Timeout as u16);
+        unimplemented!()
+    }
+
+    fn handle_done(&mut self) {
+        unimplemented!()
+    }
+
+    fn handle_access_registers(&mut self) {
+        unimplemented!()
+    }
+
+    fn handle_overwrite_data(&mut self) {
+        unimplemented!()
+    }
+
+    fn handle_read_data(&mut self) {
+        unimplemented!()
+    }
+
+    fn handle_read_instructions(&mut self) {
+        unimplemented!()
+    }
+
+    fn handle_reset_testee_vm(&mut self) {
+        unimplemented!()
+    }
+
+    fn handle_reset_time_limit(&mut self) {
+        unimplemented!()
+    }
+
+    fn handle_set_program_counter(&mut self) {
         unimplemented!()
     }
 
@@ -169,14 +221,26 @@ mod test_test_driver {
 
     #[test]
     fn test_command_parsing() {
-        assert_eq!(DriverCommands::ExecuteTestee, DriverCommands::from(DriverCommands::ExecuteTestee as u16));
-        assert_eq!(DriverCommands::Done, DriverCommands::from(DriverCommands::Done as u16));
-        assert_eq!(DriverCommands::AccessRegisters, DriverCommands::from(DriverCommands::AccessRegisters as u16));
-        assert_eq!(DriverCommands::Illegal, DriverCommands::from(DriverCommands::Illegal as u16));
-        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0x1234));
-        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0xABCD));
-        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0xFFFF));
-        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0x0000));
+        assert_eq!(
+            DriverCommand::ExecuteTestee,
+            DriverCommand::from(DriverCommand::ExecuteTestee as u16)
+        );
+        assert_eq!(
+            DriverCommand::Done,
+            DriverCommand::from(DriverCommand::Done as u16)
+        );
+        assert_eq!(
+            DriverCommand::AccessRegisters,
+            DriverCommand::from(DriverCommand::AccessRegisters as u16)
+        );
+        assert_eq!(
+            DriverCommand::Illegal,
+            DriverCommand::from(DriverCommand::Illegal as u16)
+        );
+        assert_eq!(DriverCommand::Illegal, DriverCommand::from(0x1234));
+        assert_eq!(DriverCommand::Illegal, DriverCommand::from(0xABCD));
+        assert_eq!(DriverCommand::Illegal, DriverCommand::from(0xFFFF));
+        assert_eq!(DriverCommand::Illegal, DriverCommand::from(0x0000));
     }
 
     fn run_test(
@@ -193,19 +257,14 @@ mod test_test_driver {
 
     #[test]
     fn test_no_budget() {
-        let driver_insns = Segment::new_zeroed();
-        let testee_insns = Segment::new_zeroed();
-        let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
-        let result = test_driver_data.conclude(0);
+        let (test_driver_data, result) = run_test(&[], &[], 0);
         assert_eq!(result, TestResult::Timeout);
+        assert_eq!(test_driver_data.driver_insns, 0);
     }
 
     #[test]
     fn test_illegal_instruction() {
-        let driver_insns = Segment::new_zeroed();
-        let testee_insns = Segment::new_zeroed();
-        let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
-        let result = test_driver_data.conclude(999);
+        let (test_driver_data, result) = run_test(&[0x0000], &[], 999);
         // Driver tries to execute instruction 0x0000, which is an illegal instruction by design.
         assert_eq!(result, TestResult::IllegalInstruction(0x0000));
         assert_eq!(test_driver_data.driver_insns, 1);
@@ -213,20 +272,53 @@ mod test_test_driver {
 
     #[test]
     fn test_illegal_instruction_late() {
-        let driver_insns = Segment::from_prefix(&[
-            0x5F00, // nop
-            0x102C, // debug
-            0x5F00, // nop
-            0xFFFF, // ill2
-        ]);
-        let testee_insns = Segment::new_zeroed();
-        let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
-        let result = test_driver_data.conclude(999);
-        // Driver tries to execute instruction 0x0000, which is an illegal instruction by design.
+        let (test_driver_data, result) = run_test(
+            &[
+                0x5F00, // nop
+                0x102C, // debug
+                0x5F00, // nop
+                0xFFFF, // ill2
+            ],
+            &[],
+            999,
+        );
+        // Driver tries to execute instruction 0xFFFF, which is an illegal instruction by design.
         assert_eq!(result, TestResult::IllegalInstruction(0xFFFF));
         assert_eq!(test_driver_data.driver_insns, 4);
     }
 
+    #[test]
+    fn test_illegal_yield() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3042, // lw r0, 0x42
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        // Driver tries to yield with 0x42, which is not a legal command.
+        assert_eq!(result, TestResult::IllegalYield(0x0042));
+        assert_eq!(test_driver_data.driver_insns, 2);
+    }
+
+    #[test]
+    fn test_illegal_yield_ffff() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x30FF, // lw r0, 0xFFFF
+                0x5F00, // nop
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        // Driver tries to yield with 0xFFFF, which is not a legal command.
+        assert_eq!(result, TestResult::IllegalYield(0xFFFF));
+        assert_eq!(test_driver_data.driver_insns, 3);
+    }
+
+    // TODO: testee stop reason passing
     // TODO: All the other behaviors
 }
 
