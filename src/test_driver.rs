@@ -2,8 +2,55 @@ use crate::vm::{Segment, StepResult, VirtualMachine};
 
 use std::fmt::{Display, Formatter, Result};
 
+use enumn::N;
+
 pub const TEST_DRIVER_ID: u16 = 0x0003;
 pub const TEST_DRIVER_LAYOUT_VERSION: u16 = 0x0001;
+
+#[repr(u16)]
+#[derive(Debug, Eq, Clone, Copy, PartialEq)]
+enum TesteeExecutionResult {
+    // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/0003_test_driver.md#executing-the-testee
+    // The testee will continue to execute, until it either:
+    // - yields, in which case 0x0000 and the yield value are written to register 0 and 1 of the driver, respectively;
+    Yielded = 0x0000,
+    // - or the allotted time is up, in which case 0x0001 is written to register 0 of the driver;
+    Timeout = 0x0001,
+    // - or the testee attempts to execute an illegal instruction, in which case 0xFFFF (i.e. -1) is written to register 0 of the driver.
+    IllegalInstruction = 0xFFFF,
+}
+
+#[repr(u16)]
+#[derive(Debug, Eq, Clone, Copy, N, PartialEq)]
+enum DriverCommands {
+    // https://github.com/BenWiederhake/tinyvm/blob/master/data-layout/0003_test_driver.md#miscellaneous
+    // - When the driver yields with value 1, the testee will now be executed until it stops by itself. See [Executing the testee](#executing-the-testee) section.
+    ExecuteTestee = 0x0001,
+    // - When the driver yields with value 2, it indicates that it is done, and returns the test results. See [Returning test results](#returning-test-results) section.
+    Done = 0x0002,
+    // - When the driver yields with value 3, some of the registers of the testee will be overwritten/read. See [Reading/overwriting the testee registers](#readingoverwriting-the-testee-registers).
+    AccessRegisters = 0x0003,
+    // - When the driver yields with value 4, some of the testee data segment will be overwritten. See [Overwriting the testee data segment](#overwriting-the-testee-data-segment).
+    OverwriteData = 0x0004,
+    // - When the driver yields with value 5, some of the testee data segment will be read. See [Reading the testee data segment](#reading-the-testee-data-segment).
+    ReadData = 0x0005,
+    // - When the driver yields with value 6, some of the testee instruction segment will be read. See [Reading the testee instruction segment](#reading-the-testee-instruction-segment).
+    ReadInstructions = 0x0006,
+    // - When the driver yields with value 7, the testee's data segment, registers and program counter will be reset to all-zeros.
+    ResetTesteeVM = 0x0007,
+    // - When the driver yields with value 8, the testee's allotted time is reset. See [Resetting the time limit](#resetting-the-time-limit).
+    ResetTimeLimit = 0x0008,
+    // - When the driver yields with value 9, the testee's program counter is set to the value of register 1 of the driver.
+    SetProgramCounter = 0x0009,
+    // - Any other value in register 0 is interpreted as a fatal error of the test suite, and results in a corresponding output.
+    Illegal = 0xFFFF,
+}
+
+impl From<u16> for DriverCommands {
+    fn from(value: u16) -> Self {
+        Self::n(value).unwrap_or(DriverCommands::Illegal)
+    }
+}
 
 #[derive(Debug)]
 pub struct TestDriverData {
@@ -40,12 +87,37 @@ impl TestDriverData {
 
     pub fn do_step(&mut self) -> Option<TestResult> {
         if self.testee_remaining > 0 {
-            unimplemented!() // Testee step
+            self.testee_remaining -= 1;
+            self.testee_insns += 1;
+            match self.vm_testee.step() {
+                StepResult::Continue | StepResult::DebugDump => None,
+                StepResult::IllegalInstruction(insn) => {
+                    self.vm_driver.set_register(0, TesteeExecutionResult::IllegalInstruction as u16);
+                    self.vm_driver.set_register(1, insn);
+                    None
+                }
+                StepResult::Yield(yield_value) => {
+                    self.vm_driver.set_register(0, TesteeExecutionResult::Yielded as u16);
+                    self.vm_driver.set_register(1, yield_value);
+                    self.testee_remaining = 0;
+                    None
+                }
+            }
         } else {
-            unimplemented!() // Driver step
-            // VM
-            // If valid, add total insn
+            self.driver_insns += 1;
+            match self.vm_driver.step() {
+                StepResult::Continue | StepResult::DebugDump => None,
+                StepResult::IllegalInstruction(insn) => Some(TestResult::IllegalInstruction(insn)),
+                StepResult::Yield(cmd) => self.handle_driver_yield(cmd),
+            }
         }
+    }
+
+    fn handle_driver_yield(&mut self, command: u16) -> Option<TestResult> {
+        unimplemented!();
+        // on execution, always write "1", i.e. "testee timeout"!
+        self.vm_driver.set_register(0, TesteeExecutionResult::Timeout as u16);
+        unimplemented!()
     }
 
     pub fn conclude(&mut self, total_budget: u64) -> TestResult {
@@ -95,6 +167,18 @@ pub fn run_and_print_tests(
 mod test_test_driver {
     use super::*;
 
+    #[test]
+    fn test_command_parsing() {
+        assert_eq!(DriverCommands::ExecuteTestee, DriverCommands::from(DriverCommands::ExecuteTestee as u16));
+        assert_eq!(DriverCommands::Done, DriverCommands::from(DriverCommands::Done as u16));
+        assert_eq!(DriverCommands::AccessRegisters, DriverCommands::from(DriverCommands::AccessRegisters as u16));
+        assert_eq!(DriverCommands::Illegal, DriverCommands::from(DriverCommands::Illegal as u16));
+        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0x1234));
+        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0xABCD));
+        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0xFFFF));
+        assert_eq!(DriverCommands::Illegal, DriverCommands::from(0x0000));
+    }
+
     fn run_test(
         driver_instructions_prefix: &[u16],
         testee_instructions_prefix: &[u16],
@@ -121,9 +205,26 @@ mod test_test_driver {
         let driver_insns = Segment::new_zeroed();
         let testee_insns = Segment::new_zeroed();
         let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
-        let result = test_driver_data.conclude(1);
+        let result = test_driver_data.conclude(999);
         // Driver tries to execute instruction 0x0000, which is an illegal instruction by design.
         assert_eq!(result, TestResult::IllegalInstruction(0x0000));
+        assert_eq!(test_driver_data.driver_insns, 1);
+    }
+
+    #[test]
+    fn test_illegal_instruction_late() {
+        let driver_insns = Segment::from_prefix(&[
+            0x5F00, // nop
+            0x102C, // debug
+            0x5F00, // nop
+            0xFFFF, // ill2
+        ]);
+        let testee_insns = Segment::new_zeroed();
+        let mut test_driver_data = TestDriverData::new(driver_insns, testee_insns);
+        let result = test_driver_data.conclude(999);
+        // Driver tries to execute instruction 0x0000, which is an illegal instruction by design.
+        assert_eq!(result, TestResult::IllegalInstruction(0xFFFF));
+        assert_eq!(test_driver_data.driver_insns, 4);
     }
 
     // TODO: All the other behaviors
