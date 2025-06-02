@@ -215,6 +215,19 @@ impl From<u16> for IndividualResult {
     }
 }
 
+impl Display for IndividualResult {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        let msg = match self {
+            Self::Pass => "PASS (test was successful)",
+            Self::Fail => "FAIL (execution successful, result negative)",
+            Self::FatalError => "FATAL (execution of the specific test failed)",
+            Self::Skip => "SKIP (test was not executed)",
+            Self::Illegal => "ILLEGAL (unknown; could not interpret value)",
+        };
+        f.write_str(msg)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct CompletionData {
     consistent_marker: bool,
@@ -251,6 +264,22 @@ impl CompletionData {
     }
 }
 
+impl Display for CompletionData {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "Completed {} tests.", self.results.len())?;
+        if !self.consistent_marker {
+            write!(f, " (FATAL: Inconsistent test count!)")?;
+        }
+        writeln!(f)?;
+        let count = self.results.len();
+        let width = count.max(1).ilog10() as usize + 1;
+        for (i, individual_result) in self.results.iter().enumerate() {
+            writeln!(f, " --[{:width$}/{count:width$}]--: {individual_result}", i + 1, width = width)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TestResult {
     IllegalInstruction(u16),
@@ -261,7 +290,33 @@ pub enum TestResult {
 
 impl Display for TestResult {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        todo!()
+        match self {
+            Self::IllegalInstruction(insn) => {
+                writeln!(f, "Attempted to execute illegal instruction: 0x{insn:04X}")
+            }
+            Self::IllegalYield(value) => {
+                writeln!(f, "Attempted to execute illegal yield/command: {value}")
+            }
+            Self::Timeout => {
+                writeln!(f, "Timeout")
+            }
+            Self::Completed(completion_data) => {
+                write!(f, "{completion_data}")
+            }
+        }
+    }
+}
+
+impl TestResult {
+    pub fn is_good(&self) -> bool {
+        if let TestResult::Completed(data) = self {
+            match data.overall_rating() {
+                IndividualResult::Pass | IndividualResult::Skip => true,
+                _ => false,
+            }
+        } else {
+            false
+        }
     }
 }
 
@@ -962,7 +1017,197 @@ mod test_result_printing {
     use super::*;
 
     #[test]
-    fn test_anything() {
-        todo!();
+    fn test_illegal_instruction() {
+        let result = TestResult::IllegalInstruction(0xABCD);
+        let expected = "Attempted to execute illegal instruction: 0xABCD\n";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), false);
+    }
+
+    #[test]
+    fn test_illegal_yield() {
+        let result = TestResult::IllegalYield(42);
+        let expected = "Attempted to execute illegal yield/command: 42\n";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), false);
+    }
+
+    #[test]
+    fn test_timeout() {
+        let result = TestResult::Timeout;
+        let expected = "Timeout\n";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), false);
+    }
+
+    #[test]
+    fn test_golden() {
+        let mut data = CompletionData::new();
+        data.consistent_marker = true;
+        data.results.push(IndividualResult::Pass);
+        data.results.push(IndividualResult::Pass);
+        data.results.push(IndividualResult::Pass);
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 3 tests.\n\
+            \x20--[1/3]--: PASS (test was successful)\n\
+            \x20--[2/3]--: PASS (test was successful)\n\
+            \x20--[3/3]--: PASS (test was successful)\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), true);
+    }
+
+    #[test]
+    fn test_golden_but_inconsistent() {
+        let mut data = CompletionData::new();
+        data.results.push(IndividualResult::Pass);
+        data.results.push(IndividualResult::Pass);
+        data.results.push(IndividualResult::Pass);
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 3 tests. (FATAL: Inconsistent test count!)\n\
+            \x20--[1/3]--: PASS (test was successful)\n\
+            \x20--[2/3]--: PASS (test was successful)\n\
+            \x20--[3/3]--: PASS (test was successful)\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), false);
+    }
+
+    #[test]
+    fn test_empty() {
+        let mut data = CompletionData::new();
+        data.consistent_marker = true;
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 0 tests.\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), true);
+    }
+
+    #[test]
+    fn test_mix() {
+        let mut data = CompletionData::new();
+        data.consistent_marker = true;
+        data.results.push(IndividualResult::Pass);
+        data.results.push(IndividualResult::Fail);
+        data.results.push(IndividualResult::FatalError);
+        data.results.push(IndividualResult::Skip);
+        data.results.push(IndividualResult::Illegal);
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 5 tests.\n\
+            \x20--[1/5]--: PASS (test was successful)\n\
+            \x20--[2/5]--: FAIL (execution successful, result negative)\n\
+            \x20--[3/5]--: FATAL (execution of the specific test failed)\n\
+            \x20--[4/5]--: SKIP (test was not executed)\n\
+            \x20--[5/5]--: ILLEGAL (unknown; could not interpret value)\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), false);
+    }
+
+    #[test]
+    fn test_fail_prio() {
+        let mut data = CompletionData::new();
+        data.consistent_marker = true;
+        data.results.push(IndividualResult::Pass);
+        data.results.push(IndividualResult::Fail);
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 2 tests.\n\
+            \x20--[1/2]--: PASS (test was successful)\n\
+            \x20--[2/2]--: FAIL (execution successful, result negative)\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), false);
+    }
+
+    #[test]
+    fn test_width_9() {
+        let mut data = CompletionData::new();
+        data.consistent_marker = true;
+        for _ in 0..9 {
+            data.results.push(IndividualResult::Pass);
+        }
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 9 tests.\n\
+            \x20--[1/9]--: PASS (test was successful)\n\
+            \x20--[2/9]--: PASS (test was successful)\n\
+            \x20--[3/9]--: PASS (test was successful)\n\
+            \x20--[4/9]--: PASS (test was successful)\n\
+            \x20--[5/9]--: PASS (test was successful)\n\
+            \x20--[6/9]--: PASS (test was successful)\n\
+            \x20--[7/9]--: PASS (test was successful)\n\
+            \x20--[8/9]--: PASS (test was successful)\n\
+            \x20--[9/9]--: PASS (test was successful)\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), true);
+    }
+
+    #[test]
+    fn test_width_10() {
+        let mut data = CompletionData::new();
+        data.consistent_marker = true;
+        for _ in 0..10 {
+            data.results.push(IndividualResult::Pass);
+        }
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 10 tests.\n\
+            \x20--[ 1/10]--: PASS (test was successful)\n\
+            \x20--[ 2/10]--: PASS (test was successful)\n\
+            \x20--[ 3/10]--: PASS (test was successful)\n\
+            \x20--[ 4/10]--: PASS (test was successful)\n\
+            \x20--[ 5/10]--: PASS (test was successful)\n\
+            \x20--[ 6/10]--: PASS (test was successful)\n\
+            \x20--[ 7/10]--: PASS (test was successful)\n\
+            \x20--[ 8/10]--: PASS (test was successful)\n\
+            \x20--[ 9/10]--: PASS (test was successful)\n\
+            \x20--[10/10]--: PASS (test was successful)\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), true);
+    }
+
+    #[test]
+    fn test_width_11() {
+        let mut data = CompletionData::new();
+        data.consistent_marker = true;
+        for _ in 0..11 {
+            data.results.push(IndividualResult::Pass);
+        }
+        let result = TestResult::Completed(data);
+        let expected = "\
+            Completed 11 tests.\n\
+            \x20--[ 1/11]--: PASS (test was successful)\n\
+            \x20--[ 2/11]--: PASS (test was successful)\n\
+            \x20--[ 3/11]--: PASS (test was successful)\n\
+            \x20--[ 4/11]--: PASS (test was successful)\n\
+            \x20--[ 5/11]--: PASS (test was successful)\n\
+            \x20--[ 6/11]--: PASS (test was successful)\n\
+            \x20--[ 7/11]--: PASS (test was successful)\n\
+            \x20--[ 8/11]--: PASS (test was successful)\n\
+            \x20--[ 9/11]--: PASS (test was successful)\n\
+            \x20--[10/11]--: PASS (test was successful)\n\
+            \x20--[11/11]--: PASS (test was successful)\n\
+            ";
+        let actual = format!("{result}");
+        assert_eq!(expected, actual);
+        assert_eq!(result.is_good(), true);
     }
 }
