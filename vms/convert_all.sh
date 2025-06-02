@@ -5,7 +5,7 @@ cd -P -- "$(dirname -- "$0")"
 
 ASSEMBLER="../assembler/asm.py"
 
-for ASM_FILENAME in */*.asm; do
+for ASM_FILENAME in */*.asm */*/*.asm; do
     SEGMENT_FILENAME="$(echo "${ASM_FILENAME}" | sed -Ee 's/.asm$/.segment/')"
     if [ "${ASM_FILENAME}" = "${SEGMENT_FILENAME}" ]; then
         echo "Weird asm filename?! ${ASM_FILENAME}"
