@@ -118,7 +118,9 @@ impl TestDriverData {
     fn handle_driver_yield(&mut self, command: u16) -> Option<TestResult> {
         match DriverCommand::from(command) {
             DriverCommand::ExecuteTestee => self.handle_execute_testee(),
-            DriverCommand::Done => self.handle_done(),
+            DriverCommand::Done => {
+                return Some(self.handle_done());
+            }
             DriverCommand::AccessRegisters => self.handle_access_registers(),
             DriverCommand::OverwriteData => self.handle_overwrite_data(),
             DriverCommand::ReadData => self.handle_read_data(),
@@ -140,8 +142,23 @@ impl TestDriverData {
         unimplemented!()
     }
 
-    fn handle_done(&mut self) {
-        unimplemented!()
+    fn handle_done(&mut self) -> TestResult {
+        let expected_tests = self.vm_driver.get_registers()[1];
+        let mut completion_data = CompletionData::new();
+        if expected_tests > 65534 {
+            return TestResult::Completed(completion_data);
+        }
+        let data_segment = self.vm_driver.get_data();
+        for i in 0..expected_tests {
+            let r = IndividualResult::from(data_segment[i]);
+            completion_data.results.push(r)
+        }
+        let marker0 = data_segment[expected_tests];
+        let marker1 = data_segment[expected_tests + 1];
+        // From the documentation:
+        // - After these values, the next two words must be 0x650D and 0x4585. (These are the first four bytes of SHA256(b"test driver result\n"), and serve as a kind of sanity check.)
+        completion_data.consistent_marker = marker0 == 0x650D && marker1 == 0x4585;
+        TestResult::Completed(completion_data)
     }
 
     fn handle_access_registers(&mut self) {
@@ -182,10 +199,56 @@ impl TestDriverData {
     }
 }
 
+#[repr(u16)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, N)]
+pub enum IndividualResult {
+    Pass = 1,
+    Fail = 2,
+    FatalError = 3,
+    Skip = 4,
+    Illegal = 0xFFFF,
+}
+
+impl From<u16> for IndividualResult {
+    fn from(value: u16) -> Self {
+        Self::n(value).unwrap_or(IndividualResult::Illegal)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct IndividualResult {
-    result_value: u16,
+pub struct CompletionData {
+    consistent_marker: bool,
+    results: Vec<IndividualResult>,
     // TODO: Enable test drivers to also emit test names or error messages?
+}
+
+impl CompletionData {
+    fn new() -> Self {
+        Self {
+            consistent_marker: false,
+            results: Vec::new(),
+        }
+    }
+
+    fn overall_rating(&self) -> IndividualResult {
+        if !self.consistent_marker {
+            return IndividualResult::Illegal;
+        }
+        if self.results.iter().any(|&ir| ir == IndividualResult::Illegal) {
+            return IndividualResult::Illegal;
+        }
+        if self.results.iter().any(|&ir| ir == IndividualResult::FatalError) {
+            return IndividualResult::FatalError;
+        }
+        if self.results.iter().any(|&ir| ir == IndividualResult::Fail) {
+            return IndividualResult::Fail;
+        }
+        if self.results.iter().any(|&ir| ir == IndividualResult::Pass) {
+            return IndividualResult::Pass;
+        }
+        // If we reach this, then there are either no tests, or only "skipped" tests.
+        IndividualResult::Skip
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -193,7 +256,7 @@ pub enum TestResult {
     IllegalInstruction(u16),
     IllegalYield(u16),
     Timeout,
-    Completed(Vec<IndividualResult>),
+    Completed(CompletionData),
 }
 
 impl Display for TestResult {
@@ -277,7 +340,7 @@ mod test_test_driver {
                 0x5F00, // nop
                 0x102C, // debug
                 0x5F00, // nop
-                0xFFFF, // ill2
+                0xFFFF, // ill
             ],
             &[],
             999,
@@ -316,6 +379,578 @@ mod test_test_driver {
         // Driver tries to yield with 0xFFFF, which is not a legal command.
         assert_eq!(result, TestResult::IllegalYield(0xFFFF));
         assert_eq!(test_driver_data.driver_insns, 3);
+    }
+
+    #[test]
+    fn test_check_environment_id() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x30FF, // lw r0, 0xFFFF
+                0x31FE, // lw r1, 0xFFFE
+                0x32FD, // lw r2, 0xFFFD
+                0x2108, // lw r8, r0
+                0x2119, // lw r9, r1
+                0x212A, // lw r10, r2
+                0xFFFF, // ill
+            ],
+            &[],
+            999,
+        );
+        assert_eq!(result, TestResult::IllegalInstruction(0xFFFF));
+        assert_eq!(test_driver_data.driver_insns, 7);
+        let driver_regs = test_driver_data.vm_driver.get_registers();
+        assert_eq!(driver_regs[0], 0xFFFF);
+        assert_eq!(driver_regs[1], 0xFFFE);
+        assert_eq!(driver_regs[2], 0xFFFD);
+        assert_eq!(driver_regs[8], 3); // "test_driver data-layout"
+        assert_eq!(driver_regs[9], 1); // "version 1"
+        assert_eq!(driver_regs[10], 0); // no further data ("initialized to all-zeros")
+    }
+
+    #[test]
+    fn test_timeout_long() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x5F00, // nop
+                0x5F00, // nop
+                0x5F00, // nop
+                0x5F00, // nop
+                0x5F00, // nop
+                0x5F00, // nop
+            ],
+            &[],
+            4,
+        );
+        assert_eq!(result, TestResult::Timeout);
+        assert_eq!(test_driver_data.driver_insns, 4);
+        assert_eq!(test_driver_data.vm_driver.get_program_counter(), 0x0004);
+    }
+
+    #[test]
+    fn test_done_zero_invalid() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3100, // lw r1, 0  # num tests
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 3);
+        assert_eq!(completion_data.consistent_marker, false);
+        assert_eq!(completion_data.results.len(), 0);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
+    }
+
+    #[test]
+    fn test_done_zero_valid() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3100, // lw r1, 0  # num tests
+                0x3800, // lw r8, 0x0000
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x3801, // lw r8, 0x0001
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 11);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 0);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Skip);
+    }
+
+    #[test]
+    fn test_done_negone_invalid() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x31FF, // lw r1, -1  # num tests
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 3);
+        assert_eq!(completion_data.consistent_marker, false);
+        assert_eq!(completion_data.results.len(), 0);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
+    }
+
+    #[test]
+    fn test_done_negtwo_invalid() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x31FE, // lw r1, -2  # num tests
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 3);
+        assert_eq!(completion_data.consistent_marker, false);
+        assert_eq!(completion_data.results.len(), 0xFFFE);
+        assert!(completion_data.results.iter().all(|&e| e == IndividualResult::Illegal));
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
+    }
+
+    #[test]
+    fn test_done_negtwo_valid() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x31FE, // lw r1, -2  # num tests
+                0x38FE, // lw r8, 0xFFFE
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x38FF, // lw r8, 0xFFFF
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 11);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 0xFFFE);
+        assert!(completion_data.results.iter().all(|&e| e == IndividualResult::Illegal));
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
+    }
+
+    #[test]
+    fn test_done_one_pass() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3101, // lw r1, 1  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3901, // lw r9, 1  # "pass"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 14);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 1);
+        assert_eq!(completion_data.results[0], IndividualResult::Pass);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Pass);
+    }
+
+    #[test]
+    fn test_done_one_fail() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3101, // lw r1, 1  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3902, // lw r9, 2  # "fail"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 14);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 1);
+        assert_eq!(completion_data.results[0], IndividualResult::Fail);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Fail);
+    }
+
+    #[test]
+    fn test_done_one_fatal_error() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3101, // lw r1, 1  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3903, // lw r9, 3  # "fatal error"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 14);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 1);
+        assert_eq!(completion_data.results[0], IndividualResult::FatalError);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::FatalError);
+    }
+
+    #[test]
+    fn test_done_one_skip() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3101, // lw r1, 1  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3904, // lw r9, 4  # "skip"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 14);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 1);
+        assert_eq!(completion_data.results[0], IndividualResult::Skip);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Skip);
+    }
+
+    #[test]
+    fn test_done_one_illegal() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3101, // lw r1, 1  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3905, // lw r9, 5  # (not a valid test result value, treated as 'illegal')
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 14);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 1);
+        assert_eq!(completion_data.results[0], IndividualResult::Illegal);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
+    }
+
+    #[test]
+    fn test_done_multi_prio_1_illegal() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3105, // lw r1, 5  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3901, // lw r9, 1  # "pass"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3902, // lw r9, 2  # "fail"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3903, // lw r9, 3  # "fatal error"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3904, // lw r9, 4  # "skip"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3905, // lw r9, 5  # "illegal"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 26);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 5);
+        assert_eq!(completion_data.results[0], IndividualResult::Pass);
+        assert_eq!(completion_data.results[1], IndividualResult::Fail);
+        assert_eq!(completion_data.results[2], IndividualResult::FatalError);
+        assert_eq!(completion_data.results[3], IndividualResult::Skip);
+        assert_eq!(completion_data.results[4], IndividualResult::Illegal);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
+    }
+
+    #[test]
+    fn test_done_multi_prio_2_fatal_error() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3104, // lw r1, 4  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3901, // lw r9, 1  # "pass"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3902, // lw r9, 2  # "fail"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3903, // lw r9, 3  # "fatal error"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3904, // lw r9, 4  # "skip"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 23);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 4);
+        assert_eq!(completion_data.results[0], IndividualResult::Pass);
+        assert_eq!(completion_data.results[1], IndividualResult::Fail);
+        assert_eq!(completion_data.results[2], IndividualResult::FatalError);
+        assert_eq!(completion_data.results[3], IndividualResult::Skip);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::FatalError);
+    }
+
+    #[test]
+    fn test_done_multi_prio_3_fail() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3103, // lw r1, 3  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3901, // lw r9, 1  # "pass"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3902, // lw r9, 2  # "fail"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3904, // lw r9, 4  # "skip"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 20);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 3);
+        assert_eq!(completion_data.results[0], IndividualResult::Pass);
+        assert_eq!(completion_data.results[1], IndividualResult::Fail);
+        assert_eq!(completion_data.results[2], IndividualResult::Skip);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Fail);
+    }
+
+    #[test]
+    fn test_done_multi_prio_4_pass() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3102, // lw r1, 2  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3901, // lw r9, 1  # "pass"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3904, // lw r9, 4  # "skip"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 17);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 2);
+        assert_eq!(completion_data.results[0], IndividualResult::Pass);
+        assert_eq!(completion_data.results[1], IndividualResult::Skip);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Pass);
+    }
+
+    #[test]
+    fn test_done_multi_prio_5_skip() {
+        let (test_driver_data, result) = run_test(
+            &[
+                0x3002, // lw r0, 2  # "done"
+                0x3102, // lw r1, 2  # num tests
+                0x3800, // lw r8, 0x0000
+                0x3904, // lw r9, 4  # "skip"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3904, // lw r9, 1  # "skip"
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x390D, // lw r9, 0x650D
+                0x4965, // ↑
+                0x2089, // sw r8, r9
+                0x5988, // incr r8
+                0x3985, // lw r9, 0x4585
+                0x4945, // ↑
+                0x2089, // sw r8, r9
+                0x102A, // yield
+            ],
+            &[],
+            999,
+        );
+        let completion_data = match result {
+            TestResult::Completed(completion_data) => completion_data,
+            _ => {
+                panic!("Unexpected test result type: {result:?}");
+            }
+        };
+        assert_eq!(test_driver_data.driver_insns, 17);
+        assert_eq!(completion_data.consistent_marker, true);
+        assert_eq!(completion_data.results.len(), 2);
+        assert_eq!(completion_data.results[0], IndividualResult::Skip);
+        assert_eq!(completion_data.results[1], IndividualResult::Skip);
+        assert_eq!(completion_data.overall_rating(), IndividualResult::Skip);
     }
 
     // TODO: testee stop reason passing

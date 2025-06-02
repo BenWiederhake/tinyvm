@@ -4426,7 +4426,7 @@ TESTS_TEST_DRIVER_RS = [
         nop
         debug
         nop
-        .word 0xFFFF # 'ill2'
+        ill
         """,
         "5F00 102C 5F00 FFFF",
         [],
@@ -4452,6 +4452,120 @@ TESTS_TEST_DRIVER_RS = [
         "30FF 5F00 102A",
         [],
         {0: 1, 1: 2, 2: 3},
+    ),
+    (
+        "from test_check_environment_id 202506",
+        """\
+        lw r0, 0xFFFF
+        lw r1, 0xFFFE
+        lw r2, 0xFFFD
+        lw r8, r0
+        lw r9, r1
+        lw r10, r2
+        ill
+        """,
+        "30FF 31FE 32FD 2108 2119 212A FFFF",
+        [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7},
+    ),
+    (
+        "from test_done_zero_invalid 202506",
+        """\
+        lw r0, 2  # "done"
+        lw r1, 0  # num tests
+        yield
+        """,
+        "3002 3100 102A",
+        [],
+        {0: 1, 1: 2, 2: 3},
+    ),
+    (
+        "from test_done_zero_valid 202506",
+        """\
+        lw r0, 2  # "done"
+        lw r1, 0  # num tests
+        lw r8, 0x0000
+        lw r9, 0x650D
+        sw r8, r9
+        lw r8, 0x0001
+        lw r9, 0x4585
+        sw r8, r9
+        yield
+        """,
+        "3002 3100 3800 390D 4965 2089 3801 3985 4945 2089 102A",
+        [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 4, 5: 5, 6: 6, 7: 7, 8: 7, 9: 8, 10: 9},
+    ),
+    (
+        "from test_done_negone_invalid 202506",
+        """\
+        lw r0, 2  # "done"
+        lw r1, -1  # num tests
+        yield
+        """,
+        "3002 31FF 102A",
+        [],
+        {0: 1, 1: 2, 2: 3},
+    ),
+    (
+        "from test_done_negtwo_invalid 202506",
+        """\
+        lw r0, 2  # "done"
+        lw r1, -2  # num tests
+        yield
+        """,
+        "3002 31FE 102A",
+        [],
+        {0: 1, 1: 2, 2: 3},
+    ),
+    (
+        "from test_done_negtwo_valid 202506",
+        """\
+        lw r0, 2  # "done"
+        lw r1, -2  # num tests
+        lw r8, 0xFFFE
+        lw r9, 0x650D
+        sw r8, r9
+        lw r8, 0xFFFF
+        lw r9, 0x4585
+        sw r8, r9
+        yield
+        """,
+        "3002 31FE 38FE 390D 4965 2089 38FF 3985 4945 2089 102A",
+        [],
+        {0: 1, 1: 2, 2: 3, 3: 4, 4: 4, 5: 5, 6: 6, 7: 7, 8: 7, 9: 8, 10: 9},
+    ),
+    (
+        "from test_done_multi_prio_1_illegal 202506",
+        """\
+        lw r0, 2  # "done"
+        lw r1, 5  # num tests
+        lw r8, 0x0000
+        lw r9, 1  # "pass"
+        sw r8, r9
+        incr r8
+        lw r9, 2  # "fail"
+        sw r8, r9
+        incr r8
+        lw r9, 3  # "fatal error"
+        sw r8, r9
+        incr r8
+        lw r9, 4  # "skip"
+        sw r8, r9
+        incr r8
+        lw r9, 5  # "illegal"
+        sw r8, r9
+        incr r8
+        lw r9, 0x650D
+        sw r8, r9
+        incr r8
+        lw r9, 0x4585
+        sw r8, r9
+        yield
+        """,
+        "3002 3105 3800 3901 2089 5988 3902 2089 5988 3903 2089 5988 3904 2089 5988 3905 2089 5988 390D 4965 2089 5988 3985 4945 2089 102A",
+        [],
+        -1,  # Not interesting enough
     ),
 ]
 
