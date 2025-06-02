@@ -588,11 +588,11 @@ impl VirtualMachine {
 
         match function {
             0b1000 => {
-                // * If FFFF=1000, the computed function is "decr" (add 1), e.g. decr(41) = 40
+                // * If FFFF=1000, the computed function is "decr" (subtract 1), e.g. decr(41) = 40
                 *destination = source.wrapping_sub(1);
             }
             0b1001 => {
-                // * If FFFF=1001, the computed function is "incr" (subtract 1), e.g. incr(41) = 42
+                // * If FFFF=1001, the computed function is "incr" (add 1), e.g. incr(41) = 42
                 *destination = source.wrapping_add(1);
             }
             0b1010 => {

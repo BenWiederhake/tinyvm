@@ -41,7 +41,7 @@ In order to indicate test results, the driver must load the number of executed t
     * all other values are considered an error of the test driver.
 - After these values, the next two words must be 0x650D and 0x4585. (These are the first four bytes of SHA256(b"test driver result\n"), and serve as a kind of sanity check.)
 
-This means that the maximum number of indicated tests is 65532, although it presumably becomes impractical already around a thousand tests.
+This means that the maximum number of indicated tests is 65534, although it presumably becomes impractical already around a thousand tests.
 
 TODO Example
 

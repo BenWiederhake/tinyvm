@@ -181,8 +181,8 @@ This reads from register 0bSSSS, and writes to register 0bDDDD.
 
 This computes a simple mathematical function using only the value of the source register 0bSSSS, and writes it into the destination register 0bDDDD, where FFFF selects the desired unary function.
 
-* If FFFF=1000, the computed function is "decr" (add 1), e.g. decr(41) = 40
-* If FFFF=1001, the computed function is "incr" (subtract 1), e.g. incr(41) = 42
+* If FFFF=1000, the computed function is "decr" (subtract 1), e.g. decr(41) = 40
+* If FFFF=1001, the computed function is "incr" (add 1), e.g. incr(41) = 42
 * If FFFF=1010, the computed function is "not" (bite-wise logical negation), e.g. not(0x1234) = 0xEDCB
 * If FFFF=1011, the computed function is "popcnt" (population count), e.g. popcnt(0xFFFF) = 16, popcnt(0x0000) = 0
     * Note that there are no silly exceptions as there would be in x86.

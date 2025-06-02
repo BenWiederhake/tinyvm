@@ -1532,7 +1532,7 @@ fn run_unary_test(function: u16, a: u16, result: u16) {
 
 #[test]
 fn test_unary_decr() {
-    // * If FFFF=1000, the computed function is "decr" (add 1), e.g. decr(41) = 40
+    // * If FFFF=1000, the computed function is "decr" (subtract 1), e.g. decr(41) = 40
     run_unary_test(0b1000, 41, 40);
     run_unary_test(0b1000, 0x0000, 0xFFFF);
     run_unary_test(0b1000, 0xABCD, 0xABCC);
@@ -1540,7 +1540,7 @@ fn test_unary_decr() {
 
 #[test]
 fn test_unary_incr() {
-    // * If FFFF=1001, the computed function is "incr" (subtract 1), e.g. incr(41) = 42
+    // * If FFFF=1001, the computed function is "incr" (add 1), e.g. incr(41) = 42
     run_unary_test(0b1001, 41, 42);
     run_unary_test(0b1001, 0xFFFF, 0x0000);
     run_unary_test(0b1001, 0xABCD, 0xABCE);
