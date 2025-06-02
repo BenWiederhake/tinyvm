@@ -15,6 +15,7 @@ enum RunnerType {
     #[default]
     Connect4,
     Judge,
+    // FIXME: Also permit "test_driver"
     TestDriver,
 }
 
@@ -62,8 +63,6 @@ fn parse_segment(segment_filename: &str) -> Result<Segment> {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-
-    println!("args are: {args:?}");
 
     let segments = args
         .instruction_segments

@@ -276,7 +276,7 @@ impl Display for CompletionData {
         for (i, individual_result) in self.results.iter().enumerate() {
             writeln!(f, " --[{:width$}/{count:width$}]--: {individual_result}", i + 1, width = width)?;
         }
-        Ok(())
+        writeln!(f, "Overall result: {}", self.overall_rating())
     }
 }
 
@@ -330,7 +330,6 @@ pub fn run_and_print_tests(
     let result = test_driver_data.conclude(total_budget);
     // TODO: Verbose mode? Quiet mode?
     println!("{}", result);
-    eprintln!("{:?}", result);
 }
 
 #[cfg(test)]
