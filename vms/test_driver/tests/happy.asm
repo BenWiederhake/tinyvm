@@ -6,7 +6,7 @@
 lw r0, 2  # "done"
 lw r1, 1  # num tests
 lw r8, 0x0000
-lw r9, 1  # "pass"
+lw r9, 1  # 1 for "pass", 2 for "fail"
 sw r8, r9
 incr r8
 lw r9, 0x650D

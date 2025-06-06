@@ -247,10 +247,18 @@ impl CompletionData {
         if !self.consistent_marker {
             return IndividualResult::Illegal;
         }
-        if self.results.iter().any(|&ir| ir == IndividualResult::Illegal) {
+        if self
+            .results
+            .iter()
+            .any(|&ir| ir == IndividualResult::Illegal)
+        {
             return IndividualResult::Illegal;
         }
-        if self.results.iter().any(|&ir| ir == IndividualResult::FatalError) {
+        if self
+            .results
+            .iter()
+            .any(|&ir| ir == IndividualResult::FatalError)
+        {
             return IndividualResult::FatalError;
         }
         if self.results.iter().any(|&ir| ir == IndividualResult::Fail) {
@@ -274,7 +282,12 @@ impl Display for CompletionData {
         let count = self.results.len();
         let width = count.max(1).ilog10() as usize + 1;
         for (i, individual_result) in self.results.iter().enumerate() {
-            writeln!(f, " --[{:width$}/{count:width$}]--: {individual_result}", i + 1, width = width)?;
+            writeln!(
+                f,
+                " --[{:width$}/{count:width$}]--: {individual_result}",
+                i + 1,
+                width = width
+            )?;
         }
         writeln!(f, "Overall result: {}", self.overall_rating())
     }
@@ -310,10 +323,7 @@ impl Display for TestResult {
 impl TestResult {
     pub fn is_good(&self) -> bool {
         if let TestResult::Completed(data) = self {
-            match data.overall_rating() {
-                IndividualResult::Pass | IndividualResult::Skip => true,
-                _ => false,
-            }
+            IndividualResult::Pass == data.overall_rating()
         } else {
             false
         }
@@ -324,12 +334,13 @@ pub fn run_and_print_tests(
     driver_instructions: &Segment,
     testee_instructions: &Segment,
     total_budget: u64,
-) {
+) -> bool {
     let mut test_driver_data =
         TestDriverData::new(driver_instructions.clone(), testee_instructions.clone());
     let result = test_driver_data.conclude(total_budget);
     // TODO: Verbose mode? Quiet mode?
     println!("{}", result);
+    result.is_good()
 }
 
 #[cfg(test)]
@@ -577,7 +588,10 @@ mod test_test_driver {
         assert_eq!(test_driver_data.driver_insns, 3);
         assert_eq!(completion_data.consistent_marker, false);
         assert_eq!(completion_data.results.len(), 0xFFFE);
-        assert!(completion_data.results.iter().all(|&e| e == IndividualResult::Illegal));
+        assert!(completion_data
+            .results
+            .iter()
+            .all(|&e| e == IndividualResult::Illegal));
         assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
     }
 
@@ -609,7 +623,10 @@ mod test_test_driver {
         assert_eq!(test_driver_data.driver_insns, 11);
         assert_eq!(completion_data.consistent_marker, true);
         assert_eq!(completion_data.results.len(), 0xFFFE);
-        assert!(completion_data.results.iter().all(|&e| e == IndividualResult::Illegal));
+        assert!(completion_data
+            .results
+            .iter()
+            .all(|&e| e == IndividualResult::Illegal));
         assert_eq!(completion_data.overall_rating(), IndividualResult::Illegal);
     }
 
@@ -715,7 +732,10 @@ mod test_test_driver {
         assert_eq!(completion_data.consistent_marker, true);
         assert_eq!(completion_data.results.len(), 1);
         assert_eq!(completion_data.results[0], IndividualResult::FatalError);
-        assert_eq!(completion_data.overall_rating(), IndividualResult::FatalError);
+        assert_eq!(
+            completion_data.overall_rating(),
+            IndividualResult::FatalError
+        );
     }
 
     #[test]
@@ -883,7 +903,10 @@ mod test_test_driver {
         assert_eq!(completion_data.results[1], IndividualResult::Fail);
         assert_eq!(completion_data.results[2], IndividualResult::FatalError);
         assert_eq!(completion_data.results[3], IndividualResult::Skip);
-        assert_eq!(completion_data.overall_rating(), IndividualResult::FatalError);
+        assert_eq!(
+            completion_data.overall_rating(),
+            IndividualResult::FatalError
+        );
     }
 
     #[test]

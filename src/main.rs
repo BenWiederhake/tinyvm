@@ -92,7 +92,12 @@ fn main() -> Result<()> {
                 "Wrong number of segments provided; TODO: should be checked by clap"
             );
             let total_budget = 30_000; // TODO: make it configurable through CLI
-            test_driver::run_and_print_tests(&segments[0], &segments[1], total_budget);
+            let all_success =
+                test_driver::run_and_print_tests(&segments[0], &segments[1], total_budget);
+            if !all_success {
+                // TODO: How should this be done usually?
+                std::process::exit(1);
+            }
         }
     }
 

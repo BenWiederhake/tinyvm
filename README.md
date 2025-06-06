@@ -99,9 +99,14 @@ Test the assembler:
 ./assembler/asm_test.py
 ```
 
-Test that all TinyVM algorithms work and compile to the indicated hash:
+Test that all Connect4 algorithms and judges compile to the indicated hash:
 ```
 ./vms/convert_all.sh
+```
+
+Run all tests written in assembly:
+```
+./vms/run_all_tests.sh
 ```
 
 ## Performance
