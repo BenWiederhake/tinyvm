@@ -1,7 +1,7 @@
 # Format: See ../../assembler/README.md
 
 # Just a simple read/write test. Doesn't even try to execute the testee.
-# FIXME .assert_hash B4E817E2209D9F8BCF8E062CB366FBF1383E0895F555EE4940ACD23CCEDD80CC
+.assert_hash C333C3166B9F39A6CC708438CD75E4F6427C744D4AC498F0CCA081EE110D7537
 
 # Prepare some values in memory:
 lw r8, 0x0104

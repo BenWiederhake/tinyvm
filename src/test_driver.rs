@@ -108,7 +108,11 @@ impl TestDriverData {
         } else {
             self.driver_insns += 1;
             match self.vm_driver.step() {
-                StepResult::Continue | StepResult::DebugDump => None,
+                StepResult::Continue => None,
+                StepResult::DebugDump => {
+                    println!("{:?}", self.vm_driver.get_data());
+                    None
+                }
                 StepResult::IllegalInstruction(insn) => Some(TestResult::IllegalInstruction(insn)),
                 StepResult::Yield(cmd) => self.handle_driver_yield(cmd),
             }
