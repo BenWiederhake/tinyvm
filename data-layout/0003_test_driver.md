@@ -47,15 +47,24 @@ TODO Example
 
 ## Reading/overwriting the testee registers
 
-Register 1 is interpreted as a bitmap, indicating which registers shall be written. The least-significant bit corresponds to register 0, the most significant bit corresponds to register 15. The execution environment also reads the data segment at addresses 0x0000 through 0x000F, and (for each bit that is set to 1) overwrites the testee's register with the word found in the driver's data segment. After this operation, the execution environment writes the (updated) values of all testee registers to the data segment of the driver, again in the slice 0x0000 through 0x000F.
+Register 1 is interpreted as a bitmap, indicating which registers shall be written. The
+least-significant bit corresponds to register 0, the most significant bit corresponds to register 15.
+The execution environment also reads the data segment at addresses 0x0000 through 0x000F, and
+(for each bit that is set to 1) overwrites the testee's register with the word found in the
+driver's data segment.
+
+Register 2 is the offset used for the data segment access. The pointed-to region may cross the wrap-around point.
+
+After this operation, the execution environment writes the (updated) values of all testee registers to the data segment of the driver, again in the slice "register 2 plus 0x0000" through "register 2 plus 0x000F".
 
 Example:
 - The testee already has value 0x1234 in register 7 from some prior instructions.
-- The driver has written the value 0xABCD at location 0x0005 of its data segment.
+- The driver has written the value 0xABCD at location 0x0105 of its data segment.
 - The driver loads the value 3 into register 0 and 16 (0b0000000000010000) into register 1.
+- The driver loads the value 0x0100 into register 0 and 16 (0b0000000000010000) into register 1.
 - The driver executes instruction 0x102A (`yield`).
 - The execution environment recognizes this as a request to write the value 0xABCD into register 5 of the testee, and modifies none of the other registers.
-- The execution environment writes the values of the testee's register to the data segment of the driver. At the addresses 0x0005 and 0x0007 in particular, it writes the values 0xABCD and 0x1234, respectively. (Note that the write-back of register 5 is effectively a no-op.)
+- The execution environment writes the values of the testee's register to the data segment of the driver. At the addresses 0x0105 and 0x0107 in particular, it writes the values 0xABCD and 0x1234, respectively. (Note that the write-back of register 5 is effectively a no-op.)
 
 ## Overwriting the testee data segment
 

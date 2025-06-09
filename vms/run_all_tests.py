@@ -67,11 +67,9 @@ class DetectedFiles(unittest.TestCase):
 class ExecuteTestDrivers(unittest.TestCase):
     def execute_driver(self, *cmd_args):
         # Let the unittest framework deal with capturing/displaying the results.
-        completed_process = subprocess.run(
-            ["cargo", "run", "--", "--mode=test-driver", *cmd_args],
-            check=False,
-            capture_output=True,
-        )
+        exec_args = ["cargo", "run", "--", "--mode=test-driver", *cmd_args]
+        print("+ " + " ".join(exec_args))
+        completed_process = subprocess.run(exec_args, check=False, capture_output=True)
         if 0 == completed_process.returncode:
             return
         # TODO: Output with "-b" is duplicated, and without "-b" it appears in the wrong place. Ugh.

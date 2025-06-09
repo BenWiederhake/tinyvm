@@ -158,11 +158,24 @@ impl TestDriverData {
         // From the documentation:
         // - After these values, the next two words must be 0x650D and 0x4585. (These are the first four bytes of SHA256(b"test driver result\n"), and serve as a kind of sanity check.)
         completion_data.consistent_marker = marker0 == 0x650D && marker1 == 0x4585;
+        if !completion_data.consistent_marker {
+            eprintln!("WARNING: found markers {marker0:04X} {marker1:04X} instead");
+        }
         TestResult::Completed(completion_data)
     }
 
     fn handle_access_registers(&mut self) {
-        unimplemented!()
+        let write_bitset = self.vm_driver.get_registers()[1];
+        let driver_offset = self.vm_driver.get_registers()[2];
+        for i in 0..16u16 {
+            let should_write_to_testee = 0 != (write_bitset & (1u16 << i as u32));
+            let offset = driver_offset.wrapping_add(i);
+            if should_write_to_testee {
+                self.vm_testee.set_register(i, self.vm_driver.get_data()[offset]);
+            } else {
+                self.vm_driver.get_data_mut()[offset] = self.vm_testee.get_registers()[i as usize];
+            }
+        }
     }
 
     fn handle_overwrite_data(&mut self) {
