@@ -92,8 +92,6 @@ Register 1, 2, and 3 are interpreted as an unsigned 48-bit number N (with regist
 
 By default, that value is `2**48 - 1 = 0xFFFF_FFFF_FFFF = 281474976710655`.
 
-Whenever execution is handed to the testee, the maximum number of instructions it may run is determined by N (the above number), and R, the remaining number of instructions in the test drivers overall budget.
-- If N is zero, that's a fatal error.
-- If N is non-zero, the limit is min(N, R)
+Whenever execution is handed to the testee, the maximum number of instructions it may run is determined by N (the above number), and R, the remaining number of instructions in the test drivers overall budget. In particular, the limit is min(N, R), even if N is zero.
 
 TODO: Example

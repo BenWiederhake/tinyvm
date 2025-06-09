@@ -220,7 +220,8 @@ impl TestDriverData {
     }
 
     fn handle_reset_time_limit(&mut self) {
-        unimplemented!()
+        let regs = self.vm_driver.get_registers();
+        self.testee_limit = ((regs[1] as u64) << 32) + ((regs[1] as u64) << 16) + regs[3] as u64;
     }
 
     fn handle_set_program_counter(&mut self) {

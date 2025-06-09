@@ -3,5 +3,6 @@
     ["null", "registers"],
     ["null", "data_segment"],
     ["instruction_segment_target", "instruction_segment"],
-    ["null", "program_counter_nocrash"]
+    ["null", "program_counter_nocrash"],
+    ["null", "time_limit_nocrash"]
 ]
