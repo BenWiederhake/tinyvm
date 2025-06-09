@@ -6,5 +6,6 @@
     ["instruction_segment_target", "data_segment"],
     ["null", "program_counter_nocrash"],
     ["null", "time_limit_nocrash"],
-    ["exec_testee_target", "exec_testee"]
+    ["exec_testee_target", "exec_testee"],
+    ["exec_testee_target", "exec_testee_timeout"]
 ]
