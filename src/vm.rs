@@ -372,6 +372,10 @@ impl VirtualMachine {
         self.program_counter
     }
 
+    pub fn set_program_counter(&mut self, new_pc: u16) {
+        self.program_counter = new_pc;
+    }
+
     #[must_use]
     pub fn get_time(&self) -> u64 {
         self.time

@@ -224,7 +224,8 @@ impl TestDriverData {
     }
 
     fn handle_set_program_counter(&mut self) {
-        unimplemented!()
+        let new_pc = self.vm_driver.get_registers()[1];
+        self.vm_testee.set_program_counter(new_pc);
     }
 
     pub fn conclude(&mut self, total_budget: u64) -> TestResult {
