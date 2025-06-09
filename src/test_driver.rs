@@ -205,7 +205,14 @@ impl TestDriverData {
     }
 
     fn handle_read_instructions(&mut self) {
-        unimplemented!()
+        let dst_offset = self.vm_driver.get_registers()[1];
+        let src_offset = self.vm_driver.get_registers()[2];
+        let num_words = self.vm_driver.get_registers()[3];
+        for i in 0..num_words {
+            let driver_dst_index = dst_offset.wrapping_add(i);
+            let testee_src_index = src_offset.wrapping_add(i);
+            self.vm_driver.set_data_word(driver_dst_index, self.vm_testee.get_instructions()[testee_src_index]);
+        }
     }
 
     fn handle_reset_testee_vm(&mut self) {

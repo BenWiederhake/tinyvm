@@ -1,5 +1,6 @@
 [
     ["null", "happy"],
     ["null", "registers"],
-    ["null", "data_segment"]
+    ["null", "data_segment"],
+    ["instruction_segment_target", "instruction_segment"]
 ]
