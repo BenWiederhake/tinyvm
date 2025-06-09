@@ -92,12 +92,14 @@ impl TestDriverData {
             match self.vm_testee.step() {
                 StepResult::Continue | StepResult::DebugDump => None,
                 StepResult::IllegalInstruction(insn) => {
+                    self.testee_remaining = 0; // Stop executing testee.
                     self.vm_driver
                         .set_register(0, TesteeExecutionResult::IllegalInstruction as u16);
                     self.vm_driver.set_register(1, insn);
                     None
                 }
                 StepResult::Yield(yield_value) => {
+                    self.testee_remaining = 0; // Stop executing testee.
                     self.vm_driver
                         .set_register(0, TesteeExecutionResult::Yielded as u16);
                     self.vm_driver.set_register(1, yield_value);
@@ -143,7 +145,8 @@ impl TestDriverData {
         // Already set "testee timeout" as "response" in register 0, so that the timeout case doesn't have to be recognized separately.
         self.vm_driver
             .set_register(0, TesteeExecutionResult::Timeout as u16);
-        unimplemented!()
+        self.vm_driver.set_register(1, 0x0000);
+        self.testee_remaining = self.testee_limit;
     }
 
     fn handle_done(&mut self) -> TestResult {

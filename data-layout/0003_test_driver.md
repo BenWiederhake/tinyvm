@@ -27,8 +27,8 @@ With commands (yield values) 3 through 10, the test driver can control the exact
 
 The testee will continue to execute, until it either:
 - yields, in which case 0x0000 and the yield value are written to register 0 and 1 of the driver, respectively;
-- or the allotted time is up, in which case 0x0001 is written to register 0 of the driver;
-- or the testee attempts to execute an illegal instruction, in which case 0xFFFF (i.e. -1) is written to register 0 of the driver.
+- or the allotted time is up, in which case 0x0001 is written to register 0 of the driver, and 0x0000 to register 1;
+- or the testee attempts to execute an illegal instruction, in which case 0xFFFF (i.e. -1) is written to register 0 of the driver, and the illegal instruction itself to register 1.
 
 ## Returning test results
 
