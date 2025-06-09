@@ -178,7 +178,8 @@ impl TestDriverData {
             let should_write_to_testee = 0 != (write_bitset & (1u16 << i as u32));
             let offset = driver_offset.wrapping_add(i);
             if should_write_to_testee {
-                self.vm_testee.set_register(i, self.vm_driver.get_data()[offset]);
+                self.vm_testee
+                    .set_register(i, self.vm_driver.get_data()[offset]);
             } else {
                 self.vm_driver.get_data_mut()[offset] = self.vm_testee.get_registers()[i as usize];
             }
@@ -192,7 +193,10 @@ impl TestDriverData {
         for i in 0..num_words {
             let testee_dst_index = dst_offset.wrapping_add(i);
             let driver_src_index = src_offset.wrapping_add(i);
-            self.vm_testee.set_data_word(testee_dst_index, self.vm_driver.get_data()[driver_src_index]);
+            self.vm_testee.set_data_word(
+                testee_dst_index,
+                self.vm_driver.get_data()[driver_src_index],
+            );
         }
     }
 
@@ -203,7 +207,10 @@ impl TestDriverData {
         for i in 0..num_words {
             let driver_dst_index = dst_offset.wrapping_add(i);
             let testee_src_index = src_offset.wrapping_add(i);
-            self.vm_driver.set_data_word(driver_dst_index, self.vm_testee.get_data()[testee_src_index]);
+            self.vm_driver.set_data_word(
+                driver_dst_index,
+                self.vm_testee.get_data()[testee_src_index],
+            );
         }
     }
 
@@ -214,7 +221,10 @@ impl TestDriverData {
         for i in 0..num_words {
             let driver_dst_index = dst_offset.wrapping_add(i);
             let testee_src_index = src_offset.wrapping_add(i);
-            self.vm_driver.set_data_word(driver_dst_index, self.vm_testee.get_instructions()[testee_src_index]);
+            self.vm_driver.set_data_word(
+                driver_dst_index,
+                self.vm_testee.get_instructions()[testee_src_index],
+            );
         }
     }
 

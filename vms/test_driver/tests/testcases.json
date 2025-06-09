@@ -3,6 +3,7 @@
     ["null", "registers"],
     ["null", "data_segment"],
     ["instruction_segment_target", "instruction_segment"],
+    ["instruction_segment_target", "data_segment"],
     ["null", "program_counter_nocrash"],
     ["null", "time_limit_nocrash"],
     ["exec_testee_target", "exec_testee"]
