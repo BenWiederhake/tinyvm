@@ -969,6 +969,23 @@ class Assembler:
         offset_byte = destination_offset & 0xFF
         return self.push_word(0x3000 | (addr_register << 8) | offset_byte)
 
+    def emit_load_long_label(self, command, addr_register, label_name):
+        destination_offset, destination_lineno = self.known_labels[label_name]
+        self.unused_labels.discard(label_name)
+        # Leave a slack of ten when warning: See also implementation of 'lb' and documentation of 'lla'.
+        if not (117 < destination_offset < ((-118) & 0xFFFF)):
+            self.error(
+                f"Pseudo-instruction '{command}' (to {label_name})' supports labels in the full range, but was used for just a short offset of 0x{destination_offset:04X}. Try using the non-long version, which uses fewer instructions. (non-fatal)"
+            )
+        assert 0 <= addr_register < 16
+        assert 0 <= destination_offset <= 0xFFFF
+        low_byte = destination_offset & 0xFF
+        high_byte = (destination_offset & 0xFF00) >> 8
+        return self.push_words(
+            0x3000 | (addr_register << 8) | low_byte,
+            0x4000 | (addr_register << 8) | high_byte,
+        )
+
     @asm_command
     def parse_command_b(self, command, args):
         arg_list = [e.strip() for e in args.split(" ", 1)]
@@ -1332,6 +1349,25 @@ class Assembler:
         assert 0 <= addr_register < 16
         call_data = (command, addr_register, value_label)
         return self.forward(1, value_label, self.emit_load_short_label, call_data)
+
+    @asm_command
+    def parse_command_lla(self, command, args):
+        arg_list = [e.strip() for e in args.split(",")]
+        if len(arg_list) != 2:
+            return self.error(
+                f"Command '{command}' expects exactly two comma-separated arguments, got {arg_list} instead."
+            )
+        addr_register = self.parse_reg(arg_list[0], f"first argument to {command}")
+        if addr_register is None:
+            # Error already reported
+            return False
+        value_label = self.parse_label(arg_list[1], f"second argument to {command}")
+        if value_label is None:
+            # Error already reported
+            return False
+        assert 0 <= addr_register < 16
+        call_data = (command, addr_register, value_label)
+        return self.forward(2, value_label, self.emit_load_long_label, call_data)
 
     @asm_directive
     def parse_directive_offset(self, command, args):

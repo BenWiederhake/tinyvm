@@ -153,7 +153,6 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
     * It is short for "load address".
     * As a consequence, this pseudo-instruction only works, if the label is in the range `[0x0000, 0x007F]` or in `[0xFF80, 0xFFFF]`.
     * TODO: Permit an optional immediate afterwards, i.e. `la r0, _myfunction_start +8`
-    * TODO: Implement `lla` for arbitrary addresses.
 - `nop` always generates exactly one instruction. Currently, it is `0x5F00`, equivalent to the hypothetical `mov r0, r0`.
 - `bgt reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
     * Also with other comparisons: `bgts`, `beq`, `bge`, `bges`, `blt`, `blts`, `bne`, `ble`, `bles`
@@ -191,3 +190,9 @@ Finally, some instructions are so useful, so "made" to be used in a particular c
     * Support for even longer jumps is currently missing, but should ideally be a separate pseudo-instruction (to preserve predictability).
     * Offsets 0 (infinite loop) and 1 (noop) cannot be encoded in the ISA, and therefore not supported by the assembler.
     * The label does not need to be defined yet; forward-references are fine. For more info, see [directives](#directives).
+- `lla reg_dest, lab_reference`
+    * This pseudo-instruction generates always exactly two instructions, in particular it will behave like `lw reg_dest, imm_large_value`, where `imm_large_value` is the absolute address of `lab_reference`.
+    * It is short for "long load address".
+    * This pseudo-instruction works for labels at all offsets.
+    * If, however, the offset is close to zero, a warning is emitted, to inform the user that one instruction can be saved by using `la` instead. This is similar to `lb`: Not the entire range \[-128, +127\] is flagged, only \[-118, +117\]. This is to allow for some slack when code offsets are changing while programming.
+    * TODO: Permit an optional immediate afterwards, i.e. `lla r0, _myfunction_start +8`

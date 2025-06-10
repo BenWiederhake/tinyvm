@@ -2015,6 +2015,198 @@ ASM_TESTS = [
         [],
         {2: 4},
     ),
+
+
+    (
+        "long load address of label, backward",
+        """\
+        .offset 0x1234
+        .label _foo
+        .offset 1
+        .word 0xABCD
+        lla r7, _foo
+        """,
+        "0000 ABCD 3734 4712",
+        [],
+        {1: 4, 2: 5, 3: 5},
+    ),
+    (
+        "long load address of label, forward",
+        """\
+        lla r7, _foo
+        .offset 0x20AC
+        .label _foo
+        """,
+        "37AC 4720",
+        [],
+        {0: 1, 1: 1},
+    ),
+    (
+        "long load address of label, forward max pos",
+        """\
+        .offset 2
+        lla r8, _foo
+        .offset 0x7FFF
+        .label _foo
+        """,
+        "0000 0000 38FF 487F",
+        [],
+        {2: 2, 3: 2},
+    ),
+    (
+        "long load address of label, forward max neg",
+        """\
+        .offset 1
+        lla r9, _foo
+        .offset 0x8000
+        .label _foo
+        """,
+        "0000 3900 4980",
+        [],
+        {1: 2, 2: 2},
+    ),
+    (
+        "long load address of label, backward max pos",
+        """\
+        .offset 0x7FFF
+        .label _foo
+        .offset 1
+        lla r6, _foo
+        """,
+        "0000 36FF 467F",
+        [],
+        {1: 4, 2: 4},
+    ),
+    (
+        "long load address of label, backward max neg",
+        """\
+        .offset 0x8000
+        .label _foo
+        .offset 1
+        lla r0, _foo
+        """,
+        "0000 3000 4080",
+        [],
+        {1: 4, 2: 4},
+    ),
+    (
+        "long load address of label, forward max pos one-insn nowarn",  # no backward sibling
+        """\
+        .offset 0
+        lla r10, _foo
+        .offset 0x007F
+        .label _foo
+        """,
+        "3A7F 4A00",
+        [],  # no warning: Still in slack-region
+        {0: 2, 1: 2},
+    ),
+    (
+        "long load address of label, backward max neg one-insn nowarn",  # no forward sibling
+        """\
+        .offset 0xFF80
+        .label _foo
+        .offset 0
+        lla r9, _foo
+        """,
+        "3980 49FF",
+        [],  # no warning: Still in slack-region
+        {0: 4, 1: 4},
+    ),
+    (
+        "long load address of label, backward min pos one-insn nowarn",  # no forward sibling
+        """\
+        .offset 0x0076
+        .label _foo
+        .offset 0
+        lla r13, _foo
+        """,
+        "3D76 4D00",
+        [],  # no warning: barely in slack-region
+        {0: 4, 1: 4},
+    ),
+    (
+        "long load address of label, forward min neg one-insn nowarn",  # no backward sibling
+        """\
+        .offset 0
+        lla r7, _foo
+        .offset 0xFF89
+        .label _foo
+        """,
+        "3789 47FF",
+        [],  # no warning: barely in slack-region
+        {0: 2, 1: 2},
+    ),
+    (
+        "long load address of label, backward max neg one-insn warn",  # no forward sibling
+        """\
+        .offset 0xFF8A
+        .label _foo
+        .offset 0
+        lla r1, _foo
+        """,
+        "318A 41FF",
+        [
+            "line 4: Pseudo-instruction 'lla' (to _foo)' supports labels in the full range, but was used for just a short offset of 0xFF8A. Try using the non-long version, which uses fewer instructions. (non-fatal)"
+        ],
+        {0: 4, 1: 4},
+    ),
+    (
+        "long load address of label, forward max pos one-insn warn",  # no backward sibling
+        """\
+        .offset 0
+        lla r4, _foo
+        .offset 0x0075
+        .label _foo
+        """,
+        "3475 4400",
+        [
+            "line 2: Pseudo-instruction 'lla' (to _foo)' supports labels in the full range, but was used for just a short offset of 0x0075. Try using the non-long version, which uses fewer instructions. (non-fatal)"
+        ],
+        {0: 2, 1: 2},
+    ),
+    (
+        "long load address of label, backward min neg one-insn warn",  # no forward sibling
+        """\
+        .offset 0xFFFF
+        .label _foo
+        .offset 0
+        lla r0, _foo
+        """,
+        "30FF 40FF",
+        [
+            "line 4: Pseudo-instruction 'lla' (to _foo)' supports labels in the full range, but was used for just a short offset of 0xFFFF. Try using the non-long version, which uses fewer instructions. (non-fatal)"
+        ],
+        {0: 4, 1: 4},
+    ),
+    (
+        "long load address of label, forward min pos one-insn warn",  # no backward sibling
+        """\
+        .offset 0
+        lla r9, _foo
+        .offset 0  # lol
+        .label _foo
+        """,
+        "3900 4900",
+        [
+            "line 2: Pseudo-instruction 'lla' (to _foo)' supports labels in the full range, but was used for just a short offset of 0x0000. Try using the non-long version, which uses fewer instructions. (non-fatal)"
+        ],
+        {0: 2, 1: 2},
+    ),
+    (
+        "long load address of label, forward min pos-non-zero one-insn warn",  # no backward sibling
+        """\
+        .offset 0
+        lla r2, _foo
+        .offset 1
+        .label _foo
+        """,
+        "3201 4200",
+        [
+            "line 2: Pseudo-instruction 'lla' (to _foo)' supports labels in the full range, but was used for just a short offset of 0x0001. Try using the non-long version, which uses fewer instructions. (non-fatal)"
+        ],
+        {0: 2, 1: 2},
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -3999,6 +4191,96 @@ NEGATIVE_TESTS = [
         """\
         .label  _hello_world
         la r11, _hello_wordl
+        """,
+        [
+            "line 3: Found end of asm text, but some forward references are unresolved: line 2 at offset 0 references label _hello_wordl",
+            "line 3: Did you mean any of these defined labels? ['_hello_world']",
+            "line 3: Unused label(s), try using them in dead code, or commenting them out: '_hello_world' (line 1, offset 0)",
+        ],
+    ),
+    (
+        "long load address, no-arg",
+        """\
+        lla
+        """,
+        [
+            "line 1: Command 'lla' expects exactly two comma-separated arguments, got [''] instead.",
+        ],
+    ),
+    (
+        "long load address, no-comma",
+        """\
+        .label _foo
+        lla r5 _foo
+        """,
+        [
+            "line 2: Command 'lla' expects exactly two comma-separated arguments, got ['r5 _foo'] instead.",
+        ],
+    ),
+    (
+        "long load address, one-arg",
+        """\
+        .label _foo
+        lla r5
+        """,
+        [
+            "line 2: Command 'lla' expects exactly two comma-separated arguments, got ['r5'] instead.",
+        ],
+    ),
+    (
+        "long load address, three-arg",
+        """\
+        .label _foo
+        lla r5, _foo, 123
+        """,
+        [
+            "line 2: Command 'lla' expects exactly two comma-separated arguments, got ['r5', '_foo', '123'] instead.",
+        ],
+    ),
+    (
+        "long load address, first not a register",
+        """\
+        .label _foo
+        lla 4, _foo
+        """,
+        [
+            "line 2: Cannot parse register for first argument to lla: Expected register (beginning with 'r'), instead got '4'. Try something like 'r0' instead.",
+        ],
+    ),
+    (
+        "long load address, second not a label (but imm)",
+        """\
+        lla r4, 123
+        """,
+        [
+            "line 1: Label name for second argument to lla must start with a '_' and contain at least two characters, found name '123' instead",
+        ],
+    ),
+    (
+        "long load address, second not a label (but reg)",
+        """\
+        lla r4, r8
+        """,
+        [
+            "line 1: Label name for second argument to lla must start with a '_' and contain at least two characters, found name 'r8' instead",
+        ],
+    ),
+    (
+        "long load address, non-existent",
+        """\
+        lla r3, _nonexistent_lol
+        """,
+        [
+            "line 2: Found end of asm text, but some forward references are unresolved: line 1 at offset 0 references label _nonexistent_lol",
+            # FIXME: Shouldn't suggest labels if there are none.
+            "line 2: Did you mean any of these defined labels? []",
+        ],
+    ),
+    (
+        "long load address backward, misspell",
+        """\
+        .label  _hello_world
+        lla r11, _hello_wordl
         """,
         [
             "line 3: Found end of asm text, but some forward references are unresolved: line 2 at offset 0 references label _hello_wordl",
