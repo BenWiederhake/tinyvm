@@ -1944,6 +1944,77 @@ ASM_TESTS = [
         [],
         {0: 2},
     ),
+    (
+        "load address of label, backward",
+        """\
+        ill
+        .label _foo
+        .word 0xABCD
+        la r7, _foo
+        """,
+        "FFFF ABCD 3701",
+        [],
+        {0: 1, 1: 3, 2: 4},
+    ),
+    (
+        "load address of label, forward",
+        """\
+        la r7, _foo
+        ill
+        .label _foo
+        """,
+        "3702 FFFF",
+        [],
+        {0: 1, 1: 2},
+    ),
+    (
+        "load address of label, forward max",
+        """\
+        .offset 2
+        la r8, _foo
+        .offset 0x007F
+        .label _foo
+        """,
+        "0000 0000 387F",
+        [],
+        {2: 2},
+    ),
+    (
+        "load address of label, forward min",
+        """\
+        .offset 2
+        la r8, _foo
+        .offset 0xFF80
+        .label _foo
+        """,
+        "0000 0000 3880",
+        [],
+        {2: 2},
+    ),
+    (
+        "load address of label, backward max",
+        """\
+        .offset 0x007F
+        .label _foo
+        .offset 2
+        la r9, _foo
+        """,
+        "0000 0000 397F",
+        [],
+        {2: 4},
+    ),
+    (
+        "load address of label, backward min",
+        """\
+        .offset 0xFF80
+        .label _foo
+        .offset 2
+        la r9, _foo
+        """,
+        "0000 0000 3980",
+        [],
+        {2: 4},
+    ),
 ]
 
 NEGATIVE_TESTS = [
@@ -3771,6 +3842,168 @@ NEGATIVE_TESTS = [
         """,
         [
             "line 1: Immediate value 65536 (hex: +10000) in second argument to jhi is out of bounds [-0x8000, 0xFFFF]"
+        ],
+    ),
+    (
+        "load address, no-arg",
+        """\
+        la
+        """,
+        [
+            "line 1: Command 'la' expects exactly two comma-separated arguments, got [''] instead.",
+        ],
+    ),
+    (
+        "load address, no-comma",
+        """\
+        .label _foo
+        la r5 _foo
+        """,
+        [
+            "line 2: Command 'la' expects exactly two comma-separated arguments, got ['r5 _foo'] instead.",
+        ],
+    ),
+    (
+        "load address, one-arg",
+        """\
+        .label _foo
+        la r5
+        """,
+        [
+            "line 2: Command 'la' expects exactly two comma-separated arguments, got ['r5'] instead.",
+        ],
+    ),
+    (
+        "load address, three-arg",
+        """\
+        .label _foo
+        la r5, _foo, 123
+        """,
+        [
+            "line 2: Command 'la' expects exactly two comma-separated arguments, got ['r5', '_foo', '123'] instead.",
+        ],
+    ),
+    (
+        "load address, first not a register",
+        """\
+        .label _foo
+        la 4, _foo
+        """,
+        [
+            "line 2: Cannot parse register for first argument to la: Expected register (beginning with 'r'), instead got '4'. Try something like 'r0' instead.",
+        ],
+    ),
+    (
+        "load address, second not a label (but imm)",
+        """\
+        la r4, 123
+        """,
+        [
+            "line 1: Label name for second argument to la must start with a '_' and contain at least two characters, found name '123' instead",
+        ],
+    ),
+    (
+        "load address, second not a label (but reg)",
+        """\
+        la r4, r8
+        """,
+        [
+            "line 1: Label name for second argument to la must start with a '_' and contain at least two characters, found name 'r8' instead",
+        ],
+    ),
+    (
+        "load address, non-existent",
+        """\
+        la r3, _nonexistent_lol
+        """,
+        [
+            "line 2: Found end of asm text, but some forward references are unresolved: line 1 at offset 0 references label _nonexistent_lol",
+            # FIXME: Shouldn't suggest labels if there are none.
+            "line 2: Did you mean any of these defined labels? []",
+        ],
+    ),
+    (
+        "load address backward, out-of-range middle",
+        """\
+        .offset 0x1234
+        .label _foo
+        .offset 0
+        la r11, _foo
+        """,
+        [
+            "line 4: Command 'la' can only load offsets in [-128, 127], but not 0x1234 (_foo). Try using moving the label (and changing associated code), or switch to an 'l*' pseudo-instruction.",
+        ],
+    ),
+    (
+        "load address backward, barely too positive",
+        """\
+        .offset 0x0080
+        .label _foo
+        .offset 0
+        la r11, _foo
+        """,
+        [
+            "line 4: Command 'la' can only load offsets in [-128, 127], but not 0x0080 (_foo). Try using moving the label (and changing associated code), or switch to an 'l*' pseudo-instruction.",
+        ],
+    ),
+    (
+        "load address backward, barely too negative",
+        """\
+        .offset 0xFF7F
+        .label _foo
+        .offset 0
+        la r11, _foo
+        """,
+        [
+            "line 4: Command 'la' can only load offsets in [-128, 127], but not 0xFF7F (_foo). Try using moving the label (and changing associated code), or switch to an 'l*' pseudo-instruction.",
+        ],
+    ),
+    (
+        "load address forward, out-of-range middle",
+        """\
+        la r11, _foo
+        .offset 0x1234
+        .label _foo
+        """,
+        [
+            "line 1: Command 'la' can only load offsets in [-128, 127], but not 0x1234 (_foo). Try using moving the label (and changing associated code), or switch to an 'l*' pseudo-instruction.",
+            "line 3: When label _foo was defined.",
+        ],
+    ),
+    (
+        "load address forward, barely too positive",
+        """\
+        la r11, _foo
+        .offset 0x0080
+        .label _foo
+        """,
+        [
+            "line 1: Command 'la' can only load offsets in [-128, 127], but not 0x0080 (_foo). Try using moving the label (and changing associated code), or switch to an 'l*' pseudo-instruction.",
+            "line 3: When label _foo was defined.",
+        ],
+    ),
+    (
+        "load address forward, barely too negative",
+        """\
+        la r11, _foo
+        .offset 0xFF7F
+        .label _foo
+        """,
+        [
+            "line 1: Command 'la' can only load offsets in [-128, 127], but not 0xFF7F (_foo). Try using moving the label (and changing associated code), or switch to an 'l*' pseudo-instruction.",
+            "line 3: When label _foo was defined.",
+        ],
+    ),
+    (
+        "load address backward, misspell",
+        """\
+        .label  _hello_world
+        la r11, _hello_wordl
+        """,
+        [
+            "line 3: Found end of asm text, but some forward references are unresolved: line 2 at offset 0 references label _hello_wordl",
+            "line 3: Did you mean any of these defined labels? ['_hello_world']",
+            "line 3: Unused label(s), try using them in dead code, or commenting them out: '_hello_world' (line 1, offset 0)",
         ],
     ),
 ]

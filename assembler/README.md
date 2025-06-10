@@ -142,12 +142,18 @@ This is the juicy part, and main point of having an assembler: Special directive
 
 Finally, some instructions are so useful, so "made" to be used in a particular combination, that it just makes sense to have the assembler accept pseudo-instructions for them.
 - `lw reg_dest, imm_large_value`
-    * This instruction may generate one or two instructions, and will accept any `-0x8000 <= imm_large_value <= 0xFFFF`.
+    * This pseudo-instruction may generate one or two instructions, and will accept any `-0x8000 <= imm_large_value <= 0xFFFF`.
     * If `imm_large_value` cannot be loaded in a single instruction, the assembler instead emits the two instructions:
       ```
       lw reg_dest, imm_low_bits
       lhi reg_dest, imm_high_bits
       ```
+- `la reg_dest, lab_reference`
+    * This pseudo-instruction generates always exactly one instruction, in particular it will behave like `lw reg_dest, imm_small`, where `imm_small` is the absolute address of `lab_reference`.
+    * It is short for "load address".
+    * As a consequence, this pseudo-instruction only works, if the label is in the range `[0x0000, 0x007F]` or in `[0xFF80, 0xFFFF]`.
+    * TODO: Permit an optional immediate afterwards, i.e. `la r0, _myfunction_start +8`
+    * TODO: Implement `lla` for arbitrary addresses.
 - `nop` always generates exactly one instruction. Currently, it is `0x5F00`, equivalent to the hypothetical `mov r0, r0`.
 - `bgt reg_lhs reg_rhs_dest ( imm_offset | _lab_destination )`
     * Also with other comparisons: `bgts`, `beq`, `bge`, `bges`, `blt`, `blts`, `bne`, `ble`, `bles`
