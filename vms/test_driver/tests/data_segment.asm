@@ -8,7 +8,7 @@
 # Prepare first write:
 lw r0, 16  # remaining items
 lw r1, 0x0100  # dst location (own data segment)
-lw r2, 0xFF80  # src location (own instruction segment), _random_data_one_start
+la r2, _random_data_one_start  # src location (own instruction segment)
 .label _memcpy_one_start
 lwi r3, r2
 sw r1, r3
@@ -27,7 +27,7 @@ yield
 # Prepare second write:
 lw r0, 12  # remaining items
 lw r1, 0x0200  # dst location (own data segment)
-lw r2, 0xFF90  # src location (own instruction segment), _random_data_two_start
+la r2, _random_data_two_start  # src location (own instruction segment)
 .label _memcpy_two_start
 lwi r3, r2
 sw r1, r3
@@ -70,7 +70,7 @@ sw r0, r9
 
 # Check each byte, write the result:
 lw r0, 32  # num items remaining
-lw r1, 0xFFA0  # address of expected (_expect_data_start)
+la r1, _expect_data_start  # address of expected
 lw r2, 0x0300  # address of actual
 lw r3, 0  # address of result
 .label _check_loop_begin
@@ -93,7 +93,7 @@ yield
 
 # Some random data itself
 .offset 0xFF80
-# .label _random_data_one_start  # TODO: using labels as immediates is not (yet) supported
+.label _random_data_one_start
 .word 0x3EE8
 .word 0x8DBB
 .word 0xA097
@@ -112,7 +112,7 @@ yield
 .word 0x6430
 
 .offset 0xFF90
-# .label _random_data_two_start  # TODO: using labels as immediates is not (yet) supported
+.label _random_data_two_start
 .word 0xB773
 .word 0xF089
 .word 0x9A7F
@@ -128,7 +128,7 @@ yield
 # Some words undefined
 
 .offset 0xFFA0
-# .label _expect_data_start  # TODO: using labels as immediates is not (yet) supported
+.label _expect_data_start
 .word 0x3EE8
 .word 0x8DBB
 .word 0xA097

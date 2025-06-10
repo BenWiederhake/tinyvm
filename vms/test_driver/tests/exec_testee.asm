@@ -107,5 +107,3 @@ yield
 # "Timeout", but there's no limit:
 .word 0x0000
 .word 0x0050
-
-# TODO: test from 0x0400 again, but with time limits.

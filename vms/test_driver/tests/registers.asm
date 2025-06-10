@@ -43,7 +43,7 @@ sw r0, r9
 decr r0
 lw r9, 0x650D  # first magic word of the two
 sw r0, r9
-lw r8, 0xFFCF  # address of last expected value, should be equal to _expected_data_last
+la r8, _expected_data_last
 lw r4, 0x011F  # address of last actual value
 .label _check_loop_begin
 # Invariant: r0 is the number of registers that still need to be checked at _check_loop_begin
@@ -95,5 +95,5 @@ yield
 .word 0  # r12
 .word 0  # r13
 .word 0  # r14
-# .label _expected_data_last  # TODO: Can't use labels as immediates to lwi (yet)
+.label _expected_data_last
 .word 0  # r15
