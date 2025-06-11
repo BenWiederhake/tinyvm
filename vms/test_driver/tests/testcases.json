@@ -7,5 +7,10 @@
     ["null", "program_counter_nocrash"],
     ["null", "time_limit_nocrash"],
     ["exec_testee_target", "exec_testee"],
-    ["exec_testee_target", "exec_testee_timeout"]
+    ["exec_testee_target", "exec_testee_timeout"],
+    ["fibonacci_table", "fibonacci"],
+    ["fibonacci_stack", "fibonacci"],
+    ["fibonacci_memory", "fibonacci"],
+    ["fibonacci_table", "fibonacci_high"],
+    ["fibonacci_memory", "fibonacci_high"]
 ]
