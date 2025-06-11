@@ -1,3 +1,4 @@
 [
-    ["yield0", "valid_first_move"]
+    ["yield0", "valid_first_move"],
+    ["random", "valid_first_move"]
 ]
