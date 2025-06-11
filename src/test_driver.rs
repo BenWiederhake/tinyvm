@@ -112,7 +112,10 @@ impl TestDriverData {
             match self.vm_driver.step() {
                 StepResult::Continue => None,
                 StepResult::DebugDump => {
-                    println!("{:?}", self.vm_driver.get_data());
+                    println!("Debug dump:");
+                    println!(" Testee Registers {:?}", self.vm_testee.get_registers());
+                    println!(" Driver Registers {:?}", self.vm_driver.get_registers());
+                    println!(" Driver {:?}", self.vm_driver.get_data());
                     None
                 }
                 StepResult::IllegalInstruction(insn) => Some(TestResult::IllegalInstruction(insn)),
@@ -391,6 +394,22 @@ pub fn run_and_print_tests(
     let mut test_driver_data =
         TestDriverData::new(driver_instructions.clone(), testee_instructions.clone());
     let result = test_driver_data.conclude(total_budget);
+    println!(
+        "Final program counter: {:04X}@driver, {:04X}@testee",
+        test_driver_data.vm_driver.get_program_counter(),
+        test_driver_data.vm_testee.get_program_counter()
+    );
+    println!("Debug dump:");
+    println!(
+        " Testee Registers {:?}",
+        test_driver_data.vm_testee.get_registers()
+    );
+    println!(" Testee {:?}", test_driver_data.vm_testee.get_data());
+    println!(
+        " Driver Registers {:?}",
+        test_driver_data.vm_driver.get_registers()
+    );
+    println!(" Driver {:?}", test_driver_data.vm_driver.get_data());
     // TODO: Verbose mode? Quiet mode?
     println!("{}", result);
     result.is_good()
